@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFin - Sistema Completo de Otimização de Financiamentos</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Work+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+        }
+        
+        .display-font {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #60a5fa;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+        
+        .strategy-card {
+            transition: all 0.3s ease;
+        }
+        
+        .strategy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==================== MOTOR DE CÁLCULO ====================
+        class TaxaReferencialAPI {
+            // Simulação de busca de Taxa Referencial
+            static async getTaxaAtual() {
+                // Em produção, buscar do Banco Central
+                // API: https://api.bcb.gov.br/dados/serie/bcdata.sgs.226/dados/ultimos/12?formato=json
+                return 0.0015; // 0.15% ao mês (simulado)
+            }
+        }
+
+        class FinancingCalculator {
+            constructor(contractData) {
+                this.contract = contractData;
+            }
+
+            calculateMonthlyRate(annualRate) {
+                return Math.pow(1 + annualRate, 1/12) - 1;
+            }
+
+            calculatePMT(rate, nper, pv) {
+                if (rate === 0) return pv / nper;
+                const factor = Math.pow(1 + rate, nper);
+                return pv * (rate * factor) / (factor - 1);
+            }
+
+            simulateScenario(strategy) {
+                const monthlyRate = this.calculateMonthlyRate(this.contract.taxaAnual);
+                let saldo = this.contract.saldoDevedor;
+                const simulacao = [];
+                let totalPago = 0;
+                let totalJuros = 0;
+                let mes = 0;
+
+                // Aplicar FGTS inicial se existir
+                if (strategy.fgtsInicial > 0) {
+                    saldo -= strategy.fgtsInicial;
+                    totalPago += strategy.fgtsInicial;
+                }
+
+                while (saldo > 0 && mes < 600) {
+                    const juros = saldo * monthlyRate;
+                    
+                    let amortBase;
+                    if (this.contract.sistema === 'SAC') {
+                        amortBase = this.contract.saldoDevedor / this.contract.prazoRestante;
+                    } else {
+                        const prazoRestante = Math.max(1, this.contract.prazoRestante - mes);
+                        const pmt = this.calculatePMT(monthlyRate, prazoRestante, saldo);
+                        amortBase = pmt - juros;
+                    }
+
+                    const amortExtra = strategy.amortizacaoMensal || 0;
+                    const parcela = juros + amortBase + amortExtra + 
+                                  this.contract.taxaFixa + this.contract.seguro;
+                    
+                    saldo = Math.max(0, saldo - amortBase - amortExtra);
+                    saldo *= (1 + this.contract.correcao);
+
+                    totalPago += parcela;
+                    totalJuros += juros;
+
+                    simulacao.push({
+                        mes: mes + 1,
+                        juros,
+                        amortizacao: amortBase + amortExtra,
+                        saldo,
+                        parcela
+                    });
+
+                    mes++;
+                    if (saldo <= 1) break;
+                }
+
+                return {
+                    simulacao,
+                    totalPago,
+                    totalJuros,
+                    prazoMeses: mes,
+                    custoMensalMedio: totalPago / mes
+                };
+            }
+
+            generateStrategies(clientProfile) {
+                const original = this.simulateScenario({ 
+                    amortizacaoMensal: 0, 
+                    fgtsInicial: 0 
+                });
+                
+                const strategies = [{
+                    id: 'original',
+                    nome: "Cenário Atual",
+                    descricao: "Continuando como está, sem mudanças",
+                    icon: "📊",
+                    ...original,
+                    economia: 0,
+                    reducaoPrazo: 0
+                }];
+
+                if (clientProfile.capacidadeExtra > 0) {
+                    // Estratégia 1: Agressiva
+                    const agressiva = this.simulateScenario({
+                        amortizacaoMensal: clientProfile.capacidadeExtra,
+                        fgtsInicial: clientProfile.valorFGTS || 0
+                    });
+                    strategies.push({
+                        id: 'agressiva',
+                        nome: "Liberdade Acelerada",
+                        descricao: `Investir R$ ${clientProfile.capacidadeExtra.toLocaleString('pt-BR')} por mês${clientProfile.valorFGTS > 0 ? ' + FGTS inicial' : ''}`,
+                        icon: "🚀",
+                        destaque: "Recomendada",
+                        ...agressiva,
+                        economia: original.totalPago - agressiva.totalPago,
+                        reducaoPrazo: original.prazoMeses - agressiva.prazoMeses
+                    });
+
+                    // Estratégia 2: Moderada
+                    const moderada = this.simulateScenario({
+                        amortizacaoMensal: clientProfile.capacidadeExtra * 0.6,
+                        fgtsInicial: (clientProfile.valorFGTS || 0) * 0.5
+                    });
+                    strategies.push({
+                        id: 'moderada',
+                        nome: "Equilíbrio Inteligente",
+                        descricao: `Investir R$ ${(clientProfile.capacidadeExtra * 0.6).toLocaleString('pt-BR')} por mês`,
+                        icon: "⚖️",
+                        ...moderada,
+                        economia: original.totalPago - moderada.totalPago,
+                        reducaoPrazo: original.prazoMeses - moderada.prazoMeses
+                    });
+
+                    // Estratégia 3: Conservadora
+                    const conservadora = this.simulateScenario({
+                        amortizacaoMensal: clientProfile.capacidadeExtra * 0.3,
+                        fgtsInicial: 0
+                    });
+                    strategies.push({
+                        id: 'conservadora',
+                        nome: "Segurança Financeira",
+                        descricao: `Investir R$ ${(clientProfile.capacidadeExtra * 0.3).toLocaleString('pt-BR')} por mês (reserva 70%)`,
+                        icon: "🛡️",
+                        ...conservadora,
+                        economia: original.totalPago - conservadora.totalPago,
+                        reducaoPrazo: original.prazoMeses - conservadora.prazoMeses
+                    });
+                }
+
+                return strategies;
+            }
+        }
+
+        // ==================== COMPONENTES ====================
+        
+        function LoadingScreen() {
+            return (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-white text-lg">Processando suas informações...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function ClientIntake({ onComplete }) {
+            const [step, setStep] = useState(1);
+            const [formData, setFormData] = useState({
+                nome: '',
+                whatsapp: '',
+                objetivo: '',
+                trabalhaCLT: null,
+                temFGTS: null,
+                valorFGTS: 0,
+                capacidadeExtra: 0,
+                banco: '',
+                sistema: 'SAC',
+                saldoDevedor: 0,
+                taxaAnual: 0,
+                prazoRestante: 0,
+                taxaFixa: 25,
+                seguro: 50
+            });
+
+            const updateField = (field, value) => {
+                setFormData(prev => ({ ...prev, [field]: value }));
+            };
+
+            const nextStep = () => setStep(step + 1);
+            const prevStep = () => setStep(step - 1);
+
+            const handleSubmit = () => {
+                onComplete(formData);
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-3xl mx-auto">
+                        {/* Header */}
+                        <div className="text-center mb-12 animate-in">
+                            <h1 className="text-5xl md:text-7xl font-bold display-font gradient-text mb-4">
+                                EcoFin
+                            </h1>
+                            <p className="text-xl text-gray-300">
+                                Vamos descobrir quanto você pode economizar? 💰
+                            </p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="glass rounded-2xl p-6 mb-8 animate-in" style={{animationDelay: '0.1s'}}>
+                            <div className="flex justify-between items-center">
+                                {[1, 2, 3, 4].map((s) => (
+                                    <div key={s} className="flex items-center flex-1">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${
+                                            step >= s ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'bg-gray-700 text-gray-400'
+                                        }`}>
+                                            {s}
+                                        </div>
+                                        {s < 4 && (
+                                            <div className={`flex-1 h-1 mx-2 rounded transition-all ${
+                                                step > s ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-700'
+                                            }`} />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Step Content */}
+                        <div className="glass rounded-2xl p-8 animate-in" style={{animationDelay: '0.2s'}}>
+                            {step === 1 && (
+                                <div className="space-y-6">
+                                    <h2 className="text-3xl font-bold text-white display-font mb-6">
+                                        Prazer em conhecer! 👋
+                                    </h2>
+                                    
+                                    <div>
+                                        <label className="block text-gray-300 mb-2 font-semibold">
+                                            Como posso te chamar?
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 rounded-lg input-field text-lg"
+                                            placeholder="Seu nome"
+                                            value={formData.nome}
+                                            onChange={(e) => updateField('nome', e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-300 mb-2 font-semibold">
+                                            WhatsApp (para contato)
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            className="w-full px-4 py-3 rounded-lg input-field text-lg"
+                                            placeholder="(00) 00000-0000"
+                                            value={formData.whatsapp}
+                                            onChange={(e) => updateField('whatsapp', e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-300 mb-3 font-semibold">
+                                            Qual seu maior sonho relacionado ao seu imóvel?
+                                        </label>
+                                        <div className="space-y-3">
+                                            {[
+                                                { value: 'quitar_rapido', label: '🏃‍♂️ Quitar logo e ficar livre dessa dívida', desc: 'Buscar a liberdade financeira o quanto antes' },
+                                                { value: 'reduzir_parcela', label: '💳 Reduzir a parcela mensal', desc: 'Ter mais dinheiro sobrando todo mês' },
+                                                { value: 'menos_juros', label: '💰 Economizar muito em juros', desc: 'Pagar menos para o banco' },
+                                                { value: 'balanceado', label: '⚖️ Um pouco de tudo', desc: 'Equilibrar economia e conforto' }
+                                            ].map(option => (
+                                                <div
+                                                    key={option.value}
+                                                    className={`p-4 rounded-lg cursor-pointer transition-all ${
+                                                        formData.objetivo === option.value
+                                                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500'
+                                                            : 'bg-white/5 border-2 border-transparent hover:border-gray-500'
+                                                    }`}
+                                                    onClick={() => updateField('objetivo', option.value)}
+                                                >
+                                                    <div className="font-semibold text-white">{option.label}</div>
+                                                    <div className="text-sm text-gray-400 mt-1">{option.desc}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="space-y-6">
+                                    <h2 className="text-3xl font-bold text-white display-font mb-6">
+                                        Agora me conta um pouco sobre você 💼
+                                    </h2>
+                                    
+                                    <div>
+                                        <label className="block text-gray-300 mb-3 font-semibold">
+                                            Você trabalha com carteira assinada (CLT)?
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[
+                                                { value: true, label: '✅ Sim, sou CLT', icon: '👔' },
+                                                { value: false, label: '❌ Não, sou PJ/Autônomo', icon: '💼' }
+                                            ].map(option => (
+                                                <div
+                                                    key={String(option.value)}
+                                                    className={`p-6 rounded-lg cursor-pointer transition-all text-center ${
+                                                        formData.trabalhaCLT === option.value
+                                                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500'
+                                                            : 'bg-white/5 border-2 border-transparent hover:border-gray-500'
+                                                    }`}
+                                                    onClick={() => updateField('trabalhaCLT', option.value)}
+                                                >
+                                                    <div className="text-4xl mb-2">{option.icon}</div>
+                                                    <div className="font-semibold text-white">{option.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {formData.trabalhaCLT !== null && (
+                                        <div className="animate-in">
+                                            <label className="block text-gray-300 mb-3 font-semibold">
+                                                {formData.trabalhaCLT ? 
+                                                    'Você tem FGTS disponível? Sabe quanto?' : 
+                                                    'Tem alguma reserva para usar na amortização?'}
+                                            </label>
+                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                {[
+                                                    { value: true, label: 'Sim', icon: '✅' },
+                                                    { value: false, label: 'Não', icon: '❌' }
+                                                ].map(option => (
+                                                    <div
+                                                        key={String(option.value)}
+                                                        className={`p-4 rounded-lg cursor-pointer transition-all text-center ${
+                                                            formData.temFGTS === option.value
+                                                                ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500'
+                                                                : 'bg-white/5 border-2 border-transparent hover:border-gray-500'
+                                                        }`}
+                                                        onClick={() => updateField('temFGTS', option.value)}
+                                                    >
+                                                        <div className="text-2xl mb-1">{option.icon}</div>
+                                                        <div className="font-semibold text-white">{option.label}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {formData.temFGTS && (
+                                                <div className="animate-in">
+                                                    <label className="block text-gray-300 mb-2">
+                                                        Quanto você tem disponível? (R$)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full px-4 py-3 rounded-lg input-field text-lg"
+                                                        placeholder="Ex: 30000"
+                                                        value={formData.valorFGTS || ''}
+                                                        onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-gray-300 mb-2 font-semibold">
+                                            Pensando na realidade da sua família, quanto vocês conseguem investir EXTRA por mês no financiamento?
+                                        </label>
+                                        <p className="text-sm text-gray-400 mb-3">
+                                            Seja honesto! É importante que caiba no orçamento 😊
+                                        </p>
+                                        <input
+                                            type="number"
+                                            className="w-full px-4 py-3 rounded-lg input-field text-lg"
+                                            placeholder="Ex: 500"
+                                            value={formData.capacidadeExtra || ''}
+                                            onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="space-y-6">
+                                    <h2 className="text-3xl font-bold text-white display-font mb-6">
+                                        Sobre seu financiamento 🏦
+                                    </h2>
+
+                                    <div>
+                                        <label className="block text-gray-300 mb-3 font-semibold">
+                                            Qual seu banco?
+                                        </label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            {['Caixa', 'Itaú', 'Bradesco', 'Santander', 'Banco do Brasil', 'Outro'].map(b => (
+                                                <div
+                                                    key={b}
+                                                    className={`p-4 rounded-lg cursor-pointer transition-all text-center ${
+                                                        formData.banco === b
+                                                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500'
+                                                            : 'bg-white/5 border-2 border-transparent hover:border-gray-500'
+                                                    }`}
+                                                    onClick={() => updateField('banco', b)}
+                                                >
+                                                    <div className="font-semibold text-white">{b}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-300 mb-3 font-semibold">
+                                            Sistema de amortização
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[
+                                                { value: 'SAC', label: 'SAC', desc: 'Parcelas decrescentes' },
+                                                { value: 'PRICE', label: 'PRICE', desc: 'Parcelas fixas' }
+                                            ].map(option => (
+                                                <div
+                                                    key={option.value}
+                                                    className={`p-4 rounded-lg cursor-pointer transition-all ${
+                                                        formData.sistema === option.value
+                                                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-500'
+                                                            : 'bg-white/5 border-2 border-transparent hover:border-gray-500'
+                                                    }`}
+                                                    onClick={() => updateField('sistema', option.value)}
+                                                >
+                                                    <div className="font-bold text-white text-lg">{option.label}</div>
+                                                    <div className="text-sm text-gray-400">{option.desc}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-gray-300 mb-2 font-semibold">
+                                                Saldo Devedor Atual (R$)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className="w-full px-4 py-3 rounded-lg input-field"
+                                                placeholder="Ex: 300000"
+                                                value={formData.saldoDevedor || ''}
+                                                onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-300 mb-2 font-semibold">
+                                                Taxa de Juros (% ao ano)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                className="w-full px-4 py-3 rounded-lg input-field"
+                                                placeholder="Ex: 9.75"
+                                                value={formData.taxaAnual * 100 || ''}
+                                                onChange={(e) => updateField('taxaAnual', (parseFloat(e.target.value) || 0) / 100)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-300 mb-2 font-semibold">
+                                                Prazo Restante (meses)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className="w-full px-4 py-3 rounded-lg input-field"
+                                                placeholder="Ex: 360"
+                                                value={formData.prazoRestante || ''}
+                                                onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-300 mb-2 font-semibold">
+                                                Taxa Fixa + Seguro (R$/mês)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                className="w-full px-4 py-3 rounded-lg input-field"
+                                                placeholder="Ex: 75"
+                                                value={formData.taxaFixa + formData.seguro}
+                                                onChange={(e) => {
+                                                    const total = parseFloat(e.target.value) || 75;
+                                                    updateField('taxaFixa', total * 0.33);
+                                                    updateField('seguro', total * 0.67);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 4 && (
+                                <div className="space-y-6 text-center">
+                                    <div className="text-6xl mb-4">📄</div>
+                                    <h2 className="text-3xl font-bold text-white display-font mb-4">
+                                        Upload de Documentos
+                                    </h2>
+                                    <p className="text-gray-300 text-lg mb-6">
+                                        Para uma análise mais precisa, você pode enviar prints ou PDFs do seu contrato
+                                    </p>
+
+                                    <div className="border-2 border-dashed border-gray-500 rounded-lg p-12 hover:border-blue-500 transition-all cursor-pointer">
+                                        <div className="text-4xl mb-4">📱</div>
+                                        <p className="text-white font-semibold mb-2">
+                                            Arraste arquivos aqui ou clique para selecionar
+                                        </p>
+                                        <p className="text-sm text-gray-400">
+                                            PNG, JPG, PDF (até 10MB)
+                                        </p>
+                                    </div>
+
+                                    <div className="text-left bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+                                        <h3 className="font-bold text-white mb-3">💡 Dica: Onde encontrar os dados</h3>
+                                        {formData.banco === 'Caixa' && (
+                                            <div className="text-gray-300 space-y-2 text-sm">
+                                                <p>📱 Abra o app <strong>Habitação Digital</strong></p>
+                                                <p>📋 Entre em <strong>Meu Imóvel</strong></p>
+                                                <p>📸 Tire print da tela com saldo devedor e taxa</p>
+                                            </div>
+                                        )}
+                                        {formData.banco !== 'Caixa' && formData.banco && (
+                                            <p className="text-gray-300 text-sm">
+                                                Entre no app do {formData.banco} e procure pela seção de financiamentos/imóveis
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        className="w-full py-3 rounded-lg bg-gray-600 text-white hover:bg-gray-500 transition-all"
+                                        onClick={handleSubmit}
+                                    >
+                                        Pular essa etapa (continuar com dados informados)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Navigation Buttons */}
+                            <div className="flex justify-between mt-8 pt-6 border-t border-gray-700">
+                                {step > 1 && (
+                                    <button
+                                        className="px-6 py-3 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                                        onClick={prevStep}
+                                    >
+                                        ← Voltar
+                                    </button>
+                                )}
+                                
+                                {step < 4 && (
+                                    <button
+                                        className="px-6 py-3 rounded-lg btn-primary text-white font-semibold ml-auto"
+                                        onClick={nextStep}
+                                        disabled={
+                                            (step === 1 && (!formData.nome || !formData.whatsapp || !formData.objetivo)) ||
+                                            (step === 2 && (formData.trabalhaCLT === null || formData.temFGTS === null)) ||
+                                            (step === 3 && (!formData.saldoDevedor || !formData.taxaAnual || !formData.prazoRestante))
+                                        }
+                                    >
+                                        Próximo →
+                                    </button>
+                                )}
+
+                                {step === 4 && (
+                                    <button
+                                        className="px-6 py-3 rounded-lg btn-primary text-white font-semibold ml-auto"
+                                        onClick={handleSubmit}
+                                    >
+                                        Enviar e Calcular 🚀
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function AdminDashboard({ clientData, strategies, onReset }) {
+            const [selectedStrategy, setSelectedStrategy] = useState(null);
+            const chartRef = useRef(null);
+
+            const formatCurrency = (value) => {
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(value);
+            };
+
+            const formatPercent = (value) => {
+                return (value * 100).toFixed(1) + '%';
+            };
+
+            useEffect(() => {
+                if (chartRef.current && strategies.length > 0) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Destruir gráfico anterior se existir
+                    if (window.myChart) {
+                        window.myChart.destroy();
+                    }
+
+                    // Pegar dados do cenário original para comparação
+                    const original = strategies[0];
+                    const months = Math.min(240, original.prazoMeses); // Máximo 20 anos no gráfico
+                    
+                    const datasets = strategies.slice(0, 4).map((strategy, idx) => {
+                        const data = [];
+                        for (let i = 0; i < months && i < strategy.simulacao.length; i += 6) {
+                            data.push(strategy.simulacao[i].saldo);
+                        }
+                        
+                        const colors = ['#94a3b8', '#3b82f6', '#8b5cf6', '#ec4899'];
+                        
+                        return {
+                            label: strategy.nome,
+                            data: data,
+                            borderColor: colors[idx],
+                            backgroundColor: colors[idx] + '20',
+                            borderWidth: idx === 0 ? 2 : 3,
+                            tension: 0.4,
+                            fill: false
+                        };
+                    });
+
+                    window.myChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({length: Math.ceil(months/6)}, (_, i) => `${i * 6}m`),
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#fff',
+                                        font: { size: 12 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        color: '#9ca3af',
+                                        callback: function(value) {
+                                            return 'R$ ' + (value/1000).toFixed(0) + 'k';
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(255,255,255,0.1)'
+                                    }
+                                },
+                                x: {
+                                    ticks: { color: '#9ca3af' },
+                                    grid: {
+                                        color: 'rgba(255,255,255,0.1)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }, [strategies]);
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-7xl mx-auto">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-8 animate-in">
+                            <div>
+                                <h1 className="text-4xl md:text-5xl font-bold display-font gradient-text mb-2">
+                                    Painel EcoFin
+                                </h1>
+                                <p className="text-gray-400">Análise completa para {clientData.nome}</p>
+                            </div>
+                            <button
+                                onClick={onReset}
+                                className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600 transition-all"
+                            >
+                                ← Novo Cliente
+                            </button>
+                        </div>
+
+                        {/* Client Info Card */}
+                        <div className="glass rounded-2xl p-6 mb-6 animate-in" style={{animationDelay: '0.1s'}}>
+                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+                                <span className="mr-2">👤</span> Informações do Cliente
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                <div>
+                                    <p className="text-gray-400">Nome</p>
+                                    <p className="text-white font-semibold">{clientData.nome}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400">WhatsApp</p>
+                                    <p className="text-white font-semibold">{clientData.whatsapp}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400">Objetivo</p>
+                                    <p className="text-white font-semibold capitalize">{clientData.objetivo?.replace('_', ' ')}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400">Banco</p>
+                                    <p className="text-white font-semibold">{clientData.banco}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Current Situation */}
+                        <div className="glass rounded-2xl p-6 mb-6 animate-in" style={{animationDelay: '0.2s'}}>
+                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+                                <span className="mr-2">📊</span> Situação Atual
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div className="text-center p-4 bg-white/5 rounded-lg">
+                                    <p className="text-gray-400 text-sm mb-1">Saldo Devedor</p>
+                                    <p className="text-white font-bold text-lg">{formatCurrency(clientData.saldoDevedor)}</p>
+                                </div>
+                                <div className="text-center p-4 bg-white/5 rounded-lg">
+                                    <p className="text-gray-400 text-sm mb-1">Taxa</p>
+                                    <p className="text-white font-bold text-lg">{formatPercent(clientData.taxaAnual)}</p>
+                                </div>
+                                <div className="text-center p-4 bg-white/5 rounded-lg">
+                                    <p className="text-gray-400 text-sm mb-1">Prazo</p>
+                                    <p className="text-white font-bold text-lg">{clientData.prazoRestante}m</p>
+                                    <p className="text-gray-500 text-xs">{(clientData.prazoRestante/12).toFixed(1)} anos</p>
+                                </div>
+                                <div className="text-center p-4 bg-white/5 rounded-lg">
+                                    <p className="text-gray-400 text-sm mb-1">Total a Pagar</p>
+                                    <p className="text-white font-bold text-lg">{formatCurrency(strategies[0]?.totalPago || 0)}</p>
+                                </div>
+                                <div className="text-center p-4 bg-red-500/20 rounded-lg border border-red-500/30">
+                                    <p className="text-gray-400 text-sm mb-1">Total em Juros</p>
+                                    <p className="text-red-400 font-bold text-lg">{formatCurrency(strategies[0]?.totalJuros || 0)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Strategies */}
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-white mb-4 display-font animate-in" style={{animationDelay: '0.3s'}}>
+                                🎯 Estratégias Calculadas
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {strategies.map((strategy, idx) => (
+                                    <div
+                                        key={strategy.id}
+                                        className={`strategy-card glass rounded-xl p-6 cursor-pointer animate-in ${
+                                            idx === 1 ? 'ring-2 ring-green-500' : ''
+                                        }`}
+                                        style={{animationDelay: `${0.4 + idx * 0.1}s`}}
+                                        onClick={() => setSelectedStrategy(strategy)}
+                                    >
+                                        {strategy.destaque && (
+                                            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full inline-block mb-2">
+                                                ⭐ {strategy.destaque}
+                                            </div>
+                                        )}
+                                        <div className="text-4xl mb-3">{strategy.icon}</div>
+                                        <h3 className="text-lg font-bold text-white mb-2">{strategy.nome}</h3>
+                                        <p className="text-sm text-gray-400 mb-4">{strategy.descricao}</p>
+                                        
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">Total:</span>
+                                                <span className="text-white font-semibold">{formatCurrency(strategy.totalPago)}</span>
+                                            </div>
+                                            {idx > 0 && (
+                                                <>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-400">Economia:</span>
+                                                        <span className="text-green-400 font-bold">{formatCurrency(strategy.economia)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-400">Redução:</span>
+                                                        <span className="text-blue-400 font-semibold">{strategy.reducaoPrazo}m</span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-400">Prazo:</span>
+                                                <span className="text-white font-semibold">{(strategy.prazoMeses/12).toFixed(1)}a</span>
+                                            </div>
+                                        </div>
+
+                                        {idx > 0 && (
+                                            <div className="mt-4 pt-4 border-t border-gray-700">
+                                                <div className="text-center">
+                                                    <p className="text-xs text-gray-400 mb-1">Economia %</p>
+                                                    <p className="text-2xl font-bold text-green-400">
+                                                        {((strategy.economia / strategies[0].totalPago) * 100).toFixed(1)}%
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Chart */}
+                        <div className="glass rounded-2xl p-6 mb-6 animate-in" style={{animationDelay: '0.8s'}}>
+                            <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+                                <span className="mr-2">📈</span> Evolução do Saldo Devedor
+                            </h2>
+                            <div style={{height: '400px'}}>
+                                <canvas ref={chartRef}></canvas>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in" style={{animationDelay: '0.9s'}}>
+                            <button className="glass rounded-xl p-6 text-center hover:bg-white/10 transition-all">
+                                <div className="text-3xl mb-2">📄</div>
+                                <h3 className="text-white font-bold mb-1">Gerar PDF</h3>
+                                <p className="text-sm text-gray-400">Relatório completo para o cliente</p>
+                            </button>
+                            <button className="glass rounded-xl p-6 text-center hover:bg-white/10 transition-all">
+                                <div className="text-3xl mb-2">📱</div>
+                                <h3 className="text-white font-bold mb-1">Enviar WhatsApp</h3>
+                                <p className="text-sm text-gray-400">Compartilhar análise diretamente</p>
+                            </button>
+                            <button className="glass rounded-xl p-6 text-center hover:bg-white/10 transition-all">
+                                <div className="text-3xl mb-2">📧</div>
+                                <h3 className="text-white font-bold mb-1">Enviar Email</h3>
+                                <p className="text-sm text-gray-400">Relatório por email</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==================== APP PRINCIPAL ====================
+        function App() {
+            const [view, setView] = useState('client'); // 'client' or 'admin'
+            const [clientData, setClientData] = useState(null);
+            const [strategies, setStrategies] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            const handleClientSubmit = async (data) => {
+                setLoading(true);
+                
+                // Simular processamento
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Buscar taxa referencial
+                const taxaReferencial = await TaxaReferencialAPI.getTaxaAtual();
+
+                // Criar dados do contrato
+                const contractData = {
+                    sistema: data.sistema,
+                    saldoDevedor: data.saldoDevedor,
+                    taxaAnual: data.taxaAnual,
+                    prazoOriginal: data.prazoRestante,
+                    prazoRestante: data.prazoRestante,
+                    taxaFixa: data.taxaFixa,
+                    seguro: data.seguro,
+                    correcao: taxaReferencial
+                };
+
+                // Criar perfil do cliente
+                const clientProfile = {
+                    objetivo: data.objetivo,
+                    capacidadeExtra: data.capacidadeExtra,
+                    temFGTS: data.temFGTS,
+                    valorFGTS: data.valorFGTS
+                };
+
+                // Calcular estratégias
+                const calculator = new FinancingCalculator(contractData);
+                const calculatedStrategies = calculator.generateStrategies(clientProfile);
+
+                setClientData(data);
+                setStrategies(calculatedStrategies);
+                setView('admin');
+                setLoading(false);
+            };
+
+            const handleReset = () => {
+                setClientData(null);
+                setStrategies([]);
+                setView('client');
+            };
+
+            return (
+                <>
+                    {loading && <LoadingScreen />}
+                    {!loading && view === 'client' && (
+                        <ClientIntake onComplete={handleClientSubmit} />
+                    )}
+                    {!loading && view === 'admin' && clientData && (
+                        <AdminDashboard 
+                            clientData={clientData}
+                            strategies={strategies}
+                            onReset={handleReset}
+                        />
+                    )}
+                </>
+            );
+        }
+
+        // Renderizar aplicação
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

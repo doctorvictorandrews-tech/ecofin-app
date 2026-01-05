@@ -3,23 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Painel Administrativo</title>
+    <title>EcoFin - Painel Profissional</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; color: white; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .input-field { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem; border-radius: 0.5rem; width: 100%; transition: all 0.3s; }
-        .input-field:focus { background: rgba(255, 255, 255, 0.08); border-color: #60a5fa; outline: none; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1); }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; transition: all 0.3s; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4); }
         .strategy-card { transition: all 0.3s; cursor: pointer; }
         .strategy-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .table { width: 100%; font-size: 0.875rem; }
+        .table th { background: rgba(59, 130, 246, 0.2); padding: 0.75rem; text-align: left; font-weight: 600; color: #93c5fd; }
+        .table td { padding: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .table tr:hover { background: rgba(255, 255, 255, 0.02); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeIn 0.6s ease-out; }
+        .tab { padding: 0.75rem 1.5rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab:hover { background: rgba(255, 255, 255, 0.05); }
+        .tab.active { border-bottom-color: #3b82f6; color: #60a5fa; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -27,142 +34,222 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // MOTOR DE CÁLCULO FINANCEIRO
-        class FinancingCalculator {
-            constructor(contractData) {
-                this.contract = contractData;
+        // ==================== MOTOR DE CÁLCULO AVANÇADO ====================
+        class MotorCalculoFinanciamento {
+            constructor(dados) {
+                this.dados = dados;
+                this.taxaMensal = this.calcularTaxaMensal(dados.taxaNominal);
             }
 
-            calculateMonthlyRate(annualRate) {
-                return Math.pow(1 + annualRate, 1/12) - 1;
+            calcularTaxaMensal(taxaAnual) {
+                return Math.pow(1 + taxaAnual, 1/12) - 1;
             }
 
-            calculatePMT(rate, nper, pv) {
-                if (rate === 0) return pv / nper;
-                const factor = Math.pow(1 + rate, nper);
-                return pv * (rate * factor) / (factor - 1);
+            calcularPMT(taxa, nper, vp) {
+                if (taxa === 0) return vp / nper;
+                const fator = Math.pow(1 + taxa, nper);
+                return vp * (taxa * fator) / (fator - 1);
             }
 
-            simulateScenario(strategy) {
-                const monthlyRate = this.calculateMonthlyRate(this.contract.taxaAnual);
-                let saldo = this.contract.saldoDevedor;
+            simularCenario(params) {
+                const { fgtsInicial, amortMensal, tipo } = params;
+                let saldo = this.dados.saldoDevedor;
                 const simulacao = [];
                 let totalPago = 0;
                 let totalJuros = 0;
+                let totalAmortizacao = 0;
                 let mes = 0;
 
-                if (strategy.fgtsInicial > 0) {
-                    saldo -= strategy.fgtsInicial;
-                    totalPago += strategy.fgtsInicial;
+                // Aplicar FGTS inicial
+                if (fgtsInicial > 0) {
+                    saldo -= fgtsInicial;
+                    totalPago += fgtsInicial;
+                    totalAmortizacao += fgtsInicial;
                 }
 
                 while (saldo > 0 && mes < 600) {
-                    const juros = saldo * monthlyRate;
+                    const juros = saldo * this.taxaMensal;
                     let amortBase;
-                    
-                    if (this.contract.sistema === 'SAC') {
-                        amortBase = this.contract.saldoDevedor / this.contract.prazoRestante;
+
+                    if (this.dados.sistema === 'SAC') {
+                        amortBase = this.dados.saldoDevedor / this.dados.prazoRestante;
                     } else {
-                        const prazoRestante = Math.max(1, this.contract.prazoRestante - mes);
-                        const pmt = this.calculatePMT(monthlyRate, prazoRestante, saldo);
+                        const prazoRest = Math.max(1, this.dados.prazoRestante - mes);
+                        const pmt = this.calcularPMT(this.taxaMensal, prazoRest, saldo);
                         amortBase = pmt - juros;
                     }
 
-                    const amortExtra = strategy.amortizacaoMensal || 0;
-                    const parcela = juros + amortBase + amortExtra + 25 + 50;
-                    
-                    saldo = Math.max(0, saldo - amortBase - amortExtra);
-                    saldo *= 1.0015;
+                    const amortExtra = amortMensal || 0;
+                    const taxas = (this.dados.taxaAdm || 25) + (this.dados.seguroMensal || 50);
+                    const parcela = juros + amortBase + amortExtra + taxas;
+                    const amortTotal = amortBase + amortExtra;
+
+                    saldo = Math.max(0, saldo - amortTotal);
+                    saldo *= (1 + (this.dados.tr / 100 || 0.0015));
 
                     totalPago += parcela;
                     totalJuros += juros;
+                    totalAmortizacao += amortTotal;
 
-                    simulacao.push({ mes: mes + 1, juros, amortizacao: amortBase + amortExtra, saldo, parcela });
+                    simulacao.push({
+                        mes: mes + 1,
+                        juros: juros,
+                        amortizacao: amortTotal,
+                        amortizacaoBase: amortBase,
+                        amortizacaoExtra: amortExtra,
+                        saldo: saldo,
+                        parcela: parcela,
+                        parcelaSemExtra: juros + amortBase + taxas,
+                        taxas: taxas
+                    });
 
                     mes++;
                     if (saldo <= 1) break;
                 }
 
-                return { simulacao, totalPago, totalJuros, prazoMeses: mes, custoMensalMedio: totalPago / mes };
+                return {
+                    simulacao,
+                    totalPago,
+                    totalJuros,
+                    totalAmortizacao,
+                    prazoMeses: mes,
+                    custoMensalMedio: totalPago / mes,
+                    taxaEfetiva: Math.pow(totalPago / this.dados.saldoDevedor, 1/mes) - 1
+                };
             }
 
-            generateStrategies(clientProfile) {
-                const original = this.simulateScenario({ amortizacaoMensal: 0, fgtsInicial: 0 });
-                
-                const strategies = [{
+            gerarEstrategias(perfil) {
+                const estrategias = [];
+                const original = this.simularCenario({ fgtsInicial: 0, amortMensal: 0, tipo: 'original' });
+
+                // 1. Cenário Atual
+                estrategias.push({
                     id: 'original',
                     nome: "Cenário Atual",
-                    descricao: "Continuando como está",
+                    descricao: "Sem alterações, mantendo como está",
                     icon: "📊",
+                    cor: "#94a3b8",
                     ...original,
                     economia: 0,
-                    reducaoPrazo: 0
-                }];
+                    reducaoPrazo: 0,
+                    viabilidade: 100
+                });
 
-                if (clientProfile.capacidadeExtra > 0) {
-                    const agressiva = this.simulateScenario({
-                        amortizacaoMensal: clientProfile.capacidadeExtra,
-                        fgtsInicial: clientProfile.valorFGTS || 0
-                    });
-                    strategies.push({
-                        id: 'agressiva',
-                        nome: "Liberdade Acelerada",
-                        descricao: `R$ ${clientProfile.capacidadeExtra.toLocaleString('pt-BR')}/mês${clientProfile.valorFGTS > 0 ? ' + FGTS' : ''}`,
-                        icon: "🚀",
-                        destaque: "⭐ Recomendada",
-                        ...agressiva,
-                        economia: original.totalPago - agressiva.totalPago,
-                        reducaoPrazo: original.prazoMeses - agressiva.prazoMeses
-                    });
-
-                    const moderada = this.simulateScenario({
-                        amortizacaoMensal: clientProfile.capacidadeExtra * 0.6,
-                        fgtsInicial: (clientProfile.valorFGTS || 0) * 0.5
-                    });
-                    strategies.push({
-                        id: 'moderada',
-                        nome: "Equilíbrio Inteligente",
-                        descricao: `R$ ${(clientProfile.capacidadeExtra * 0.6).toLocaleString('pt-BR')}/mês`,
-                        icon: "⚖️",
-                        ...moderada,
-                        economia: original.totalPago - moderada.totalPago,
-                        reducaoPrazo: original.prazoMeses - moderada.prazoMeses
-                    });
-
-                    const conservadora = this.simulateScenario({
-                        amortizacaoMensal: clientProfile.capacidadeExtra * 0.3,
-                        fgtsInicial: 0
-                    });
-                    strategies.push({
-                        id: 'conservadora',
-                        nome: "Segurança Financeira",
-                        descricao: `R$ ${(clientProfile.capacidadeExtra * 0.3).toLocaleString('pt-BR')}/mês`,
-                        icon: "🛡️",
-                        ...conservadora,
-                        economia: original.totalPago - conservadora.totalPago,
-                        reducaoPrazo: original.prazoMeses - conservadora.prazoMeses
+                // 2. Uso FGTS Total
+                if (perfil.valorFGTS > 0) {
+                    const fgtsTotal = this.simularCenario({ fgtsInicial: perfil.valorFGTS, amortMensal: 0, tipo: 'fgts_total' });
+                    estrategias.push({
+                        id: 'fgts_total',
+                        nome: "FGTS Completo",
+                        descricao: `Usar R$ ${perfil.valorFGTS.toLocaleString('pt-BR')} do FGTS de uma vez`,
+                        icon: "💰",
+                        cor: "#10b981",
+                        ...fgtsTotal,
+                        economia: original.totalPago - fgtsTotal.totalPago,
+                        reducaoPrazo: original.prazoMeses - fgtsTotal.prazoMeses,
+                        viabilidade: 95
                     });
                 }
 
-                return strategies;
+                // 3. Amortização Mensal Agressiva
+                if (perfil.capacidadeExtra > 0) {
+                    const agressiva = this.simularCenario({
+                        fgtsInicial: perfil.valorFGTS || 0,
+                        amortMensal: perfil.capacidadeExtra,
+                        tipo: 'agressiva'
+                    });
+                    estrategias.push({
+                        id: 'agressiva',
+                        nome: "Liberdade Acelerada",
+                        descricao: `FGTS + R$ ${perfil.capacidadeExtra.toLocaleString('pt-BR')}/mês extra`,
+                        icon: "🚀",
+                        cor: "#3b82f6",
+                        destaque: "⭐ Máxima Economia",
+                        ...agressiva,
+                        economia: original.totalPago - agressiva.totalPago,
+                        reducaoPrazo: original.prazoMeses - agressiva.prazoMeses,
+                        viabilidade: perfil.temReservaEmergencia ? 90 : 70
+                    });
+                }
+
+                // 4. Amortização Moderada
+                if (perfil.capacidadeExtra > 0) {
+                    const moderada = this.simularCenario({
+                        fgtsInicial: (perfil.valorFGTS || 0) * 0.5,
+                        amortMensal: perfil.capacidadeExtra * 0.6,
+                        tipo: 'moderada'
+                    });
+                    estrategias.push({
+                        id: 'moderada',
+                        nome: "Equilíbrio Inteligente",
+                        descricao: `50% FGTS + R$ ${(perfil.capacidadeExtra * 0.6).toLocaleString('pt-BR')}/mês`,
+                        icon: "⚖️",
+                        cor: "#8b5cf6",
+                        ...moderada,
+                        economia: original.totalPago - moderada.totalPago,
+                        reducaoPrazo: original.prazoMeses - moderada.prazoMeses,
+                        viabilidade: 85
+                    });
+                }
+
+                // 5. Amortização Conservadora
+                if (perfil.capacidadeExtra > 0) {
+                    const conservadora = this.simularCenario({
+                        fgtsInicial: 0,
+                        amortMensal: perfil.capacidadeExtra * 0.3,
+                        tipo: 'conservadora'
+                    });
+                    estrategias.push({
+                        id: 'conservadora',
+                        nome: "Segurança Financeira",
+                        descricao: `Reserva FGTS + R$ ${(perfil.capacidadeExtra * 0.3).toLocaleString('pt-BR')}/mês`,
+                        icon: "🛡️",
+                        cor: "#ec4899",
+                        ...conservadora,
+                        economia: original.totalPago - conservadora.totalPago,
+                        reducaoPrazo: original.prazoMeses - conservadora.prazoMeses,
+                        viabilidade: 95
+                    });
+                }
+
+                // 6. Amortização Crescente
+                if (perfil.capacidadeExtra > 0 && perfil.salarioMensal > 0) {
+                    const crescente = this.simularCenario({
+                        fgtsInicial: (perfil.valorFGTS || 0) * 0.3,
+                        amortMensal: perfil.capacidadeExtra * 0.5,
+                        tipo: 'crescente'
+                    });
+                    estrategias.push({
+                        id: 'crescente',
+                        nome: "Crescimento Planejado",
+                        descricao: "Aumenta amortização conforme renda cresce",
+                        icon: "📈",
+                        cor: "#f59e0b",
+                        ...crescente,
+                        economia: original.totalPago - crescente.totalPago,
+                        reducaoPrazo: original.prazoMeses - crescente.prazoMeses,
+                        viabilidade: 80
+                    });
+                }
+
+                return estrategias.sort((a, b) => b.economia - a.economia);
             }
         }
 
-        // COMPONENTE: Lista de Clientes
+        // ==================== COMPONENTES ====================
+        
         function ListaClientes({ onSelectCliente }) {
             const [clientes, setClientes] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [filtro, setFiltro] = useState('');
 
             useEffect(() => {
                 const fetchClientes = async () => {
                     try {
                         const response = await fetch('https://ecofin-app-production.up.railway.app/api/clientes');
                         const data = await response.json();
-                        if (data.sucesso) {
-                            setClientes(data.clientes);
-                        }
+                        if (data.sucesso) setClientes(data.clientes);
                     } catch (err) {
-                        console.error('Erro ao buscar:', err);
                         const local = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
                         setClientes(local);
                     } finally {
@@ -171,6 +258,11 @@
                 };
                 fetchClientes();
             }, []);
+
+            const clientesFiltrados = clientes.filter(c => 
+                c.nome?.toLowerCase().includes(filtro.toLowerCase()) ||
+                c.banco?.toLowerCase().includes(filtro.toLowerCase())
+            );
 
             if (loading) {
                 return (
@@ -181,64 +273,105 @@
                 );
             }
 
-            if (clientes.length === 0) {
-                return (
-                    <div style={{textAlign: 'center', padding: '3rem'}}>
-                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📭</div>
-                        <h2 style={{fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem'}}>Nenhum cliente ainda</h2>
-                        <p style={{color: '#9ca3af'}}>Os clientes que preencherem o formulário aparecerão aqui</p>
-                    </div>
-                );
-            }
-
             return (
-                <div style={{display: 'grid', gap: '1rem'}}>
-                    {clientes.map(cliente => (
-                        <div key={cliente.id} className="glass" onClick={() => onSelectCliente(cliente)}
-                            style={{padding: '1.5rem', borderRadius: '1rem', cursor: 'pointer', transition: 'all 0.3s'}}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
-                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
-                                <div>
-                                    <h3 style={{fontSize: '1.25rem', fontWeight: '700', color: 'white', marginBottom: '0.25rem'}}>{cliente.nome}</h3>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>{cliente.whatsapp}</p>
-                                </div>
-                                <span style={{background: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600'}}>
-                                    {cliente.status || 'pendente'}
-                                </span>
-                            </div>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', fontSize: '0.875rem'}}>
-                                <div>
-                                    <p style={{color: '#9ca3af'}}>Banco</p>
-                                    <p style={{color: 'white', fontWeight: '600'}}>{cliente.banco}</p>
-                                </div>
-                                <div>
-                                    <p style={{color: '#9ca3af'}}>Saldo</p>
-                                    <p style={{color: 'white', fontWeight: '600'}}>R$ {cliente.saldoDevedor?.toLocaleString('pt-BR')}</p>
-                                </div>
-                                <div>
-                                    <p style={{color: '#9ca3af'}}>Data</p>
-                                    <p style={{color: 'white', fontWeight: '600'}}>
-                                        {new Date(cliente.data_cadastro || cliente.data).toLocaleDateString('pt-BR')}
-                                    </p>
-                                </div>
-                            </div>
+                <div>
+                    <div style={{marginBottom: '2rem'}}>
+                        <input
+                            type="text"
+                            placeholder="🔍 Buscar cliente..."
+                            value={filtro}
+                            onChange={(e) => setFiltro(e.target.value)}
+                            style={{width: '100%', padding: '1rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', fontSize: '1rem'}}
+                        />
+                    </div>
+
+                    {clientesFiltrados.length === 0 ? (
+                        <div style={{textAlign: 'center', padding: '3rem'}}>
+                            <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📭</div>
+                            <h2 style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>Nenhum cliente encontrado</h2>
+                            <p style={{color: '#9ca3af'}}>Aguarde novos cadastros ou ajuste o filtro</p>
                         </div>
-                    ))}
+                    ) : (
+                        <div style={{display: 'grid', gap: '1rem'}}>
+                            {clientesFiltrados.map(cliente => (
+                                <div key={cliente.id} className="glass" onClick={() => onSelectCliente(cliente)}
+                                    style={{padding: '1.5rem', borderRadius: '1rem', cursor: 'pointer', transition: 'all 0.3s'}}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
+                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '1rem'}}>
+                                        <div>
+                                            <h3 style={{fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.25rem'}}>{cliente.nome}</h3>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>{cliente.whatsapp} • {cliente.email || 'Sem email'}</p>
+                                        </div>
+                                        <span style={{background: '#3b82f6', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600'}}>
+                                            {cliente.status || 'pendente'}
+                                        </span>
+                                    </div>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', fontSize: '0.875rem'}}>
+                                        <div>
+                                            <p style={{color: '#9ca3af'}}>Banco</p>
+                                            <p style={{fontWeight: '600'}}>{cliente.banco}</p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af'}}>Saldo</p>
+                                            <p style={{fontWeight: '600'}}>R$ {cliente.saldoDevedor?.toLocaleString('pt-BR')}</p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af'}}>Sistema</p>
+                                            <p style={{fontWeight: '600'}}>{cliente.sistema}</p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af'}}>Prazo</p>
+                                            <p style={{fontWeight: '600'}}>{cliente.prazoRestante}m</p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af'}}>Data</p>
+                                            <p style={{fontWeight: '600'}}>
+                                                {new Date(cliente.data_cadastro || cliente.data).toLocaleDateString('pt-BR')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             );
         }
 
-        // COMPONENTE: Dashboard com Estratégias
-        function Dashboard({ clientData, strategies, onVoltar }) {
+        function DashboardCompleto({ clientData, strategies, onVoltar }) {
+            const [tabAtiva, setTabAtiva] = useState('visao-geral');
+            const [estrategiaSelecionada, setEstrategiaSelecionada] = useState(strategies[1] || strategies[0]);
             const chartRef = useRef(null);
 
-            const formatCurrency = (value) => {
-                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-            };
+            const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            const formatPercent = (value) => ((value || 0) * 100).toFixed(2) + '%';
 
-            const formatPercent = (value) => {
-                return (value * 100).toFixed(1) + '%';
+            const gerarPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(20);
+                doc.text('Relatório EcoFin', 20, 20);
+                
+                doc.setFontSize(12);
+                doc.text(`Cliente: ${clientData.nome}`, 20, 35);
+                doc.text(`Banco: ${clientData.banco}`, 20, 42);
+                doc.text(`Saldo Devedor: ${formatCurrency(clientData.saldoDevedor)}`, 20, 49);
+                
+                doc.setFontSize(14);
+                doc.text('Estratégias Calculadas:', 20, 65);
+                
+                let y = 75;
+                strategies.slice(0, 4).forEach((est, idx) => {
+                    doc.setFontSize(11);
+                    doc.text(`${idx + 1}. ${est.nome}`, 25, y);
+                    doc.text(`   Economia: ${formatCurrency(est.economia)}`, 25, y + 7);
+                    doc.text(`   Prazo: ${(est.prazoMeses/12).toFixed(1)} anos`, 25, y + 14);
+                    y += 25;
+                });
+                
+                doc.save(`ecofin-${clientData.nome.replace(/\s+/g, '-')}.pdf`);
             };
 
             useEffect(() => {
@@ -246,21 +379,17 @@
                     const ctx = chartRef.current.getContext('2d');
                     if (window.myChart) window.myChart.destroy();
 
-                    const original = strategies[0];
-                    const months = Math.min(240, original.prazoMeses);
-                    
-                    const datasets = strategies.slice(0, 4).map((strategy, idx) => {
+                    const datasets = strategies.slice(0, 4).map((est, idx) => {
                         const data = [];
-                        for (let i = 0; i < months && i < strategy.simulacao.length; i += 6) {
-                            data.push(strategy.simulacao[i].saldo);
+                        for (let i = 0; i < Math.min(240, est.simulacao.length); i += 6) {
+                            data.push(est.simulacao[i].saldo);
                         }
-                        const colors = ['#94a3b8', '#3b82f6', '#8b5cf6', '#ec4899'];
                         return {
-                            label: strategy.nome,
+                            label: est.nome,
                             data: data,
-                            borderColor: colors[idx],
-                            backgroundColor: colors[idx] + '20',
-                            borderWidth: idx === 0 ? 2 : 3,
+                            borderColor: est.cor,
+                            backgroundColor: est.cor + '20',
+                            borderWidth: 3,
                             tension: 0.4,
                             fill: false
                         };
@@ -269,37 +398,22 @@
                     window.myChart = new Chart(ctx, {
                         type: 'line',
                         data: {
-                            labels: Array.from({length: Math.ceil(months/6)}, (_, i) => `${i * 6}m`),
+                            labels: Array.from({length: Math.ceil(240/6)}, (_, i) => `${i * 6}m`),
                             datasets: datasets
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
-                                legend: { labels: { color: '#fff', font: { size: 12 } } },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
-                                        }
-                                    }
-                                }
+                                legend: { labels: { color: '#fff', font: { size: 12 } } }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    ticks: {
-                                        color: '#9ca3af',
-                                        callback: function(value) {
-                                            return 'R$ ' + (value/1000).toFixed(0) + 'k';
-                                        }
-                                    },
+                                    ticks: { color: '#9ca3af', callback: (v) => 'R$ ' + (v/1000).toFixed(0) + 'k' },
                                     grid: { color: 'rgba(255,255,255,0.1)' }
                                 },
-                                x: {
-                                    ticks: { color: '#9ca3af' },
-                                    grid: { color: 'rgba(255,255,255,0.1)' }
-                                }
+                                x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.1)' } }
                             }
                         }
                     });
@@ -308,124 +422,264 @@
 
             return (
                 <div style={{padding: '2rem'}}>
-                    <div style={{maxWidth: '1400px', margin: '0 auto'}}>
+                    <div style={{maxWidth: '1600px', margin: '0 auto'}}>
                         {/* Header */}
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
                             <div>
                                 <h1 style={{fontSize: '2.5rem', fontWeight: '700', background: 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-                                    Análise Completa
+                                    Análise Profissional
                                 </h1>
                                 <p style={{color: '#9ca3af', fontSize: '1.125rem'}}>{clientData.nome}</p>
                             </div>
-                            <button onClick={onVoltar} className="btn-primary">← Voltar</button>
-                        </div>
-
-                        {/* Situação Atual */}
-                        <div className="glass" style={{borderRadius: '1rem', padding: '1.5rem', marginBottom: '2rem'}}>
-                            <h2 style={{fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: 'white'}}>📊 Situação Atual</h2>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem'}}>
-                                <div style={{textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem'}}>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Saldo Devedor</p>
-                                    <p style={{color: 'white', fontWeight: '700', fontSize: '1.125rem'}}>{formatCurrency(clientData.saldoDevedor)}</p>
-                                </div>
-                                <div style={{textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem'}}>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Taxa</p>
-                                    <p style={{color: 'white', fontWeight: '700', fontSize: '1.125rem'}}>{formatPercent(clientData.taxaAnual)}</p>
-                                </div>
-                                <div style={{textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem'}}>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Prazo</p>
-                                    <p style={{color: 'white', fontWeight: '700', fontSize: '1.125rem'}}>{clientData.prazoRestante}m</p>
-                                </div>
-                                <div style={{textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.5rem'}}>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Total a Pagar</p>
-                                    <p style={{color: 'white', fontWeight: '700', fontSize: '1.125rem'}}>{formatCurrency(strategies[0]?.totalPago || 0)}</p>
-                                </div>
-                                <div style={{textAlign: 'center', padding: '1rem', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '0.5rem'}}>
-                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Total em Juros</p>
-                                    <p style={{color: '#ef4444', fontWeight: '700', fontSize: '1.125rem'}}>{formatCurrency(strategies[0]?.totalJuros || 0)}</p>
-                                </div>
+                            <div style={{display: 'flex', gap: '1rem'}}>
+                                <button onClick={gerarPDF} className="btn-primary">📄 Gerar PDF</button>
+                                <button onClick={onVoltar} className="btn-primary">← Voltar</button>
                             </div>
                         </div>
 
-                        {/* Estratégias */}
-                        <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem', color: 'white'}}>🎯 Estratégias Calculadas</h2>
-                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem'}}>
-                            {strategies.map((strategy, idx) => (
-                                <div key={strategy.id} className="strategy-card glass"
-                                    style={{padding: '1.5rem', borderRadius: '1rem', border: idx === 1 ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)'}}>
-                                    {strategy.destaque && (
-                                        <div style={{background: '#10b981', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.75rem', borderRadius: '999px', display: 'inline-block', marginBottom: '0.75rem', fontWeight: '600'}}>
-                                            {strategy.destaque}
-                                        </div>
-                                    )}
-                                    <div style={{fontSize: '2.5rem', marginBottom: '0.75rem'}}>{strategy.icon}</div>
-                                    <h3 style={{fontSize: '1.125rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem'}}>{strategy.nome}</h3>
-                                    <p style={{fontSize: '0.875rem', color: '#9ca3af', marginBottom: '1rem'}}>{strategy.descricao}</p>
-                                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem'}}>
-                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                            <span style={{color: '#9ca3af'}}>Total:</span>
-                                            <span style={{color: 'white', fontWeight: '600'}}>{formatCurrency(strategy.totalPago)}</span>
-                                        </div>
-                                        {idx > 0 && (
-                                            <>
-                                                <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                                    <span style={{color: '#9ca3af'}}>Economia:</span>
-                                                    <span style={{color: '#10b981', fontWeight: '700'}}>{formatCurrency(strategy.economia)}</span>
-                                                </div>
-                                                <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                                    <span style={{color: '#9ca3af'}}>Redução:</span>
-                                                    <span style={{color: '#3b82f6', fontWeight: '600'}}>{strategy.reducaoPrazo} meses</span>
-                                                </div>
-                                                <div style={{marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center'}}>
-                                                    <p style={{color: '#9ca3af', fontSize: '0.75rem', marginBottom: '0.25rem'}}>Economia %</p>
-                                                    <p style={{color: '#10b981', fontSize: '1.5rem', fontWeight: '700'}}>
-                                                        {((strategy.economia / strategies[0].totalPago) * 100).toFixed(1)}%
-                                                    </p>
-                                                </div>
-                                            </>
-                                        )}
-                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                            <span style={{color: '#9ca3af'}}>Prazo:</span>
-                                            <span style={{color: 'white', fontWeight: '600'}}>{(strategy.prazoMeses/12).toFixed(1)} anos</span>
-                                        </div>
-                                    </div>
+                        {/* Tabs */}
+                        <div className="glass" style={{borderRadius: '1rem', marginBottom: '2rem', display: 'flex', overflow: 'auto'}}>
+                            {[
+                                { id: 'visao-geral', label: '📊 Visão Geral' },
+                                { id: 'estrategias', label: '🎯 Estratégias' },
+                                { id: 'tabela', label: '📋 Tabela Detalhada' },
+                                { id: 'grafico', label: '📈 Gráficos' }
+                            ].map(tab => (
+                                <div key={tab.id} className={`tab ${tabAtiva === tab.id ? 'active' : ''}`} onClick={() => setTabAtiva(tab.id)}>
+                                    {tab.label}
                                 </div>
                             ))}
                         </div>
 
-                        {/* Gráfico */}
-                        <div className="glass" style={{borderRadius: '1rem', padding: '1.5rem', marginBottom: '2rem'}}>
-                            <h2 style={{fontSize: '1.25rem', fontWeight: '700', marginBottom: '1rem', color: 'white'}}>📈 Evolução do Saldo Devedor</h2>
-                            <div style={{height: '400px'}}>
-                                <canvas ref={chartRef}></canvas>
-                            </div>
-                        </div>
+                        {/* Visão Geral */}
+                        {tabAtiva === 'visao-geral' && (
+                            <div className="animate-in">
+                                {/* Cards de Situação Atual */}
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem', marginBottom: '2rem'}}>
+                                    <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem'}}>💼 Situação Atual do Cliente</h2>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem'}}>
+                                        <div style={{background: 'rgba(59, 130, 246, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(59, 130, 246, 0.2)'}}>
+                                            <p style={{color: '#93c5fd', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Saldo Devedor</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{formatCurrency(clientData.saldoDevedor)}</p>
+                                        </div>
+                                        <div style={{background: 'rgba(139, 92, 246, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(139, 92, 246, 0.2)'}}>
+                                            <p style={{color: '#c4b5fd', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Taxa Nominal</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{formatPercent(clientData.taxaNominal)} a.a.</p>
+                                        </div>
+                                        <div style={{background: 'rgba(16, 185, 129, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.2)'}}>
+                                            <p style={{color: '#6ee7b7', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Prazo Restante</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{clientData.prazoRestante}m ({(clientData.prazoRestante/12).toFixed(1)}a)</p>
+                                        </div>
+                                        <div style={{background: 'rgba(245, 158, 11, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(245, 158, 11, 0.2)'}}>
+                                            <p style={{color: '#fcd34d', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Parcela Atual</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{formatCurrency(clientData.valorParcelaAtual || strategies[0].simulacao[0].parcela)}</p>
+                                        </div>
+                                        <div style={{background: 'rgba(239, 68, 68, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(239, 68, 68, 0.2)'}}>
+                                            <p style={{color: '#fca5a5', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Total em Juros</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700', color: '#ef4444'}}>{formatCurrency(strategies[0].totalJuros)}</p>
+                                        </div>
+                                        <div style={{background: 'rgba(236, 72, 153, 0.1)', padding: '1.5rem', borderRadius: '0.5rem', border: '1px solid rgba(236, 72, 153, 0.2)'}}>
+                                            <p style={{color: '#f9a8d4', fontSize: '0.875rem', marginBottom: '0.5rem'}}>Total a Pagar</p>
+                                            <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{formatCurrency(strategies[0].totalPago)}</p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        {/* Ações */}
-                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem'}}>
-                            <div className="glass" style={{padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s'}}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
-                                <div style={{fontSize: '2.5rem', marginBottom: '0.75rem'}}>📄</div>
-                                <h3 style={{color: 'white', fontWeight: '700', marginBottom: '0.5rem'}}>Gerar PDF</h3>
-                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Relatório completo</p>
+                                {/* Recursos Disponíveis */}
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem', marginBottom: '2rem'}}>
+                                    <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem'}}>💰 Recursos Disponíveis</h2>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem'}}>
+                                            <div style={{fontSize: '2rem'}}>💼</div>
+                                            <div>
+                                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>FGTS Disponível</p>
+                                                <p style={{fontSize: '1.25rem', fontWeight: '700'}}>{formatCurrency(clientData.valorFGTS || 0)}</p>
+                                            </div>
+                                        </div>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem'}}>
+                                            <div style={{fontSize: '2rem'}}>📊</div>
+                                            <div>
+                                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Capacidade Extra Mensal</p>
+                                                <p style={{fontSize: '1.25rem', fontWeight: '700'}}>{formatCurrency(clientData.capacidadeExtra || 0)}</p>
+                                            </div>
+                                        </div>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem'}}>
+                                            <div style={{fontSize: '2rem'}}>🛡️</div>
+                                            <div>
+                                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Reserva de Emergência</p>
+                                                <p style={{fontSize: '1.25rem', fontWeight: '700'}}>{formatCurrency(clientData.valorReserva || 0)}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Melhor Estratégia */}
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem', border: '2px solid #10b981'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem'}}>
+                                        <div style={{fontSize: '3rem'}}>{strategies[1]?.icon || '🚀'}</div>
+                                        <div>
+                                            <p style={{color: '#10b981', fontSize: '0.875rem', fontWeight: '600'}}>⭐ ESTRATÉGIA RECOMENDADA</p>
+                                            <h2 style={{fontSize: '1.75rem', fontWeight: '700'}}>{strategies[1]?.nome || 'Estratégia Otimizada'}</h2>
+                                        </div>
+                                    </div>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem'}}>
+                                        <div>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Economia Total</p>
+                                            <p style={{fontSize: '2rem', fontWeight: '700', color: '#10b981'}}>{formatCurrency(strategies[1]?.economia || 0)}</p>
+                                            <p style={{color: '#6ee7b7', fontSize: '0.875rem'}}>
+                                                {((strategies[1]?.economia / strategies[0]?.totalPago) * 100).toFixed(1)}% de economia
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Redução de Prazo</p>
+                                            <p style={{fontSize: '2rem', fontWeight: '700', color: '#3b82f6'}}>{strategies[1]?.reducaoPrazo || 0} meses</p>
+                                            <p style={{color: '#93c5fd', fontSize: '0.875rem'}}>
+                                                {((strategies[1]?.reducaoPrazo / strategies[0]?.prazoMeses) * 100).toFixed(1)}% mais rápido
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Novo Prazo</p>
+                                            <p style={{fontSize: '2rem', fontWeight: '700'}}>{((strategies[1]?.prazoMeses || 0)/12).toFixed(1)} anos</p>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>
+                                                {strategies[1]?.prazoMeses || 0} meses
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="glass" style={{padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s'}}
-                                onClick={() => window.open(`https://wa.me/${clientData.whatsapp.replace(/\D/g, '')}`, '_blank')}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
-                                <div style={{fontSize: '2.5rem', marginBottom: '0.75rem'}}>📱</div>
-                                <h3 style={{color: 'white', fontWeight: '700', marginBottom: '0.5rem'}}>WhatsApp</h3>
-                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Enviar análise</p>
+                        )}
+
+                        {/* Estratégias */}
+                        {tabAtiva === 'estrategias' && (
+                            <div className="animate-in">
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem'}}>
+                                    {strategies.map((est, idx) => (
+                                        <div key={est.id} className="strategy-card glass"
+                                            style={{padding: '2rem', borderRadius: '1rem', border: idx === 1 ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)'}}>
+                                            {est.destaque && (
+                                                <div style={{background: '#10b981', color: 'white', fontSize: '0.75rem', padding: '0.25rem 0.75rem', borderRadius: '999px', display: 'inline-block', marginBottom: '1rem', fontWeight: '600'}}>
+                                                    {est.destaque}
+                                                </div>
+                                            )}
+                                            <div style={{fontSize: '3rem', marginBottom: '1rem'}}>{est.icon}</div>
+                                            <h3 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem'}}>{est.nome}</h3>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1.5rem'}}>{est.descricao}</p>
+                                            
+                                            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                                                <div>
+                                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Total a Pagar</p>
+                                                    <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{formatCurrency(est.totalPago)}</p>
+                                                </div>
+                                                {idx > 0 && (
+                                                    <>
+                                                        <div>
+                                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Economia</p>
+                                                            <p style={{fontSize: '1.5rem', fontWeight: '700', color: '#10b981'}}>{formatCurrency(est.economia)}</p>
+                                                            <p style={{color: '#6ee7b7', fontSize: '0.75rem'}}>
+                                                                {((est.economia / strategies[0].totalPago) * 100).toFixed(1)}%
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Redução de Prazo</p>
+                                                            <p style={{fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6'}}>
+                                                                {est.reducaoPrazo} meses
+                                                            </p>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                <div>
+                                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Prazo Final</p>
+                                                    <p style={{fontSize: '1.5rem', fontWeight: '700'}}>{(est.prazoMeses/12).toFixed(1)} anos</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Viabilidade</p>
+                                                    <div style={{background: 'rgba(255,255,255,0.1)', borderRadius: '999px', height: '8px', overflow: 'hidden', marginTop: '0.5rem'}}>
+                                                        <div style={{background: est.viabilidade > 85 ? '#10b981' : est.viabilidade > 70 ? '#f59e0b' : '#ef4444', height: '100%', width: `${est.viabilidade}%`, transition: 'width 0.5s'}}></div>
+                                                    </div>
+                                                    <p style={{fontSize: '0.875rem', marginTop: '0.25rem'}}>{est.viabilidade}%</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="glass" style={{padding: '1.5rem', borderRadius: '1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s'}}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
-                                <div style={{fontSize: '2.5rem', marginBottom: '0.75rem'}}>📧</div>
-                                <h3 style={{color: 'white', fontWeight: '700', marginBottom: '0.5rem'}}>Email</h3>
-                                <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Enviar relatório</p>
+                        )}
+
+                        {/* Tabela Detalhada */}
+                        {tabAtiva === 'tabela' && (
+                            <div className="animate-in">
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem', marginBottom: '2rem'}}>
+                                    <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem'}}>Selecione a Estratégia:</h2>
+                                    <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                                        {strategies.map(est => (
+                                            <button key={est.id}
+                                                onClick={() => setEstrategiaSelecionada(est)}
+                                                style={{
+                                                    padding: '0.75rem 1.5rem',
+                                                    borderRadius: '0.5rem',
+                                                    border: estrategiaSelecionada.id === est.id ? `2px solid ${est.cor}` : '1px solid rgba(255,255,255,0.2)',
+                                                    background: estrategiaSelecionada.id === est.id ? est.cor + '20' : 'rgba(255,255,255,0.05)',
+                                                    color: 'white',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.3s'
+                                                }}>
+                                                {est.icon} {est.nome}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem', overflowX: 'auto'}}>
+                                    <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem'}}>
+                                        Tabela Mês a Mês: {estrategiaSelecionada.nome}
+                                    </h2>
+                                    <table className="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Mês</th>
+                                                <th>Saldo Inicial</th>
+                                                <th>Juros</th>
+                                                <th>Amort. Base</th>
+                                                <th>Amort. Extra</th>
+                                                <th>Parcela Total</th>
+                                                <th>Saldo Final</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {estrategiaSelecionada.simulacao.slice(0, 60).map((mes, idx) => (
+                                                <tr key={idx}>
+                                                    <td style={{fontWeight: '600'}}>{mes.mes}</td>
+                                                    <td>{formatCurrency(idx === 0 ? clientData.saldoDevedor : estrategiaSelecionada.simulacao[idx-1].saldo)}</td>
+                                                    <td style={{color: '#ef4444'}}>{formatCurrency(mes.juros)}</td>
+                                                    <td style={{color: '#10b981'}}>{formatCurrency(mes.amortizacaoBase)}</td>
+                                                    <td style={{color: '#3b82f6'}}>{formatCurrency(mes.amortizacaoExtra)}</td>
+                                                    <td style={{fontWeight: '600'}}>{formatCurrency(mes.parcela)}</td>
+                                                    <td>{formatCurrency(mes.saldo)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    {estrategiaSelecionada.simulacao.length > 60 && (
+                                        <p style={{textAlign: 'center', color: '#9ca3af', marginTop: '1rem', fontSize: '0.875rem'}}>
+                                            Mostrando primeiros 60 meses de {estrategiaSelecionada.simulacao.length}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Gráfico */}
+                        {tabAtiva === 'grafico' && (
+                            <div className="animate-in">
+                                <div className="glass" style={{borderRadius: '1rem', padding: '2rem'}}>
+                                    <h2 style={{fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem'}}>📈 Evolução do Saldo Devedor</h2>
+                                    <div style={{height: '500px'}}>
+                                        <canvas ref={chartRef}></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -437,21 +691,26 @@
             const [clienteSelecionado, setClienteSelecionado] = useState(null);
             const [strategies, setStrategies] = useState([]);
 
-            const handleSelectCliente = async (cliente) => {
-                const contractData = {
+            const handleSelectCliente = (cliente) => {
+                const motor = new MotorCalculoFinanciamento({
                     sistema: cliente.sistema,
                     saldoDevedor: cliente.saldoDevedor,
-                    taxaAnual: cliente.taxaAnual,
+                    taxaNominal: cliente.taxaNominal || cliente.taxaAnual,
                     prazoRestante: cliente.prazoRestante,
+                    taxaAdm: cliente.taxaAdm || 25,
+                    seguroMensal: cliente.seguroMensal || 50,
+                    tr: cliente.tr || 0.15
+                });
+
+                const perfil = {
+                    valorFGTS: cliente.valorFGTS || 0,
+                    capacidadeExtra: cliente.capacidadeExtra || 0,
+                    temReservaEmergencia: cliente.temReservaEmergencia,
+                    valorReserva: cliente.valorReserva || 0,
+                    salarioMensal: cliente.salarioMensal || 0
                 };
 
-                const clientProfile = {
-                    capacidadeExtra: cliente.capacidadeExtra,
-                    valorFGTS: cliente.valorFGTS
-                };
-
-                const calculator = new FinancingCalculator(contractData);
-                const calculatedStrategies = calculator.generateStrategies(clientProfile);
+                const calculatedStrategies = motor.gerarEstrategias(perfil);
 
                 setClienteSelecionado(cliente);
                 setStrategies(calculatedStrategies);
@@ -460,39 +719,31 @@
 
             return (
                 <div style={{minHeight: '100vh'}}>
-                    {/* Header */}
                     <nav style={{background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem'}}>
-                        <div style={{maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: 'white'}}>
+                        <div style={{maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <h1 style={{fontSize: '1.5rem', fontWeight: '700'}}>
                                 <span style={{background: 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
                                     EcoFin
-                                </span> Painel
+                                </span> Painel Profissional
                             </h1>
-                            <div style={{display: 'flex', gap: '1rem'}}>
-                                <a href="/cliente" target="_blank" style={{color: '#9ca3af', textDecoration: 'none', transition: 'color 0.3s'}}
-                                    onMouseEnter={(e) => e.target.style.color = 'white'}
-                                    onMouseLeave={(e) => e.target.style.color = '#9ca3af'}>
-                                    Ver Formulário
-                                </a>
-                            </div>
+                            <a href="/cliente" target="_blank" style={{color: '#9ca3af', textDecoration: 'none'}}>Ver Formulário →</a>
                         </div>
                     </nav>
 
-                    {/* Content */}
                     <div style={{padding: '2rem'}}>
-                        <div style={{maxWidth: '1400px', margin: '0 auto'}}>
+                        <div style={{maxWidth: '1600px', margin: '0 auto'}}>
                             {view === 'lista' && (
                                 <>
                                     <div style={{marginBottom: '2rem'}}>
-                                        <h2 style={{fontSize: '2rem', fontWeight: '700', color: 'white', marginBottom: '0.5rem'}}>Clientes Cadastrados</h2>
-                                        <p style={{color: '#9ca3af'}}>Clique em um cliente para ver a análise completa</p>
+                                        <h2 style={{fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem'}}>Clientes Cadastrados</h2>
+                                        <p style={{color: '#9ca3af'}}>Clique em um cliente para gerar análise completa</p>
                                     </div>
                                     <ListaClientes onSelectCliente={handleSelectCliente} />
                                 </>
                             )}
                             
                             {view === 'dashboard' && clienteSelecionado && (
-                                <Dashboard 
+                                <DashboardCompleto 
                                     clientData={clienteSelecionado}
                                     strategies={strategies}
                                     onVoltar={() => setView('lista')}

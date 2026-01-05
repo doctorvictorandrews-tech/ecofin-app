@@ -1,1 +1,1 @@
-web: python main.py
+web: python ecofin_backend_railway.py

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFin - Análise Gratuita</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #000 0%, #1B4D3E 100%); color: white; min-height: 100vh; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; padding: 2rem; }
+        .input-field { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 168, 60, 0.3); color: white; padding: 0.75rem; border-radius: 0.5rem; width: 100%; transition: all 0.3s; }
+        .input-field:focus { background: rgba(255, 255, 255, 0.12); border-color: #D4A83C; outline: none; box-shadow: 0 0 0 3px rgba(212, 168, 60, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; transition: all 0.3s; font-size: 1rem; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: 1px solid rgba(212, 168, 60, 0.3); cursor: pointer; font-weight: 600; }
+        .option-card { padding: 2rem; border-radius: 1rem; cursor: pointer; transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 2px solid transparent; }
+        .option-card:hover { background: rgba(212, 168, 60, 0.1); transform: translateY(-5px); }
+        .option-card.selected { background: rgba(212, 168, 60, 0.2); border-color: #D4A83C; }
+        .upload-zone { border: 2px dashed rgba(212, 168, 60, 0.5); border-radius: 1rem; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(255, 255, 255, 0.03); }
+        .upload-zone:hover { border-color: #D4A83C; background: rgba(212, 168, 60, 0.1); }
+        .file-preview { background: rgba(212, 168, 60, 0.15); border: 1px solid #D4A83C; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .progress-bar { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; overflow: hidden; margin-top: 1rem; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #D4A83C 0%, #E5B94D 100%); transition: width 0.3s; }
+        .step-indicator { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
+        .step { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 3px solid rgba(212, 168, 60, 0.3); background: rgba(0, 0, 0, 0.3); transition: all 0.3s; }
+        .step.active { background: #D4A83C; color: #000; border-color: #D4A83C; transform: scale(1.1); }
+        .step.completed { background: #1B4D3E; border-color: #1B4D3E; color: white; }
+        .guide-box { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 0.5rem; padding: 1.5rem; margin: 1.5rem 0; }
+        .guide-step { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .guide-number { background: #D4A83C; color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .ocr-status { background: rgba(212, 168, 60, 0.1); border: 1px solid #D4A83C; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; }
+        .logo { max-width: 200px; height: auto; margin: 0 auto 2rem; display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner { border: 4px solid rgba(212, 168, 60, 0.1); border-top: 4px solid #D4A83C; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        // ==================== GUIAS POR BANCO ====================
+        const GUIAS_BANCOS = {
+            'caixa': {
+                nome: 'Caixa Econômica Federal',
+                passos: [
+                    'Abra o aplicativo "Habitação Caixa"',
+                    'Faça login com seu CPF e senha',
+                    'Toque em "Meu Imóvel"',
+                    'Na tela principal, você verá: Saldo Devedor, Taxa de Juros, Parcela',
+                    'Tire um print ou foto nítida da tela',
+                    'Faça o upload aqui'
+                ],
+                dicas: 'Certifique-se que a foto está nítida e todos os números estão legíveis'
+            },
+            'itau': {
+                nome: 'Itaú',
+                passos: [
+                    'Abra o app Itaú',
+                    'Vá em "Empréstimos e Financiamentos"',
+                    'Selecione "Financiamento Imobiliário"',
+                    'Toque em "Ver detalhes"',
+                    'Tire print da tela com: Saldo, Taxa, Prazo, Parcela',
+                    'Faça o upload aqui'
+                ],
+                dicas: 'O app Itaú mostra todos os dados em uma única tela. Capture tudo!'
+            },
+            'bradesco': {
+                nome: 'Bradesco',
+                passos: [
+                    'Abra o app Bradesco',
+                    'Menu "Empréstimos"',
+                    'Selecione "Financiamento Imobiliário"',
+                    'Toque em "Consultar contrato"',
+                    'Tire print dos dados principais',
+                    'Upload aqui'
+                ],
+                dicas: 'No Bradesco, os dados podem estar em abas diferentes. Capture a aba principal.'
+            },
+            'santander': {
+                nome: 'Santander',
+                passos: [
+                    'Abra o app Santander',
+                    'Vá em "Empréstimos"',
+                    'Selecione seu financiamento',
+                    'Toque em "Detalhes do contrato"',
+                    'Tire print da tela',
+                    'Upload aqui'
+                ],
+                dicas: 'O Santander mostra um resumo completo. Uma foto é suficiente.'
+            },
+            'bb': {
+                nome: 'Banco do Brasil',
+                passos: [
+                    'Abra o app BB',
+                    'Menu "Empréstimos e Financiamentos"',
+                    'Selecione "Crédito Imobiliário"',
+                    'Toque em "Posição do contrato"',
+                    'Tire print da posição',
+                    'Upload aqui'
+                ],
+                dicas: 'O BB tem uma tela de "Posição" com todos os dados necessários.'
+            }
+        };
+
+        // ==================== OCR ====================
+        async function extrairDadosOCR(file) {
+            const { data: { text } } = await Tesseract.recognize(file, 'por', {
+                logger: m => console.log(m)
+            });
+
+            const extrair = (regex, defaultValue = 0) => {
+                const match = text.match(regex);
+                if (!match) return defaultValue;
+                const numero = match[1].replace(/[^\d,.-]/g, '').replace(',', '.');
+                return parseFloat(numero) || defaultValue;
+            };
+
+            return {
+                saldoDevedor: extrair(/saldo.*?devedor.*?(\d+[.,]?\d*)/i) || extrair(/devedor.*?(\d+[.,]?\d*)/i),
+                taxaNominal: (extrair(/taxa.*?juros.*?(\d+[.,]?\d*)/i) || extrair(/taxa.*?(\d+[.,]?\d*)/i)) / 100,
+                prazoRestante: extrair(/prazo.*?restante.*?(\d+)/i) || extrair(/prazo.*?(\d+)/i),
+                valorParcela: extrair(/parcela.*?(\d+[.,]?\d*)/i) || extrair(/valor.*?parcela.*?(\d+[.,]?\d*)/i)
+            };
+        }
+
+        // ==================== COMPONENTE PRINCIPAL ====================
+        function FormularioCliente() {
+            const [step, setStep] = useState(1);
+            const [metodoInput, setMetodoInput] = useState(null);
+            const [bancoSelecionado, setBancoSelecionado] = useState('');
+            const [arquivoContrato, setArquivoContrato] = useState(null);
+            const [processandoOCR, setProcessandoOCR] = useState(false);
+            const [progressoOCR, setProgressoOCR] = useState(0);
+            const [dadosExtraidos, setDadosExtraidos] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [submitted, setSubmitted] = useState(false);
+
+            const [formData, setFormData] = useState({
+                nome: '', whatsapp: '', email: '', cpf: '', objetivo: '',
+                trabalhaCLT: null, tempoEmpresa: '', salarioMensal: 0, temFGTS: null, valorFGTS: 0,
+                capacidadeExtra: 0, temReservaEmergencia: null, valorReserva: 0,
+                banco: '', sistema: 'SAC', valorImovelOriginal: 0, valorFinanciado: 0,
+                saldoDevedor: 0, taxaNominal: 0, prazoTotalOriginal: 0, prazoRestante: 0,
+                valorParcelaAtual: 0, taxaAdm: 25, seguroMensal: 50, tr: 0.15,
+                dataInicioContrato: '', dataUltimaAmortizacao: '',
+                preferencia: '', planejamentoFuturo: '', observacoes: ''
+            });
+
+            const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+            const handleFileUpload = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Arquivo muito grande! Máximo 10MB');
+                    return;
+                }
+
+                setArquivoContrato(file);
+                setProcessandoOCR(true);
+                setProgressoOCR(10);
+
+                try {
+                    setProgressoOCR(30);
+                    const dados = await extrairDadosOCR(file);
+                    setProgressoOCR(80);
+                    
+                    setDadosExtraidos(dados);
+                    updateField('saldoDevedor', dados.saldoDevedor);
+                    updateField('taxaNominal', dados.taxaNominal);
+                    updateField('prazoRestante', dados.prazoRestante);
+                    updateField('valorParcelaAtual', dados.valorParcela);
+                    updateField('banco', bancoSelecionado);
+                    
+                    setProgressoOCR(100);
+                    setTimeout(() => {
+                        setProcessandoOCR(false);
+                        setStep(4);
+                    }, 500);
+                } catch (err) {
+                    console.error('Erro OCR:', err);
+                    alert('Não conseguimos ler o documento automaticamente. Por favor, preencha manualmente.');
+                    setProcessandoOCR(false);
+                    setMetodoInput('manual');
+                    setStep(3);
+                }
+            };
+
+            const handleSubmit = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch('https://ecofin-app-production.up.railway.app/api/cliente', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...formData, data: new Date().toISOString(), status: 'pendente' })
+                    });
+                    const data = await response.json();
+                    if (data.sucesso) setSubmitted(true);
+                    else throw new Error('Erro ao enviar');
+                } catch (err) {
+                    const clientes = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
+                    clientes.push({ ...formData, id: Date.now(), data: new Date().toISOString(), status: 'pendente' });
+                    localStorage.setItem('ecofin_clientes', JSON.stringify(clientes));
+                    setSubmitted(true);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (submitted) {
+                return (
+                    <div className="container">
+                        <div className="glass animate-in" style={{textAlign: 'center', padding: '3rem', maxWidth: '600px', margin: '5rem auto'}}>
+                            <div style={{fontSize: '5rem', marginBottom: '1.5rem'}}>🎉</div>
+                            <h1 style={{fontSize: '2.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
+                                Perfeito, {formData.nome}!
+                            </h1>
+                            <p style={{fontSize: '1.25rem', color: '#ccc', marginBottom: '2rem', lineHeight: '1.8'}}>
+                                Recebemos sua solicitação! Victor analisará seu caso e entrará em contato 
+                                em até <strong style={{color: '#D4A83C'}}>24 horas</strong> com uma análise 
+                                completa e personalizada.
+                            </p>
+                            <div style={{background: 'rgba(212, 168, 60, 0.1)', border: '1px solid #D4A83C', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem'}}>
+                                <p style={{fontWeight: '600', marginBottom: '0.5rem', color: '#D4A83C'}}>📊 O que acontece agora?</p>
+                                <p style={{fontSize: '0.875rem', color: '#ccc', lineHeight: '1.6'}}>
+                                    • Análise detalhada do seu contrato<br/>
+                                    • Cálculo de múltiplas estratégias<br/>
+                                    • Relatório completo personalizado<br/>
+                                    • Contato via WhatsApp com resultados
+                                </p>
+                            </div>
+                            <a href="/" style={{display: 'inline-block', textDecoration: 'none'}}>
+                                <button className="btn-primary">Voltar para o Início</button>
+                            </a>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="container">
+                    <div style={{textAlign: 'center', marginBottom: '3rem'}} className="animate-in">
+                        <div style={{fontSize: '5rem', marginBottom: '1rem'}}>🔑</div>
+                        <h1 style={{fontSize: '3rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                            Análise Gratuita EcoFin
+                        </h1>
+                        <p style={{fontSize: '1.25rem', color: '#ccc'}}>
+                            Descubra quanto você pode economizar no seu financiamento
+                        </p>
+                        <p style={{fontSize: '0.875rem', color: '#D4A83C', marginTop: '1rem'}}>
+                            Menos juros. Mais patrimônio. Simples assim.
+                        </p>
+                    </div>
+
+                    <div className="step-indicator">
+                        {[1, 2, 3, 4, 5].map(s => (
+                            <div key={s} className={`step ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
+                                {step > s ? '✓' : s}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="glass animate-in">
+                        {/* STEP 1: Dados Pessoais */}
+                        {step === 1 && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
+                                    📋 Seus Dados
+                                </h2>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Nome Completo *</label>
+                                        <input type="text" className="input-field" placeholder="José da Silva" value={formData.nome} onChange={(e) => updateField('nome', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>WhatsApp *</label>
+                                        <input type="tel" className="input-field" placeholder="(11) 99999-9999" value={formData.whatsapp} onChange={(e) => updateField('whatsapp', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Email</label>
+                                        <input type="email" className="input-field" placeholder="seu@email.com" value={formData.email} onChange={(e) => updateField('email', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div style={{marginTop: '1.5rem'}}>
+                                    <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.75rem', fontWeight: '600'}}>Qual seu principal objetivo? *</label>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+                                        {[
+                                            { value: 'quitar_rapido', icon: '🏃‍♂️', label: 'Quitar Rápido', desc: 'Liberdade financeira' },
+                                            { value: 'economia', icon: '💰', label: 'Economizar Máximo', desc: 'Pagar menos juros' }
+                                        ].map(opt => (
+                                            <div key={opt.value} className={`option-card ${formData.objetivo === opt.value ? 'selected' : ''}`} onClick={() => updateField('objetivo', opt.value)}>
+                                                <div style={{fontSize: '3rem', marginBottom: '0.5rem'}}>{opt.icon}</div>
+                                                <div style={{fontWeight: '700', color: 'white', marginBottom: '0.25rem'}}>{opt.label}</div>
+                                                <div style={{fontSize: '0.875rem', color: '#999'}}>{opt.desc}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(2)} className="btn-primary" disabled={!formData.nome || !formData.whatsapp || !formData.objetivo}>
+                                        Próxima Etapa →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2: Escolher Método */}
+                        {step === 2 && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
+                                    📄 Como você quer informar os dados do financiamento?
+                                </h2>
+                                <p style={{color: '#ccc', marginBottom: '2rem'}}>Escolha a forma mais fácil para você:</p>
+                                
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem'}}>
+                                    <div className={`option-card ${metodoInput === 'upload' ? 'selected' : ''}`} onClick={() => { setMetodoInput('upload'); setStep(2.5); }}>
+                                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📸</div>
+                                        <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>Upload Automático</h3>
+                                        <p style={{color: '#ccc', fontSize: '0.875rem', marginBottom: '1rem'}}>Recomendado - Mais Rápido!</p>
+                                        <ul style={{textAlign: 'left', color: '#999', fontSize: '0.875rem', lineHeight: '1.8'}}>
+                                            <li>✅ Tire foto do app do banco</li>
+                                            <li>✅ Sistema lê automaticamente</li>
+                                            <li>✅ Você só confirma os dados</li>
+                                        </ul>
+                                    </div>
+
+                                    <div className={`option-card ${metodoInput === 'manual' ? 'selected' : ''}`} onClick={() => { setMetodoInput('manual'); setStep(3); }}>
+                                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>⌨️</div>
+                                        <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>Preencher Manualmente</h3>
+                                        <p style={{color: '#ccc', fontSize: '0.875rem', marginBottom: '1rem'}}>Tradicional</p>
+                                        <ul style={{textAlign: 'left', color: '#999', fontSize: '0.875rem', lineHeight: '1.8'}}>
+                                            <li>📝 Preencha todos os campos</li>
+                                            <li>📋 Consulte seu contrato</li>
+                                            <li>⏱️ Leva ~5 minutos</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(1)} className="btn-secondary">← Voltar</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2.5: Escolher Banco */}
+                        {step === 2.5 && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
+                                    🏦 Qual é o seu banco?
+                                </h2>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+                                    {Object.entries(GUIAS_BANCOS).map(([key, banco]) => (
+                                        <div key={key} className={`option-card ${bancoSelecionado === key ? 'selected' : ''}`} 
+                                            onClick={() => { setBancoSelecionado(key); setStep(2.7); }}
+                                            style={{padding: '1.5rem'}}>
+                                            <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🏦</div>
+                                            <div style={{fontWeight: '700', color: 'white'}}>{banco.nome}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(2)} className="btn-secondary">← Voltar</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2.7: Guia do Banco */}
+                        {step === 2.7 && bancoSelecionado && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
+                                    📱 Como tirar a foto no {GUIAS_BANCOS[bancoSelecionado].nome}
+                                </h2>
+                                
+                                <div className="guide-box">
+                                    <p style={{fontWeight: '600', color: '#D4A83C', marginBottom: '1.5rem'}}>Siga estes passos:</p>
+                                    {GUIAS_BANCOS[bancoSelecionado].passos.map((passo, idx) => (
+                                        <div key={idx} className="guide-step">
+                                            <div className="guide-number">{idx + 1}</div>
+                                            <p style={{color: 'white', lineHeight: '1.6'}}>{passo}</p>
+                                        </div>
+                                    ))}
+                                    <div style={{background: 'rgba(212, 168, 60, 0.1)', padding: '1rem', borderRadius: '0.5rem', marginTop: '1rem'}}>
+                                        <p style={{fontSize: '0.875rem', color: '#D4A83C'}}>
+                                            💡 <strong>Dica:</strong> {GUIAS_BANCOS[bancoSelecionado].dicas}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div style={{marginTop: '2rem'}}>
+                                    <input type="file" id="upload-contrato" accept="image/*,.pdf" style={{display: 'none'}} onChange={handleFileUpload} />
+                                    <label htmlFor="upload-contrato">
+                                        <div className="upload-zone">
+                                            <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📸</div>
+                                            <p style={{fontSize: '1.25rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                                Clique para fazer upload
+                                            </p>
+                                            <p style={{color: '#999', fontSize: '0.875rem'}}>
+                                                Foto, print ou PDF (máx 10MB)
+                                            </p>
+                                        </div>
+                                    </label>
+                                    
+                                    {arquivoContrato && (
+                                        <div className="file-preview">
+                                            <span style={{color: 'white'}}>📄 {arquivoContrato.name}</span>
+                                            <button onClick={() => setArquivoContrato(null)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.5rem'}}>×</button>
+                                        </div>
+                                    )}
+
+                                    {processandoOCR && (
+                                        <div className="ocr-status">
+                                            <div className="spinner" style={{marginBottom: '1rem'}}></div>
+                                            <p style={{textAlign: 'center', color: '#D4A83C', fontWeight: '600'}}>
+                                                Processando documento... {progressoOCR}%
+                                            </p>
+                                            <div className="progress-bar">
+                                                <div className="progress-fill" style={{width: `${progressoOCR}%`}}></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(2.5)} className="btn-secondary">← Voltar</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 3: Manual (simplificado - principais campos) */}
+                        {step === 3 && metodoInput === 'manual' && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
+                                    📄 Dados do Financiamento
+                                </h2>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Banco *</label>
+                                        <input type="text" className="input-field" placeholder="Caixa, Itaú..." value={formData.banco} onChange={(e) => updateField('banco', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Sistema *</label>
+                                        <select className="input-field" value={formData.sistema} onChange={(e) => updateField('sistema', e.target.value)}>
+                                            <option value="SAC">SAC</option>
+                                            <option value="PRICE">PRICE</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Saldo Devedor (R$) *</label>
+                                        <input type="number" className="input-field" placeholder="250000" value={formData.saldoDevedor || ''} onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa (% ao ano) *</label>
+                                        <input type="number" step="0.01" className="input-field" placeholder="9.75" value={formData.taxaNominal * 100 || ''} onChange={(e) => updateField('taxaNominal', (parseFloat(e.target.value) || 0) / 100)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Prazo Restante (meses) *</label>
+                                        <input type="number" className="input-field" placeholder="360" value={formData.prazoRestante || ''} onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Valor FGTS (R$)</label>
+                                        <input type="number" className="input-field" placeholder="25000" value={formData.valorFGTS || ''} onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Capacidade Extra (R$/mês)</label>
+                                        <input type="number" className="input-field" placeholder="500" value={formData.capacidadeExtra || ''} onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                </div>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(2)} className="btn-secondary">← Voltar</button>
+                                    <button onClick={() => setStep(5)} className="btn-primary" disabled={!formData.banco || !formData.saldoDevedor || !formData.taxaNominal || !formData.prazoRestante}>
+                                        Finalizar →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 4: Confirmar Dados Extraídos */}
+                        {step === 4 && dadosExtraidos && (
+                            <div>
+                                <div style={{background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem'}}>
+                                    <p style={{color: '#10b981', fontWeight: '700', fontSize: '1.125rem', marginBottom: '0.5rem'}}>
+                                        ✅ Documento processado com sucesso!
+                                    </p>
+                                    <p style={{color: '#ccc', fontSize: '0.875rem'}}>
+                                        Verifique se os dados abaixo estão corretos. Você pode corrigir qualquer valor se necessário.
+                                    </p>
+                                </div>
+
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
+                                    🔍 Confirme os Dados Extraídos
+                                </h2>
+                                
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Saldo Devedor (R$)</label>
+                                        <input type="number" className="input-field" value={formData.saldoDevedor || ''} onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa (% ao ano)</label>
+                                        <input type="number" step="0.01" className="input-field" value={(formData.taxaNominal * 100).toFixed(2) || ''} onChange={(e) => updateField('taxaNominal', (parseFloat(e.target.value) || 0) / 100)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Prazo Restante (meses)</label>
+                                        <input type="number" className="input-field" value={formData.prazoRestante || ''} onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Valor da Parcela (R$)</label>
+                                        <input type="number" className="input-field" value={formData.valorParcelaAtual || ''} onChange={(e) => updateField('valorParcelaAtual', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                </div>
+
+                                <div style={{marginTop: '2rem'}}>
+                                    <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.75rem', fontWeight: '600'}}>Informações Adicionais</label>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
+                                        <div>
+                                            <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Valor FGTS (R$)</label>
+                                            <input type="number" className="input-field" placeholder="25000" value={formData.valorFGTS || ''} onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                        <div>
+                                            <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Capacidade Extra (R$/mês)</label>
+                                            <input type="number" className="input-field" placeholder="500" value={formData.capacidadeExtra || ''} onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(2.5)} className="btn-secondary">← Voltar</button>
+                                    <button onClick={() => setStep(5)} className="btn-primary">
+                                        Confirmar e Finalizar →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 5: Resumo Final */}
+                        {step === 5 && (
+                            <div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
+                                    ✅ Resumo da Solicitação
+                                </h2>
+                                
+                                <div style={{background: 'rgba(212, 168, 60, 0.1)', border: '1px solid #D4A83C', borderRadius: '0.5rem', padding: '2rem', marginBottom: '2rem'}}>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', fontSize: '0.875rem'}}>
+                                        <div><p style={{color: '#999'}}>Nome:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.nome}</p></div>
+                                        <div><p style={{color: '#999'}}>WhatsApp:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.whatsapp}</p></div>
+                                        <div><p style={{color: '#999'}}>Objetivo:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.objetivo === 'quitar_rapido' ? 'Quitar Rápido' : 'Economizar'}</p></div>
+                                        <div><p style={{color: '#999'}}>Banco:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.banco}</p></div>
+                                        <div><p style={{color: '#999'}}>Saldo:</p><p style={{fontWeight: '700', color: '#D4A83C'}}>R$ {formData.saldoDevedor?.toLocaleString('pt-BR')}</p></div>
+                                        <div><p style={{color: '#999'}}>Taxa:</p><p style={{fontWeight: '700', color: 'white'}}>{(formData.taxaNominal * 100).toFixed(2)}% a.a.</p></div>
+                                        <div><p style={{color: '#999'}}>Prazo:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.prazoRestante} meses</p></div>
+                                        <div><p style={{color: '#999'}}>FGTS:</p><p style={{fontWeight: '700', color: 'white'}}>R$ {formData.valorFGTS?.toLocaleString('pt-BR')}</p></div>
+                                    </div>
+                                </div>
+
+                                <div style={{background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem'}}>
+                                    <p style={{color: '#93c5fd', fontSize: '0.875rem', lineHeight: '1.6'}}>
+                                        ℹ️ Ao enviar, Victor receberá seus dados e fará uma análise completa personalizada. 
+                                        Você receberá um relatório detalhado com múltiplas estratégias de economia em até 24 horas.
+                                    </p>
+                                </div>
+
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
+                                    <button onClick={() => setStep(metodoInput === 'upload' ? 4 : 3)} className="btn-secondary">← Voltar</button>
+                                    <button onClick={handleSubmit} className="btn-primary" disabled={loading} style={{fontSize: '1.125rem', padding: '1.25rem 2.5rem'}}>
+                                        {loading ? 'Enviando...' : '🚀 Enviar Solicitação'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<FormularioCliente />, document.getElementById('root'));
+    </script>
+</body>
+</html>

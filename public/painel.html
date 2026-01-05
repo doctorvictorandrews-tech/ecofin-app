@@ -3,51 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Análise Profissional</title>
+    <title>EcoFin - Painel Administrativo</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000; color: white; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+        .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; }
         .section { margin-bottom: 3rem; }
-        .section-title { font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .card { background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .highlight-box { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%); border: 2px solid rgba(59, 130, 246, 0.5); padding: 2rem; border-radius: 1rem; margin: 2rem 0; }
-        .recomendacao { background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border: 2px solid #10b981; padding: 2.5rem; border-radius: 1rem; margin: 2rem 0; }
-        .justificativa { background: rgba(255, 255, 255, 0.03); padding: 1.5rem; border-left: 4px solid #3b82f6; border-radius: 0.5rem; margin: 1rem 0; line-height: 1.8; }
-        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4); }
+        .section-title { font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; color: #D4A83C; }
+        .card { background: rgba(27, 77, 62, 0.1); padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(212, 168, 60, 0.2); }
+        .recomendacao { background: linear-gradient(135deg, rgba(212, 168, 60, 0.2) 0%, rgba(27, 77, 62, 0.2) 100%); border: 2px solid #D4A83C; padding: 2.5rem; border-radius: 1rem; margin: 2rem 0; }
+        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; transition: all 0.3s; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
+        .btn-secondary { background: #1B4D3E; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; }
         .metric { text-align: center; padding: 1.5rem; }
         .metric-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .metric-label { color: #9ca3af; font-size: 0.875rem; }
-        .timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
-        .timeline-item { margin-bottom: 2rem; position: relative; }
-        .timeline-item::before { content: ''; position: absolute; left: -2rem; top: 0.5rem; width: 1rem; height: 1rem; background: #3b82f6; border-radius: 50%; }
-        .timeline-item::after { content: ''; position: absolute; left: -1.5rem; top: 1.5rem; width: 2px; height: calc(100% + 1rem); background: rgba(59, 130, 246, 0.3); }
-        .timeline-item:last-child::after { display: none; }
-        .comparison-table { width: 100%; border-collapse: collapse; margin: 2rem 0; }
-        .comparison-table th { background: rgba(59, 130, 246, 0.2); padding: 1rem; text-align: left; font-weight: 600; }
-        .comparison-table td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .alert { background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; }
+        .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; }
+        .table-wrapper { overflow-x: auto; margin: 2rem 0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .data-table thead { background: rgba(212, 168, 60, 0.2); position: sticky; top: 0; z-index: 10; }
+        .data-table th { padding: 1rem 0.75rem; text-align: right; font-weight: 700; color: #D4A83C; border-bottom: 2px solid #D4A83C; }
+        .data-table th:first-child { text-align: left; }
+        .data-table td { padding: 0.75rem; text-align: right; border-bottom: 1px solid rgba(212, 168, 60, 0.1); }
+        .data-table td:first-child { text-align: left; font-weight: 600; }
+        .data-table tr:hover { background: rgba(212, 168, 60, 0.05); }
+        .year-header { background: rgba(212, 168, 60, 0.15) !important; cursor: pointer; user-select: none; transition: all 0.3s; }
+        .year-header:hover { background: rgba(212, 168, 60, 0.25) !important; }
+        .year-header td { font-size: 1rem; font-weight: 700; color: #D4A83C; padding: 1rem !important; }
+        .month-row { background: rgba(0, 0, 0, 0.2); }
+        .positive { color: #10b981; font-weight: 600; }
+        .negative { color: #ef4444; font-weight: 600; }
+        .warning { color: #f59e0b; font-weight: 600; }
+        .highlight { background: rgba(212, 168, 60, 0.1); }
+        .logo { max-width: 120px; height: auto; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeIn 0.6s ease-out; }
-        .year-row { background: rgba(255, 255, 255, 0.02); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid #3b82f6; }
+        .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .collapse-icon { display: inline-block; margin-right: 0.5rem; transition: transform 0.3s; }
+        .collapsed { transform: rotate(-90deg); }
+        @media print {
+            body { background: white; color: black; }
+            .glass, .card { border: 1px solid #ddd; background: white; }
+            .btn-primary, .btn-secondary, .toolbar { display: none; }
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+        
+        const SENHA_ADMIN = "ecofin2025";
 
-        // ==================== MOTOR DE OTIMIZAÇÃO ====================
-        class OtimizadorFinanciamento {
+        // ==================== MOTOR DE CÁLCULO COMPLETO ====================
+        class MotorCalculoCompleto {
             constructor(dados) {
                 this.dados = dados;
-                this.taxaMensal = Math.pow(1 + dados.taxaNominal, 1/12) - 1;
+                this.taxaMensal = Math.pow(1 + (dados.taxaNominal || dados.taxaAnual || 0), 1/12) - 1;
             }
 
             calcularPMT(taxa, nper, vp) {
@@ -56,101 +73,79 @@
                 return vp * (taxa * fator) / (fator - 1);
             }
 
-            simular(fgtsInicial, amortMensal) {
+            simularCompleto(fgtsInicial, amortMensal) {
                 let saldo = this.dados.saldoDevedor - (fgtsInicial || 0);
                 const detalhes = [];
                 let totalPago = fgtsInicial || 0;
                 let totalJuros = 0;
+                let totalAmortizado = fgtsInicial || 0;
                 let mes = 0;
 
-                while (saldo > 0 && mes < 600) {
+                while (saldo > 1 && mes < 600) {
+                    const saldoInicial = saldo;
                     const juros = saldo * this.taxaMensal;
-                    let amortBase;
                     
+                    let amortBase;
                     if (this.dados.sistema === 'SAC') {
                         amortBase = this.dados.saldoDevedor / this.dados.prazoRestante;
                     } else {
                         const pmt = this.calcularPMT(this.taxaMensal, Math.max(1, this.dados.prazoRestante - mes), saldo);
-                        amortBase = pmt - juros;
+                        amortBase = Math.max(0, pmt - juros);
                     }
 
                     const amortExtra = amortMensal || 0;
-                    const taxas = 75; // taxa adm + seguro
+                    const taxas = (this.dados.taxaAdm || 25) + (this.dados.seguroMensal || 50);
                     const parcela = juros + amortBase + amortExtra + taxas;
                     
                     saldo = Math.max(0, saldo - amortBase - amortExtra);
-                    saldo *= 1.0015; // TR
+                    saldo *= (1 + ((this.dados.tr || 0.15) / 100));
 
                     totalPago += parcela;
                     totalJuros += juros;
+                    totalAmortizado += (amortBase + amortExtra);
 
                     detalhes.push({
                         mes: mes + 1,
                         ano: Math.floor(mes / 12) + 1,
-                        saldo,
-                        juros,
-                        amortizacao: amortBase + amortExtra,
-                        parcela
+                        saldoInicial: saldoInicial,
+                        juros: juros,
+                        amortBase: amortBase,
+                        amortExtra: amortExtra,
+                        amortTotal: amortBase + amortExtra,
+                        parcela: parcela,
+                        saldoFinal: saldo,
+                        percentualQuitado: ((this.dados.saldoDevedor - saldo) / this.dados.saldoDevedor) * 100,
+                        jurosAcumulados: totalJuros,
+                        amortAcumulada: totalAmortizado
                     });
 
                     mes++;
                     if (saldo <= 1) break;
                 }
 
-                return {
-                    detalhes,
-                    totalPago,
-                    totalJuros,
-                    prazoMeses: mes,
-                    economia: 0
-                };
+                return { detalhes, totalPago, totalJuros, prazoMeses: mes, totalAmortizado };
             }
 
-            encontrarPontoOtimo(objetivo, recursos) {
-                if (objetivo === 'quitar_rapido') {
-                    return this.otimizarQuitacaoRapida(recursos);
-                } else {
-                    return this.otimizarEconomia(recursos);
-                }
-            }
-
-            otimizarQuitacaoRapida(recursos) {
+            encontrarEstrategiaOtima(recursos, objetivo) {
                 const cenarios = [];
-                const original = this.simular(0, 0);
-
-                // Testar diferentes combinações
-                for (let fgtsPerc = 0; fgtsPerc <= 100; fgtsPerc += 25) {
-                    for (let amortPerc = 50; amortPerc <= 100; amortPerc += 25) {
-                        const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
-                        const amort = (recursos.capacidadeExtra || 0) * (amortPerc / 100);
-                        const sim = this.simular(fgts, amort);
-                        sim.economia = original.totalPago - sim.totalPago;
-                        sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
-                        sim.fgtsUsado = fgts;
-                        sim.amortMensal = amort;
-                        sim.score = sim.reducaoPrazo * 10 + (sim.economia / 1000);
-                        cenarios.push(sim);
-                    }
-                }
-
-                return cenarios.sort((a, b) => b.score - a.score)[0];
-            }
-
-            otimizarEconomia(recursos) {
-                const cenarios = [];
-                const original = this.simular(0, 0);
+                const original = this.simularCompleto(0, 0);
 
                 for (let fgtsPerc = 0; fgtsPerc <= 100; fgtsPerc += 25) {
                     for (let amortPerc = 30; amortPerc <= 100; amortPerc += 10) {
                         const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
                         const amort = (recursos.capacidadeExtra || 0) * (amortPerc / 100);
-                        const sim = this.simular(fgts, amort);
-                        sim.economia = original.totalPago - sim.totalPago;
-                        sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
+                        const sim = this.simularCompleto(fgts, amort);
                         sim.fgtsUsado = fgts;
                         sim.amortMensal = amort;
-                        sim.roi = sim.economia / ((fgts + (amort * sim.prazoMeses)) || 1);
-                        sim.score = sim.economia + (sim.roi * 10000);
+                        sim.economia = original.totalPago - sim.totalPago;
+                        sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
+                        
+                        if (objetivo === 'quitar_rapido') {
+                            sim.score = sim.reducaoPrazo * 10 + (sim.economia / 1000);
+                        } else {
+                            sim.score = sim.economia + ((sim.economia / ((fgts + (amort * sim.prazoMeses)) || 1)) * 10000);
+                        }
+                        
                         cenarios.push(sim);
                     }
                 }
@@ -158,176 +153,66 @@
                 return cenarios.sort((a, b) => b.score - a.score)[0];
             }
 
-            gerarJustificativa(estrategia, objetivo, recursos) {
-                const original = this.simular(0, 0);
-                const formato = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
-
-                if (objetivo === 'quitar_rapido') {
-                    return `
-                        <h3 style="color: #10b981; font-size: 1.5rem; margin-bottom: 1rem;">Por que essa é a melhor estratégia para QUITAR RÁPIDO?</h3>
-                        
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            Analisamos matematicamente ${(recursos.capacidadeExtra > 0 ? 75 : 25)} cenários diferentes e esta estratégia é a que permite 
-                            <strong style="color: #10b981;">quitar seu financiamento no menor tempo possível</strong>, considerando seus recursos disponíveis.
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Comparando com não fazer nada:</strong> Você quitará <strong style="color: #3b82f6;">${estrategia.reducaoPrazo} meses mais rápido</strong> 
-                            (${(estrategia.reducaoPrazo/12).toFixed(1)} anos a menos). Além disso, economizará ${formato(estrategia.economia)} em juros.
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Por que usar ${estrategia.fgtsUsado > 0 ? formato(estrategia.fgtsUsado) + ' do FGTS agora' : 'FGTS gradualmente'}?</strong> 
-                            ${estrategia.fgtsUsado > (recursos.valorFGTS * 0.7) ? 
-                                'Usar a maior parte do FGTS agora reduz drasticamente o saldo devedor, fazendo com que os juros futuros sejam calculados sobre um valor muito menor. Isso acelera significativamente a quitação.' :
-                                'Reservar parte do FGTS permite flexibilidade futura enquanto ainda acelera a quitação através das amortizações mensais.'}
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Sobre a amortização mensal de ${formato(estrategia.amortMensal)}:</strong> 
-                            Este valor foi calculado para ser o <strong>ponto ótimo</strong> entre velocidade de quitação e sua capacidade financeira. 
-                            Valores maiores trariam ganhos marginais pequenos, enquanto valores menores estenderiam muito o prazo.
-                        </p>
-
-                        <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; margin: 1.5rem 0; border-radius: 0.5rem;">
-                            <strong style="color: #10b981;">💡 Insight importante:</strong> Cada real amortizado hoje economiza cerca de R$ ${(original.totalJuros / original.totalPago * 2).toFixed(2)} 
-                            em juros ao longo do financiamento. Por isso a estratégia agressiva vale a pena.
-                        </div>
-                    `;
-                } else {
-                    const roiAnual = (estrategia.roi * 12 * 100).toFixed(1);
-                    return `
-                        <h3 style="color: #10b981; font-size: 1.5rem; margin-bottom: 1rem;">Por que essa é a estratégia de MÁXIMA ECONOMIA?</h3>
-                        
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            Testamos ${(recursos.capacidadeExtra > 0 ? 88 : 25)} combinações diferentes de FGTS e amortização mensal. Esta estratégia oferece o 
-                            <strong style="color: #10b981;">melhor retorno sobre investimento (ROI)</strong> considerando o esforço mensal necessário.
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Economia total:</strong> ${formato(estrategia.economia)} (${((estrategia.economia/original.totalPago)*100).toFixed(1)}% do custo original). 
-                            Isso significa que <strong style="color: #3b82f6;">para cada R$ 1 que você investir em amortizações, 
-                            economizará R$ ${estrategia.roi.toFixed(2)} em juros</strong>.
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Por que ${formato(estrategia.amortMensal)}/mês é o valor ideal?</strong> 
-                            Este é o <strong>ponto de equilíbrio perfeito</strong>. Valores maiores trazem economia adicional pequena 
-                            (retorno decrescente), enquanto valores menores deixam dinheiro "na mesa". Nossa análise matemática identificou 
-                            que este valor maximiza a relação custo-benefício.
-                        </p>
-
-                        <p style="margin-bottom: 1rem; line-height: 1.8;">
-                            <strong>Sobre o uso do FGTS:</strong> ${estrategia.fgtsUsado > 0 ? 
-                                `Usar ${formato(estrategia.fgtsUsado)} do FGTS (${((estrategia.fgtsUsado/(recursos.valorFGTS||1))*100).toFixed(0)}% do disponível) 
-                                proporciona um impulso inicial forte, reduzindo o saldo sobre o qual os juros incidem. O restante fica como reserva estratégica.` :
-                                'Reservar o FGTS permite maior flexibilidade futura e uma amortização mensal menor ainda gera excelente economia.'}
-                        </p>
-
-                        <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 1rem; margin: 1.5rem 0; border-radius: 0.5rem;">
-                            <strong style="color: #10b981;">💰 ROI Efetivo:</strong> Investir nas amortizações rende aproximadamente ${roiAnual}% ao ano 
-                            (equivalente a ${(roiAnual/12).toFixed(2)}% ao mês), <strong>isento de imposto de renda</strong>. 
-                            Compare: poupança rende ~7% a.a., CDI ~13% a.a. (com IR). Sua amortização é muito mais rentável!
-                        </div>
-                    `;
-                }
-            }
-
-            gerarPlanoAcao(estrategia) {
-                const passos = [];
-                
-                if (estrategia.fgtsUsado > 0) {
-                    passos.push({
-                        titulo: 'Mês 1: Usar FGTS Estrategicamente',
-                        descricao: `Amortizar ${new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(estrategia.fgtsUsado)} do FGTS. 
-                        Solicite junto ao banco e escolha "REDUZIR PRAZO" para máximo impacto.`,
-                        prazo: 'Mês 1',
-                        icone: '💰'
-                    });
-                }
-
-                passos.push({
-                    titulo: `Meses ${estrategia.fgtsUsado > 0 ? '2-12' : '1-12'}: Estabelecer Rotina de Amortização`,
-                    descricao: `Amorizar ${new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(estrategia.amortMensal)} todo mês. 
-                    Configure débito automático ou crie um alerta no calendário.`,
-                    prazo: 'Primeiro ano',
-                    icone: '📅'
-                });
-
-                const meta25 = Math.ceil(estrategia.prazoMeses * 0.25);
-                const meta50 = Math.ceil(estrategia.prazoMeses * 0.5);
-                const meta75 = Math.ceil(estrategia.prazoMeses * 0.75);
-
-                passos.push({
-                    titulo: `Mês ${meta25}: Marco 25% - Primeira Revisão`,
-                    descricao: 'Você terá quitado 1/4 do financiamento. Revise sua capacidade financeira e considere aumentar amortização se possível.',
-                    prazo: `Mês ${meta25}`,
-                    icone: '🎯'
-                });
-
-                passos.push({
-                    titulo: `Mês ${meta50}: Marco 50% - Ponto de Virada`,
-                    descricao: 'Metade do caminho! A partir daqui, os juros caem significativamente. Mantenha o ritmo.',
-                    prazo: `Mês ${meta50}`,
-                    icone: '⚡'
-                });
-
-                passos.push({
-                    titulo: `Mês ${meta75}: Marco 75% - Reta Final`,
-                    descricao: 'Faltam apenas 25%! Os juros já são muito menores. Considere acelerar ainda mais se tiver condições.',
-                    prazo: `Mês ${meta75}`,
-                    icone: '🏃'
-                });
-
-                passos.push({
-                    titulo: `Mês ${estrategia.prazoMeses}: QUITAÇÃO TOTAL! 🎉`,
-                    descricao: 'Parabéns! Seu imóvel está 100% quitado. Você economizou anos de juros e agora tem patrimônio livre.',
-                    prazo: `Mês ${estrategia.prazoMeses}`,
-                    icone: '🏠'
-                });
-
-                return passos;
-            }
-
-            gerarCronogramaAnual(estrategia) {
-                const anos = [];
-                let anoAtual = {
-                    ano: 1,
-                    saldoInicial: this.dados.saldoDevedor,
-                    totalPago: 0,
-                    totalJuros: 0,
-                    totalAmortizado: 0,
-                    saldoFinal: 0,
-                    meses: []
-                };
-
-                estrategia.detalhes.forEach((mes, idx) => {
-                    if (mes.ano > anoAtual.ano) {
-                        anos.push({...anoAtual});
-                        anoAtual = {
+            agruparPorAno(detalhes) {
+                const anos = {};
+                detalhes.forEach(mes => {
+                    if (!anos[mes.ano]) {
+                        anos[mes.ano] = {
                             ano: mes.ano,
-                            saldoInicial: estrategia.detalhes[idx-1].saldo,
+                            meses: [],
                             totalPago: 0,
                             totalJuros: 0,
                             totalAmortizado: 0,
-                            saldoFinal: 0,
-                            meses: []
+                            saldoInicial: mes.saldoInicial,
+                            saldoFinal: mes.saldoFinal
                         };
                     }
-
-                    anoAtual.totalPago += mes.parcela;
-                    anoAtual.totalJuros += mes.juros;
-                    anoAtual.totalAmortizado += mes.amortizacao;
-                    anoAtual.saldoFinal = mes.saldo;
-                    anoAtual.meses.push(mes);
+                    anos[mes.ano].meses.push(mes);
+                    anos[mes.ano].totalPago += mes.parcela;
+                    anos[mes.ano].totalJuros += mes.juros;
+                    anos[mes.ano].totalAmortizado += mes.amortTotal;
+                    anos[mes.ano].saldoFinal = mes.saldoFinal;
                 });
-
-                if (anoAtual.meses.length > 0) {
-                    anos.push(anoAtual);
-                }
-
-                return anos;
+                return Object.values(anos);
             }
+        }
+
+        // ==================== EXPORTAR EXCEL ====================
+        function exportarExcel(estrategia, cliente) {
+            const wb = XLSX.utils.book_new();
+            
+            const wsData = [
+                ['ANÁLISE COMPLETA ECOFIN'],
+                ['Cliente:', cliente.nome],
+                ['Data:', new Date().toLocaleDateString('pt-BR')],
+                [],
+                ['Mês', 'Ano', 'Saldo Inicial', 'Juros', 'Amort. Base', 'Amort. Extra', 'Parcela', 'Saldo Final', '% Quitado', 'Juros Acum.', 'Amort. Acum.'],
+            ];
+
+            estrategia.detalhes.forEach(m => {
+                wsData.push([
+                    m.mes,
+                    m.ano,
+                    m.saldoInicial,
+                    m.juros,
+                    m.amortBase,
+                    m.amortExtra,
+                    m.parcela,
+                    m.saldoFinal,
+                    m.percentualQuitado,
+                    m.jurosAcumulados,
+                    m.amortAcumulada
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [
+                {wch: 6}, {wch: 6}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 12}, 
+                {wch: 12}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 15}
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Análise Completa');
+            XLSX.writeFile(wb, `EcoFin_${cliente.nome.replace(/\s+/g, '_')}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`);
         }
 
         // ==================== COMPONENTES ====================
@@ -353,15 +238,16 @@
             }, []);
 
             if (loading) {
-                return <div style={{textAlign: 'center', padding: '3rem'}}>
-                    <div style={{width: '50px', height: '50px', border: '4px solid #3b82f6', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto'}}></div>
+                return <div style={{textAlign: 'center', padding: '3rem', color: '#D4A83C'}}>
+                    <div style={{fontSize: '3rem', marginBottom: '1rem'}}>⏳</div>
+                    <p>Carregando clientes...</p>
                 </div>;
             }
 
             if (clientes.length === 0) {
                 return <div style={{textAlign: 'center', padding: '3rem'}}>
                     <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📭</div>
-                    <h2>Nenhum cliente cadastrado</h2>
+                    <h2 style={{color: '#D4A83C'}}>Nenhum cliente cadastrado</h2>
                 </div>;
             }
 
@@ -370,22 +256,22 @@
                     {clientes.map(cliente => (
                         <div key={cliente.id} className="glass" onClick={() => onSelectCliente(cliente)}
                             style={{padding: '1.5rem', cursor: 'pointer', transition: 'all 0.3s'}}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}>
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 168, 60, 0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212, 168, 60, 0.05)'}>
                             <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem'}}>
                                 <div>
-                                    <h3 style={{fontSize: '1.25rem', fontWeight: '700'}}>{cliente.nome}</h3>
+                                    <h3 style={{fontSize: '1.25rem', fontWeight: '700', color: '#D4A83C'}}>{cliente.nome}</h3>
                                     <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>{cliente.whatsapp}</p>
                                 </div>
-                                <span style={{background: '#3b82f6', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem'}}>
-                                    {cliente.objetivo?.replace('_', ' ').toUpperCase()}
+                                <span style={{background: '#D4A83C', color: '#000', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700'}}>
+                                    {(cliente.objetivo || 'economia').replace('_', ' ').toUpperCase()}
                                 </span>
                             </div>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', fontSize: '0.875rem'}}>
-                                <div><p style={{color: '#9ca3af'}}>Banco</p><p style={{fontWeight: '600'}}>{cliente.banco}</p></div>
-                                <div><p style={{color: '#9ca3af'}}>Saldo</p><p style={{fontWeight: '600'}}>R$ {cliente.saldoDevedor?.toLocaleString('pt-BR')}</p></div>
-                                <div><p style={{color: '#9ca3af'}}>Taxa</p><p style={{fontWeight: '600'}}>{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</p></div>
-                                <div><p style={{color: '#9ca3af'}}>Prazo</p><p style={{fontWeight: '600'}}>{cliente.prazoRestante}m</p></div>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', fontSize: '0.875rem'}}>
+                                <div><p style={{color: '#9ca3af'}}>Banco</p><p style={{fontWeight: '600', color: 'white'}}>{cliente.banco}</p></div>
+                                <div><p style={{color: '#9ca3af'}}>Saldo</p><p style={{fontWeight: '600', color: 'white'}}>R$ {cliente.saldoDevedor?.toLocaleString('pt-BR')}</p></div>
+                                <div><p style={{color: '#9ca3af'}}>Taxa</p><p style={{fontWeight: '600', color: 'white'}}>{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</p></div>
+                                <div><p style={{color: '#9ca3af'}}>Prazo</p><p style={{fontWeight: '600', color: 'white'}}>{cliente.prazoRestante}m</p></div>
                             </div>
                         </div>
                     ))}
@@ -393,15 +279,116 @@
             );
         }
 
-        function AnaliseProfissional({ cliente, onVoltar, modoVisualizacao }) {
+        function TabelaCompleta({ estrategia, estrategiaOriginal, cliente }) {
+            const [anosExpandidos, setAnosExpandidos] = useState([1, 2]);
             const formato = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
-            const chartRef = useRef(null);
-
-            const otimizador = new OtimizadorFinanciamento({
+            
+            const motor = new MotorCalculoCompleto({
                 sistema: cliente.sistema,
                 saldoDevedor: cliente.saldoDevedor,
                 taxaNominal: cliente.taxaNominal || cliente.taxaAnual,
-                prazoRestante: cliente.prazoRestante
+                prazoRestante: cliente.prazoRestante,
+                taxaAdm: cliente.taxaAdm,
+                seguroMensal: cliente.seguroMensal,
+                tr: cliente.tr
+            });
+
+            const anosDados = motor.agruparPorAno(estrategia.detalhes);
+
+            const toggleAno = (ano) => {
+                setAnosExpandidos(prev => 
+                    prev.includes(ano) ? prev.filter(a => a !== ano) : [...prev, ano]
+                );
+            };
+
+            const expandirTodos = () => setAnosExpandidos(anosDados.map(a => a.ano));
+            const colapsarTodos = () => setAnosExpandidos([]);
+
+            return (
+                <div>
+                    <div className="toolbar">
+                        <button onClick={expandirTodos} className="btn-primary">▼ Expandir Todos</button>
+                        <button onClick={colapsarTodos} className="btn-secondary">▶ Colapsar Todos</button>
+                        <button onClick={() => exportarExcel(estrategia, cliente)} className="btn-primary">
+                            📥 Exportar Excel
+                        </button>
+                        <button onClick={() => window.print()} className="btn-secondary">
+                            🖨️ Imprimir
+                        </button>
+                    </div>
+
+                    <div className="table-wrapper">
+                        <table className="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mês</th>
+                                    <th>Saldo Inicial</th>
+                                    <th>Juros</th>
+                                    <th>Amort. Base</th>
+                                    <th>Amort. Extra</th>
+                                    <th>Parcela Total</th>
+                                    <th>Saldo Final</th>
+                                    <th>% Quitado</th>
+                                    <th>Juros Acum.</th>
+                                    <th>Amort. Acum.</th>
+                                    <th>Economia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {anosDados.map(ano => (
+                                    <React.Fragment key={ano.ano}>
+                                        <tr className="year-header" onClick={() => toggleAno(ano.ano)}>
+                                            <td colSpan="11">
+                                                <span className={`collapse-icon ${!anosExpandidos.includes(ano.ano) ? 'collapsed' : ''}`}>
+                                                    ▼
+                                                </span>
+                                                <strong>Ano {ano.ano}</strong> ({ano.meses.length} meses) - 
+                                                Saldo: {formato(ano.saldoInicial)} → {formato(ano.saldoFinal)} | 
+                                                Total Pago: {formato(ano.totalPago)} | 
+                                                Juros: {formato(ano.totalJuros)}
+                                            </td>
+                                        </tr>
+                                        {anosExpandidos.includes(ano.ano) && ano.meses.map(mes => {
+                                            const economiaOriginal = estrategiaOriginal.detalhes[mes.mes - 1];
+                                            const economia = economiaOriginal ? (economiaOriginal.jurosAcumulados - mes.jurosAcumulados) : 0;
+                                            
+                                            return (
+                                                <tr key={mes.mes} className="month-row">
+                                                    <td>{mes.mes}</td>
+                                                    <td>{formato(mes.saldoInicial)}</td>
+                                                    <td className="negative">{formato(mes.juros)}</td>
+                                                    <td className="positive">{formato(mes.amortBase)}</td>
+                                                    <td className="warning">{formato(mes.amortExtra)}</td>
+                                                    <td><strong>{formato(mes.parcela)}</strong></td>
+                                                    <td>{formato(mes.saldoFinal)}</td>
+                                                    <td>{mes.percentualQuitado.toFixed(1)}%</td>
+                                                    <td className="negative">{formato(mes.jurosAcumulados)}</td>
+                                                    <td className="positive">{formato(mes.amortAcumulada)}</td>
+                                                    <td className="positive">{formato(economia)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        function AnaliseProfissionalCompleta({ cliente, onVoltar }) {
+            const formato = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
+            const [tabAtiva, setTabAtiva] = useState('visao-geral');
+
+            const motor = new MotorCalculoCompleto({
+                sistema: cliente.sistema,
+                saldoDevedor: cliente.saldoDevedor,
+                taxaNominal: cliente.taxaNominal || cliente.taxaAnual,
+                prazoRestante: cliente.prazoRestante,
+                taxaAdm: cliente.taxaAdm,
+                seguroMensal: cliente.seguroMensal,
+                tr: cliente.tr
             });
 
             const recursos = {
@@ -409,336 +396,196 @@
                 capacidadeExtra: cliente.capacidadeExtra || 0
             };
 
-            const estrategiaOtima = otimizador.encontrarPontoOtimo(cliente.objetivo || 'economia', recursos);
-            const original = otimizador.simular(0, 0);
-            const justificativa = otimizador.gerarJustificativa(estrategiaOtima, cliente.objetivo || 'economia', recursos);
-            const planoAcao = otimizador.gerarPlanoAcao(estrategiaOtima);
-            const cronogramaAnual = otimizador.gerarCronogramaAnual(estrategiaOtima);
-
-            const compartilharLink = () => {
-                const url = `${window.location.origin}/relatorio/${cliente.id}`;
-                navigator.clipboard.writeText(url);
-                alert('Link copiado! Compartilhe com seu cliente: ' + url);
-            };
-
-            useEffect(() => {
-                if (chartRef.current) {
-                    const ctx = chartRef.current.getContext('2d');
-                    if (window.myChart) window.myChart.destroy();
-
-                    const datasets = [
-                        {
-                            label: 'Sem Fazer Nada',
-                            data: original.detalhes.filter((_, i) => i % 6 === 0).map(d => d.saldo),
-                            borderColor: '#ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            borderWidth: 2
-                        },
-                        {
-                            label: 'Estratégia Otimizada',
-                            data: estrategiaOtima.detalhes.filter((_, i) => i % 6 === 0).map(d => d.saldo),
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 3
-                        }
-                    ];
-
-                    window.myChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: Array.from({length: Math.ceil(Math.max(original.prazoMeses, estrategiaOtima.prazoMeses)/6)}, (_, i) => `${i*6}m`),
-                            datasets: datasets
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { labels: { color: '#fff' } } },
-                            scales: {
-                                y: { ticks: { color: '#9ca3af', callback: (v) => 'R$ ' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                                x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                            }
-                        }
-                    });
-                }
-            }, []);
+            const estrategiaOtima = motor.encontrarEstrategiaOtima(recursos, cliente.objetivo || 'economia');
+            const estrategiaOriginal = motor.simularCompleto(0, 0);
 
             return (
                 <div className="container">
-                    {!modoVisualizacao && (
-                        <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
-                            <button onClick={onVoltar} className="btn-primary">← Voltar</button>
-                            <button onClick={compartilharLink} className="btn-primary">🔗 Compartilhar com Cliente</button>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" alt="EcoFin" className="logo" style={{visibility: 'hidden'}} />
+                        <h1 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C'}}>Análise Profissional Completa</h1>
+                        <button onClick={onVoltar} className="btn-primary">← Voltar</button>
+                    </div>
+
+                    {/* TABS */}
+                    <div className="glass" style={{padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                        {[
+                            {id: 'visao-geral', label: '📊 Visão Geral'},
+                            {id: 'tabela-completa', label: '📋 Tabela Completa'},
+                            {id: 'graficos', label: '📈 Gráficos'}
+                        ].map(tab => (
+                            <button key={tab.id} onClick={() => setTabAtiva(tab.id)}
+                                style={{
+                                    padding: '0.75rem 1.5rem',
+                                    borderRadius: '0.5rem',
+                                    border: 'none',
+                                    background: tabAtiva === tab.id ? '#D4A83C' : 'transparent',
+                                    color: tabAtiva === tab.id ? '#000' : '#D4A83C',
+                                    cursor: 'pointer',
+                                    fontWeight: '700',
+                                    transition: 'all 0.3s'
+                                }}>
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* VISÃO GERAL */}
+                    {tabAtiva === 'visao-geral' && (
+                        <div className="animate-in">
+                            <div className="section">
+                                <h2 className="section-title">Situação Atual - {cliente.nome}</h2>
+                                <div className="card">
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem'}}>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#ef4444'}}>{formato(cliente.saldoDevedor)}</div>
+                                            <div className="metric-label">Saldo Devedor</div>
+                                        </div>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#D4A83C'}}>{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</div>
+                                            <div className="metric-label">Taxa ao Ano</div>
+                                        </div>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#1B4D3E'}}>{(cliente.prazoRestante/12).toFixed(1)}</div>
+                                            <div className="metric-label">Anos Restantes</div>
+                                        </div>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#ef4444'}}>{formato(estrategiaOriginal.totalJuros)}</div>
+                                            <div className="metric-label">Total em Juros</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="section">
+                                <h2 className="section-title">🎯 Estratégia Otimizada</h2>
+                                <div className="recomendacao">
+                                    <div style={{fontSize: '3rem', marginBottom: '1rem'}}>🔑</div>
+                                    <h3 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
+                                        {cliente.objetivo === 'quitar_rapido' ? 'Quitação Acelerada' : 'Máxima Economia'}
+                                    </h3>
+                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginTop: '2rem'}}>
+                                        <div className="metric">
+                                            <div className="metric-value positive">{formato(estrategiaOtima.economia)}</div>
+                                            <div className="metric-label">Economia Total</div>
+                                        </div>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#1B4D3E'}}>{estrategiaOtima.reducaoPrazo}</div>
+                                            <div className="metric-label">Meses Economizados</div>
+                                        </div>
+                                        <div className="metric">
+                                            <div className="metric-value" style={{color: '#D4A83C'}}>{(estrategiaOtima.prazoMeses/12).toFixed(1)}</div>
+                                            <div className="metric-label">Anos para Quitar</div>
+                                        </div>
+                                    </div>
+                                    <div style={{marginTop: '2rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '0.5rem'}}>
+                                        <p style={{fontSize: '1.125rem', lineHeight: '1.8'}}>
+                                            <strong style={{color: '#D4A83C'}}>Resumo:</strong> 
+                                            {estrategiaOtima.fgtsUsado > 0 && ` Usar ${formato(estrategiaOtima.fgtsUsado)} do FGTS + `}
+                                            Amortizar {formato(estrategiaOtima.amortMensal)}/mês = 
+                                            Economia de {formato(estrategiaOtima.economia)} em {(estrategiaOtima.reducaoPrazo/12).toFixed(1)} anos a menos!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
-                    {/* SEÇÃO 1: DIAGNÓSTICO */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">📊 Diagnóstico Completo</h2>
-                        <div className="card">
-                            <h3 style={{fontSize: '1.5rem', marginBottom: '1.5rem'}}>Situação Atual de {cliente.nome}</h3>
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem'}}>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#ef4444'}}>{formato(cliente.saldoDevedor)}</div>
-                                    <div className="metric-label">Saldo Devedor</div>
-                                </div>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#f59e0b'}}>{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</div>
-                                    <div className="metric-label">Taxa ao Ano</div>
-                                </div>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#3b82f6'}}>{(cliente.prazoRestante/12).toFixed(1)} anos</div>
-                                    <div className="metric-label">Prazo Restante</div>
-                                </div>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#8b5cf6'}}>{formato(original.totalPago)}</div>
-                                    <div className="metric-label">Total a Pagar</div>
+                    {/* TABELA COMPLETA */}
+                    {tabAtiva === 'tabela-completa' && (
+                        <div className="animate-in">
+                            <div className="section">
+                                <h2 className="section-title">📋 Tabela Mês a Mês Completa</h2>
+                                <div className="card">
+                                    <TabelaCompleta 
+                                        estrategia={estrategiaOtima} 
+                                        estrategiaOriginal={estrategiaOriginal}
+                                        cliente={cliente}
+                                    />
                                 </div>
                             </div>
                         </div>
+                    )}
 
-                        <div className="alert">
-                            <strong>⚠️ Atenção:</strong> Se continuar sem fazer alterações, você pagará {formato(original.totalJuros)} em juros 
-                            ao longo de {(original.prazoMeses/12).toFixed(1)} anos. Isso representa {((original.totalJuros/cliente.saldoDevedor)*100).toFixed(0)}% 
-                            do valor que você deve hoje!
-                        </div>
-                    </div>
-
-                    {/* SEÇÃO 2: ESTRATÉGIA RECOMENDADA */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">🎯 Estratégia Otimizada Recomendada</h2>
-                        <div className="recomendacao">
-                            <div style={{display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem'}}>
-                                <div style={{fontSize: '4rem'}}>🚀</div>
-                                <div>
-                                    <h3 style={{fontSize: '2rem', fontWeight: '700'}}>
-                                        {cliente.objetivo === 'quitar_rapido' ? 'Quitação Acelerada Inteligente' : 'Máxima Economia Otimizada'}
-                                    </h3>
-                                    <p style={{color: '#6ee7b7', fontSize: '1.125rem'}}>
-                                        Testamos {recursos.capacidadeExtra > 0 ? '75+' : '25'} cenários - Esta é matematicamente a melhor!
+                    {/* GRÁFICOS */}
+                    {tabAtiva === 'graficos' && (
+                        <div className="animate-in">
+                            <div className="section">
+                                <h2 className="section-title">📈 Comparação Visual</h2>
+                                <div className="card">
+                                    <p style={{textAlign: 'center', fontSize: '1.125rem', color: '#9ca3af'}}>
+                                        Gráfico comparativo será implementado em breve
                                     </p>
                                 </div>
                             </div>
-
-                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem'}}>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#10b981'}}>{formato(estrategiaOtima.economia)}</div>
-                                    <div className="metric-label">Economia Total</div>
-                                    <div style={{color: '#6ee7b7', fontSize: '0.875rem', marginTop: '0.5rem'}}>
-                                        {((estrategiaOtima.economia/original.totalPago)*100).toFixed(1)}% menos
-                                    </div>
-                                </div>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#3b82f6'}}>{estrategiaOtima.reducaoPrazo}</div>
-                                    <div className="metric-label">Meses Economizados</div>
-                                    <div style={{color: '#93c5fd', fontSize: '0.875rem', marginTop: '0.5rem'}}>
-                                        {(estrategiaOtima.reducaoPrazo/12).toFixed(1)} anos a menos
-                                    </div>
-                                </div>
-                                <div className="metric">
-                                    <div className="metric-value" style={{color: '#8b5cf6'}}>{(estrategiaOtima.prazoMeses/12).toFixed(1)}</div>
-                                    <div className="metric-label">Anos para Quitar</div>
-                                    <div style={{color: '#c4b5fd', fontSize: '0.875rem', marginTop: '0.5rem'}}>
-                                        {estrategiaOtima.prazoMeses} meses
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '0.5rem', marginTop: '2rem'}}>
-                                <h4 style={{fontSize: '1.25rem', marginBottom: '1rem', color: '#10b981'}}>📌 Resumo da Estratégia:</h4>
-                                <ul style={{listStyle: 'none', padding: 0}}>
-                                    {estrategiaOtima.fgtsUsado > 0 && (
-                                        <li style={{padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                                            <strong>💰 FGTS:</strong> Usar {formato(estrategiaOtima.fgtsUsado)} na primeira amortização
-                                        </li>
-                                    )}
-                                    <li style={{padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)'}}>
-                                        <strong>📅 Amortização Mensal:</strong> {formato(estrategiaOtima.amortMensal)} todo mês
-                                    </li>
-                                    <li style={{padding: '0.75rem 0'}}>
-                                        <strong>🎯 Resultado:</strong> Quitação em {(estrategiaOtima.prazoMeses/12).toFixed(1)} anos com economia de {formato(estrategiaOtima.economia)}
-                                    </li>
-                                </ul>
-                            </div>
                         </div>
-
-                        <div className="justificativa" dangerouslySetInnerHTML={{ __html: justificativa }}></div>
-                    </div>
-
-                    {/* SEÇÃO 3: PLANO DE AÇÃO */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">📋 Plano de Ação Detalhado</h2>
-                        <div className="card">
-                            <div className="timeline">
-                                {planoAcao.map((passo, idx) => (
-                                    <div key={idx} className="timeline-item">
-                                        <div style={{display: 'flex', gap: '1rem'}}>
-                                            <div style={{fontSize: '2rem'}}>{passo.icone}</div>
-                                            <div style={{flex: 1}}>
-                                                <div style={{color: '#60a5fa', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem'}}>
-                                                    {passo.prazo}
-                                                </div>
-                                                <h4 style={{fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem'}}>
-                                                    {passo.titulo}
-                                                </h4>
-                                                <p style={{color: '#9ca3af', lineHeight: '1.6'}}>
-                                                    {passo.descricao}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SEÇÃO 4: CRONOGRAMA ANUAL */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">📅 Projeção Ano a Ano</h2>
-                        <div className="card">
-                            {cronogramaAnual.slice(0, 10).map((ano) => (
-                                <div key={ano.ano} className="year-row">
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                                        <h4 style={{fontSize: '1.5rem', fontWeight: '700'}}>Ano {ano.ano}</h4>
-                                        <div style={{color: '#3b82f6', fontWeight: '600'}}>
-                                            Saldo: {formato(ano.saldoInicial)} → {formato(ano.saldoFinal)}
-                                        </div>
-                                    </div>
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', fontSize: '0.875rem'}}>
-                                        <div>
-                                            <p style={{color: '#9ca3af'}}>Total Pago</p>
-                                            <p style={{fontWeight: '600'}}>{formato(ano.totalPago)}</p>
-                                        </div>
-                                        <div>
-                                            <p style={{color: '#9ca3af'}}>Juros Pagos</p>
-                                            <p style={{fontWeight: '600', color: '#ef4444'}}>{formato(ano.totalJuros)}</p>
-                                        </div>
-                                        <div>
-                                            <p style={{color: '#9ca3af'}}>Amortizado</p>
-                                            <p style={{fontWeight: '600', color: '#10b981'}}>{formato(ano.totalAmortizado)}</p>
-                                        </div>
-                                        <div>
-                                            <p style={{color: '#9ca3af'}}>% Quitado</p>
-                                            <p style={{fontWeight: '600'}}>
-                                                {((1 - ano.saldoFinal/cliente.saldoDevedor)*100).toFixed(1)}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {cronogramaAnual.length > 10 && (
-                                <p style={{textAlign: 'center', color: '#9ca3af', marginTop: '1rem'}}>
-                                    Mostrando primeiros 10 anos de {cronogramaAnual.length}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* SEÇÃO 5: GRÁFICO COMPARATIVO */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">📈 Comparação Visual</h2>
-                        <div className="card">
-                            <div style={{height: '400px'}}>
-                                <canvas ref={chartRef}></canvas>
-                            </div>
-                            <div className="highlight-box" style={{marginTop: '2rem'}}>
-                                <p style={{fontSize: '1.125rem', lineHeight: '1.8', textAlign: 'center'}}>
-                                    <strong>A área entre as linhas</strong> representa a economia real de {formato(estrategiaOtima.economia)}. 
-                                    Quanto mais cedo você começar, maior será o benefício!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* COMPARAÇÃO FINAL */}
-                    <div className="section animate-in">
-                        <h2 className="section-title">⚖️ Comparação Final</h2>
-                        <div className="card">
-                            <table className="comparison-table">
-                                <thead>
-                                    <tr>
-                                        <th>Métrica</th>
-                                        <th>Sem Fazer Nada</th>
-                                        <th>Com Estratégia Otimizada</th>
-                                        <th>Diferença</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Prazo Total</strong></td>
-                                        <td>{(original.prazoMeses/12).toFixed(1)} anos</td>
-                                        <td style={{color: '#10b981'}}>{(estrategiaOtima.prazoMeses/12).toFixed(1)} anos</td>
-                                        <td style={{color: '#10b981', fontWeight: '600'}}>
-                                            {(estrategiaOtima.reducaoPrazo/12).toFixed(1)} anos menos
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total Pago</strong></td>
-                                        <td>{formato(original.totalPago)}</td>
-                                        <td style={{color: '#10b981'}}>{formato(estrategiaOtima.totalPago)}</td>
-                                        <td style={{color: '#10b981', fontWeight: '600'}}>
-                                            -{formato(estrategiaOtima.economia)}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total em Juros</strong></td>
-                                        <td style={{color: '#ef4444'}}>{formato(original.totalJuros)}</td>
-                                        <td style={{color: '#10b981'}}>{formato(estrategiaOtima.totalJuros)}</td>
-                                        <td style={{color: '#10b981', fontWeight: '600'}}>
-                                            -{formato(original.totalJuros - estrategiaOtima.totalJuros)}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Custo Mensal Médio</strong></td>
-                                        <td>{formato(original.totalPago / original.prazoMeses)}</td>
-                                        <td>{formato(estrategiaOtima.totalPago / estrategiaOtima.prazoMeses)}</td>
-                                        <td style={{color: '#3b82f6', fontWeight: '600'}}>
-                                            {formato((estrategiaOtima.totalPago / estrategiaOtima.prazoMeses) - (original.totalPago / original.prazoMeses))}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    )}
                 </div>
             );
         }
 
-        // APP PRINCIPAL
+        // APP PRINCIPAL COM SENHA
         function App() {
+            const [autenticado, setAutenticado] = useState(false);
             const [view, setView] = useState('lista');
             const [clienteSelecionado, setClienteSelecionado] = useState(null);
 
+            useEffect(() => {
+                const auth = sessionStorage.getItem('ecofin_autenticado');
+                if (auth === 'true') {
+                    setAutenticado(true);
+                } else {
+                    const senha = prompt('🔐 Senha de acesso ao painel:');
+                    if (senha === SENHA_ADMIN) {
+                        sessionStorage.setItem('ecofin_autenticado', 'true');
+                        setAutenticado(true);
+                    } else {
+                        alert('❌ Senha incorreta!');
+                        window.location.href = '/';
+                    }
+                }
+            }, []);
+
+            if (!autenticado) {
+                return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}>
+                    <div style={{textAlign: 'center'}}>
+                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>🔒</div>
+                        <p style={{color: '#D4A83C', fontSize: '1.25rem'}}>Verificando acesso...</p>
+                    </div>
+                </div>;
+            }
+
             return (
                 <div style={{minHeight: '100vh'}}>
-                    <nav style={{background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '1.5rem'}}>
+                    <nav style={{background: 'rgba(212, 168, 60, 0.1)', borderBottom: '2px solid #D4A83C', padding: '1.5rem'}}>
                         <div className="container" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <h1 style={{fontSize: '1.5rem', fontWeight: '700'}}>
-                                <span style={{background: 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
-                                    EcoFin
-                                </span> Análise Profissional
+                            <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C'}}>
+                                🔑 EcoFin - Painel Profissional
                             </h1>
+                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>
+                                Menos juros. Mais patrimônio. Simples assim.
+                            </p>
                         </div>
                     </nav>
 
-                    <div style={{padding: '2rem 0'}}>
-                        {view === 'lista' && (
-                            <div className="container">
-                                <div style={{marginBottom: '2rem'}}>
-                                    <h2 style={{fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem'}}>Clientes Cadastrados</h2>
-                                    <p style={{color: '#9ca3af'}}>Clique para gerar análise profissional completa</p>
-                                </div>
-                                <ListaClientes onSelectCliente={(c) => { setClienteSelecionado(c); setView('analise'); }} />
+                    {view === 'lista' && (
+                        <div className="container" style={{paddingTop: '2rem'}}>
+                            <div style={{marginBottom: '2rem'}}>
+                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                    Clientes Cadastrados
+                                </h2>
+                                <p style={{color: '#9ca3af'}}>Clique em um cliente para ver análise completa</p>
                             </div>
-                        )}
-                        
-                        {view === 'analise' && clienteSelecionado && (
-                            <AnaliseProfissional 
-                                cliente={clienteSelecionado}
-                                onVoltar={() => setView('lista')}
-                                modoVisualizacao={false}
-                            />
-                        )}
-                    </div>
+                            <ListaClientes onSelectCliente={(c) => { setClienteSelecionado(c); setView('analise'); }} />
+                        </div>
+                    )}
+                    
+                    {view === 'analise' && clienteSelecionado && (
+                        <AnaliseProfissionalCompleta 
+                            cliente={clienteSelecionado}
+                            onVoltar={() => setView('lista')}
+                        />
+                    )}
                 </div>
             );
         }

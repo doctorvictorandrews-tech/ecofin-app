@@ -9,151 +9,66 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000000;
-            color: white;
-        }
-        
-        /* CORES DO SEU SITE */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000000; color: white; }
         .bg-ecofin-yellow { background: #D4A83C; }
-        .bg-ecofin-green { background: #1B4D3E; }
         .text-ecofin-yellow { color: #D4A83C; }
-        .text-ecofin-green { color: #1B4D3E; }
-        .border-ecofin-yellow { border-color: #D4A83C; }
-        
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(212, 168, 60, 0.2);
-        }
-        
-        .input-field {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(212, 168, 60, 0.3);
-            color: white;
-            transition: all 0.3s;
-        }
-        
-        .input-field:focus {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: #D4A83C;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(212, 168, 60, 0.1);
-        }
-        
-        .btn-ecofin {
-            background: #D4A83C;
-            color: #000;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-ecofin:hover {
-            background: #E5B94D;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-in {
-            animation: fadeIn 0.5s ease-out;
-        }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); }
+        .input-field { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 168, 60, 0.3); color: white; transition: all 0.3s; }
+        .input-field:focus { background: rgba(255, 255, 255, 0.12); border-color: #D4A83C; outline: none; box-shadow: 0 0 0 3px rgba(212, 168, 60, 0.1); }
+        .btn-ecofin { background: #D4A83C; color: #000; font-weight: 600; transition: all 0.3s; }
+        .btn-ecofin:hover { background: #E5B94D; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
     </style>
 </head>
 <body>
-    <!-- Header - IGUAL AO SEU SITE -->
     <nav style="background: #000; padding: 1.5rem; border-bottom: 1px solid rgba(212, 168, 60, 0.2);">
-        <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+        <div style="max-width: 1200px; margin: 0 auto;">
             <a href="/" style="font-size: 1.5rem; font-weight: 700; color: white; text-decoration: none;">
                 E<span style="color: #D4A83C;">C</span><span style="color: #1B4D3E;">O</span>FIN
             </a>
-            <div style="display: flex; gap: 2rem; align-items: center;">
-                <a href="/" style="color: #ccc; text-decoration: none; transition: color 0.3s;">Início</a>
-                <a href="#sobre" style="color: #ccc; text-decoration: none; transition: color 0.3s;">Sobre</a>
-                <a href="#contato" style="color: #ccc; text-decoration: none; transition: color 0.3s;">Contato</a>
-            </div>
         </div>
     </nav>
-
     <div id="app"></div>
-
     <script type="text/babel">
         const { useState } = React;
 
         function SimuladorEcoFin() {
             const [step, setStep] = useState(1);
             const [formData, setFormData] = useState({
-                nome: '',
-                whatsapp: '',
-                email: '',
-                objetivo: '',
-                trabalhaCLT: null,
-                temFGTS: null,
-                valorFGTS: 0,
-                capacidadeExtra: 0,
-                banco: '',
-                sistema: 'SAC',
-                saldoDevedor: 0,
-                taxaAnual: 0,
-                prazoRestante: 0,
+                nome: '', whatsapp: '', email: '', objetivo: '', trabalhaCLT: null, temFGTS: null,
+                valorFGTS: 0, capacidadeExtra: 0, banco: '', sistema: 'SAC', saldoDevedor: 0,
+                taxaAnual: 0, prazoRestante: 0,
             });
             const [submitted, setSubmitted] = useState(false);
+            const [loading, setLoading] = useState(false);
 
-            const updateField = (field, value) => {
-                setFormData(prev => ({ ...prev, [field]: value }));
-            };
-
+            const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
             const nextStep = () => setStep(step + 1);
             const prevStep = () => setStep(step - 1);
 
             const handleSubmit = async () => {
-    try {
-        // Enviar para a API
-        const response = await fetch('https://ecofin-app-production.up.railway.app/api/cliente', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
-
-        if (!response.ok) {
-            throw new Error('Erro ao enviar dados');
-        }
-
-        const data = await response.json();
-        
-        if (data.sucesso) {
-            setSubmitted(true);
-        } else {
-            alert('Erro ao processar dados. Tente novamente.');
-        }
-
-    } catch (err) {
-        console.error('Erro:', err);
-        // Fallback: salvar no localStorage se API falhar
-        const clientes = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
-        clientes.push({
-            ...formData,
-            id: Date.now(),
-            data: new Date().toISOString(),
-            status: 'pendente'
-        });
-        localStorage.setItem('ecofin_clientes', JSON.stringify(clientes));
-        setSubmitted(true);
-    }
-};
+                setLoading(true);
+                try {
+                    const response = await fetch('https://ecofin-app-production.up.railway.app/api/cliente', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    const data = await response.json();
+                    if (data.sucesso) setSubmitted(true);
+                    else alert('Erro ao processar. Tente novamente.');
+                } catch (err) {
+                    console.error('Erro:', err);
+                    const clientes = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
+                    clientes.push({ ...formData, id: Date.now(), data: new Date().toISOString(), status: 'pendente' });
+                    localStorage.setItem('ecofin_clientes', JSON.stringify(clientes));
+                    setSubmitted(true);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
             if (submitted) {
                 return (
@@ -164,18 +79,10 @@
                                 Pronto, {formData.nome}!
                             </h1>
                             <p style={{fontSize: '1.125rem', color: '#ccc', marginBottom: '2rem'}}>
-                                Recebemos seus dados e já estamos preparando sua análise completa.
+                                Recebemos seus dados. Victor vai entrar em contato em até 24h.
                             </p>
-                            <div style={{background: 'rgba(212, 168, 60, 0.1)', border: '1px solid rgba(212, 168, 60, 0.3)', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem'}}>
-                                <p style={{color: 'white', fontWeight: '600', marginBottom: '0.5rem'}}>
-                                    📱 O Victor vai entrar em contato em até 24h
-                                </p>
-                                <p style={{color: '#ccc', fontSize: '0.875rem'}}>
-                                    Você receberá um relatório completo com as melhores estratégias.
-                                </p>
-                            </div>
                             <a href="/" className="btn-ecofin" style={{display: 'inline-block', padding: '0.75rem 2rem', borderRadius: '0.5rem', textDecoration: 'none'}}>
-                                Voltar para o Início
+                                Voltar
                             </a>
                         </div>
                     </div>
@@ -185,110 +92,58 @@
             return (
                 <div style={{minHeight: '80vh', padding: '2rem 1rem'}}>
                     <div style={{maxWidth: '800px', margin: '0 auto'}}>
-                        {/* Título */}
                         <div className="animate-in" style={{textAlign: 'center', marginBottom: '3rem'}}>
-                            <h1 style={{fontSize: '2.5rem', fontWeight: '700', color: 'white', marginBottom: '1rem'}}>
-                                Economia de até <span className="text-ecofin-yellow">50%</span> no seu financiamento
+                            <h1 style={{fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem'}}>
+                                Economia de até <span className="text-ecofin-yellow">50%</span>
                             </h1>
                             <p style={{fontSize: '1.125rem', color: '#ccc'}}>
-                                Simule aqui e descubra quanto você pode economizar! 💰
+                                Preencha o questionário! 💰
                             </p>
                         </div>
 
-                        {/* Progress Bar */}
                         <div className="glass" style={{borderRadius: '1rem', padding: '1.5rem', marginBottom: '2rem'}}>
                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                 {[1, 2, 3, 4].map((s) => (
                                     <div key={s} style={{display: 'flex', alignItems: 'center', flex: 1}}>
                                         <div style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontWeight: '700',
-                                            background: step >= s ? '#D4A83C' : '#333',
-                                            color: step >= s ? '#000' : '#666'
-                                        }}>
-                                            {s}
-                                        </div>
-                                        {s < 4 && (
-                                            <div style={{
-                                                flex: 1,
-                                                height: '3px',
-                                                margin: '0 0.5rem',
-                                                borderRadius: '999px',
-                                                background: step > s ? '#D4A83C' : '#333'
-                                            }} />
-                                        )}
+                                            width: '40px', height: '40px', borderRadius: '50%', display: 'flex',
+                                            alignItems: 'center', justifyContent: 'center', fontWeight: '700',
+                                            background: step >= s ? '#D4A83C' : '#333', color: step >= s ? '#000' : '#666'
+                                        }}>{s}</div>
+                                        {s < 4 && <div style={{ flex: 1, height: '3px', margin: '0 0.5rem', background: step > s ? '#D4A83C' : '#333' }} />}
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Formulário */}
                         <div className="glass animate-in" style={{borderRadius: '1rem', padding: '2rem'}}>
-                            {/* Conteúdo dos steps igual ao anterior, mas com cores adaptadas */}
                             {step === 1 && (
                                 <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
-                                    <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: '#D4A83C'}}>
-                                        Prazer em conhecer! 👋
-                                    </h2>
-                                    
+                                    <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: '#D4A83C'}}>Prazer em conhecer! 👋</h2>
                                     <div>
-                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>
-                                            Como posso te chamar?
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="input-field"
-                                            style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem', fontSize: '1rem'}}
-                                            placeholder="Seu nome"
-                                            value={formData.nome}
-                                            onChange={(e) => updateField('nome', e.target.value)}
-                                        />
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Nome</label>
+                                        <input type="text" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="Seu nome" value={formData.nome} onChange={(e) => updateField('nome', e.target.value)} />
                                     </div>
-
                                     <div>
-                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>
-                                            WhatsApp para contato
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            className="input-field"
-                                            style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem', fontSize: '1rem'}}
-                                            placeholder="(00) 00000-0000"
-                                            value={formData.whatsapp}
-                                            onChange={(e) => updateField('whatsapp', e.target.value)}
-                                        />
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>WhatsApp</label>
+                                        <input type="tel" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="(00) 00000-0000" value={formData.whatsapp} onChange={(e) => updateField('whatsapp', e.target.value)} />
                                     </div>
-
                                     <div>
-                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.75rem', fontWeight: '600'}}>
-                                            Qual seu maior objetivo?
-                                        </label>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.75rem', fontWeight: '600'}}>Qual seu maior objetivo?</label>
                                         <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
                                             {[
-                                                { value: 'quitar_rapido', label: '🏃‍♂️ Quitar logo e ficar livre', desc: 'Buscar a liberdade financeira' },
-                                                { value: 'reduzir_parcela', label: '💳 Reduzir a parcela mensal', desc: 'Ter mais dinheiro sobrando' },
-                                                { value: 'menos_juros', label: '💰 Economizar muito em juros', desc: 'Pagar menos para o banco' },
-                                                { value: 'balanceado', label: '⚖️ Um pouco de tudo', desc: 'Equilibrar economia e conforto' }
-                                            ].map(option => (
-                                                <div
-                                                    key={option.value}
-                                                    onClick={() => updateField('objetivo', option.value)}
-                                                    style={{
-                                                        padding: '1rem',
-                                                        borderRadius: '0.5rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.3s',
-                                                        background: formData.objetivo === option.value ? 'rgba(212, 168, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                                                        border: `2px solid ${formData.objetivo === option.value ? '#D4A83C' : 'transparent'}`
-                                                    }}
-                                                >
-                                                    <div style={{fontWeight: '600', color: 'white', marginBottom: '0.25rem'}}>{option.label}</div>
-                                                    <div style={{fontSize: '0.875rem', color: '#999'}}>{option.desc}</div>
+                                                { value: 'quitar_rapido', label: '🏃‍♂️ Quitar logo' },
+                                                { value: 'reduzir_parcela', label: '💳 Reduzir parcela' },
+                                                { value: 'menos_juros', label: '💰 Economizar juros' },
+                                                { value: 'balanceado', label: '⚖️ Equilibrado' }
+                                            ].map(opt => (
+                                                <div key={opt.value} onClick={() => updateField('objetivo', opt.value)}
+                                                    style={{padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer',
+                                                    background: formData.objetivo === opt.value ? 'rgba(212, 168, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                    border: `2px solid ${formData.objetivo === opt.value ? '#D4A83C' : 'transparent'}`}}>
+                                                    {opt.label}
                                                 </div>
                                             ))}
                                         </div>
@@ -296,37 +151,119 @@
                                 </div>
                             )}
 
-                            {/* Adicionar outros steps aqui... */}
+                            {step === 2 && (
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                                    <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: '#D4A83C'}}>Perfil Financeiro 💼</h2>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.75rem', fontWeight: '600'}}>Trabalha CLT?</label>
+                                        <div style={{display: 'flex', gap: '1rem'}}>
+                                            {[{ value: true, label: '✅ Sim' }, { value: false, label: '❌ Não' }].map(opt => (
+                                                <div key={String(opt.value)} onClick={() => updateField('trabalhaCLT', opt.value)}
+                                                    style={{flex: 1, padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', textAlign: 'center',
+                                                    background: formData.trabalhaCLT === opt.value ? 'rgba(212, 168, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                    border: `2px solid ${formData.trabalhaCLT === opt.value ? '#D4A83C' : 'transparent'}`}}>
+                                                    {opt.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.75rem', fontWeight: '600'}}>Tem FGTS?</label>
+                                        <div style={{display: 'flex', gap: '1rem'}}>
+                                            {[{ value: true, label: '✅ Sim' }, { value: false, label: '❌ Não' }].map(opt => (
+                                                <div key={String(opt.value)} onClick={() => updateField('temFGTS', opt.value)}
+                                                    style={{flex: 1, padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', textAlign: 'center',
+                                                    background: formData.temFGTS === opt.value ? 'rgba(212, 168, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                    border: `2px solid ${formData.temFGTS === opt.value ? '#D4A83C' : 'transparent'}`}}>
+                                                    {opt.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {formData.temFGTS && (
+                                        <div>
+                                            <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Valor FGTS (R$)</label>
+                                            <input type="number" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                                placeholder="15000" value={formData.valorFGTS || ''} onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Capacidade extra/mês (R$)</label>
+                                        <input type="number" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="500" value={formData.capacidadeExtra || ''} onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                </div>
+                            )}
 
-                            {/* Botões de Navegação */}
+                            {step === 3 && (
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+                                    <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: '#D4A83C'}}>Dados do Contrato 📄</h2>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Banco</label>
+                                        <input type="text" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="Caixa, Itaú..." value={formData.banco} onChange={(e) => updateField('banco', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Sistema</label>
+                                        <div style={{display: 'flex', gap: '1rem'}}>
+                                            {[{ value: 'SAC', label: 'SAC' }, { value: 'PRICE', label: 'PRICE' }].map(opt => (
+                                                <div key={opt.value} onClick={() => updateField('sistema', opt.value)}
+                                                    style={{flex: 1, padding: '1rem', borderRadius: '0.5rem', cursor: 'pointer', textAlign: 'center',
+                                                    background: formData.sistema === opt.value ? 'rgba(212, 168, 60, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                    border: `2px solid ${formData.sistema === opt.value ? '#D4A83C' : 'transparent'}`}}>
+                                                    {opt.label}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Saldo Devedor (R$)</label>
+                                        <input type="number" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="300000" value={formData.saldoDevedor || ''} onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa (% ao ano)</label>
+                                        <input type="number" step="0.01" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="10" value={formData.taxaAnual * 100 || ''} onChange={(e) => updateField('taxaAnual', (parseFloat(e.target.value) || 0) / 100)} />
+                                    </div>
+                                    <div>
+                                        <label style={{display: 'block', color: '#ccc', marginBottom: '0.5rem', fontWeight: '600'}}>Prazo restante (meses)</label>
+                                        <input type="number" className="input-field" style={{width: '100%', padding: '0.75rem', borderRadius: '0.5rem'}}
+                                            placeholder="360" value={formData.prazoRestante || ''} onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 4 && (
+                                <div style={{textAlign: 'center'}}>
+                                    <div style={{fontSize: '4rem', marginBottom: '1.5rem'}}>✅</div>
+                                    <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>Confirme</h2>
+                                    <div style={{textAlign: 'left', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '2rem'}}>
+                                        <p><strong>Nome:</strong> {formData.nome}</p>
+                                        <p><strong>WhatsApp:</strong> {formData.whatsapp}</p>
+                                        <p><strong>Banco:</strong> {formData.banco}</p>
+                                        <p><strong>Saldo:</strong> R$ {formData.saldoDevedor?.toLocaleString('pt-BR')}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
                                 {step > 1 && (
-                                    <button
-                                        onClick={prevStep}
-                                        style={{padding: '0.75rem 1.5rem', borderRadius: '0.5rem', background: '#333', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600'}}
-                                    >
+                                    <button onClick={prevStep} style={{padding: '0.75rem 1.5rem', borderRadius: '0.5rem', background: '#333', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600'}}>
                                         ← Voltar
                                     </button>
                                 )}
-                                
                                 {step < 4 && (
-                                    <button
-                                        onClick={nextStep}
-                                        className="btn-ecofin"
+                                    <button onClick={nextStep} className="btn-ecofin"
                                         style={{padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', marginLeft: 'auto'}}
-                                        disabled={step === 1 && (!formData.nome || !formData.whatsapp || !formData.objetivo)}
-                                    >
+                                        disabled={step === 1 && (!formData.nome || !formData.whatsapp || !formData.objetivo)}>
                                         Próximo →
                                     </button>
                                 )}
-
                                 {step === 4 && (
-                                    <button
-                                        onClick={handleSubmit}
-                                        className="btn-ecofin"
-                                        style={{padding: '1rem 2rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '1.125rem', marginLeft: 'auto'}}
-                                    >
-                                        Enviar e Calcular 🚀
+                                    <button onClick={handleSubmit} className="btn-ecofin" disabled={loading}
+                                        style={{padding: '1rem 2rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontSize: '1.125rem', marginLeft: 'auto'}}>
+                                        {loading ? 'Enviando...' : 'Enviar 🚀'}
                                     </button>
                                 )}
                             </div>
@@ -338,11 +275,9 @@
 
         ReactDOM.render(<SimuladorEcoFin />, document.getElementById('app'));
     </script>
-
-    <!-- Footer -->
     <footer style="background: #000; padding: 3rem 1rem; margin-top: 4rem; border-top: 1px solid rgba(212, 168, 60, 0.2);">
         <div style="max-width: 1200px; margin: 0 auto; text-align: center; color: #666;">
-            <p>© 2025 EcoFin - Menos juros. Mais patrimônio. Simples assim.</p>
+            <p>© 2025 EcoFin</p>
         </div>
     </footer>
 </body>

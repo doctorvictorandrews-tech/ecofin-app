@@ -948,7 +948,29 @@
             const [clientData, setClientData] = useState(null);
             const [strategies, setStrategies] = useState([]);
             const [loading, setLoading] = useState(false);
+            const [clientes, setClientes] = useState([]);
 
+// Buscar clientes da API
+useEffect(() => {
+    const fetchClientes = async () => {
+        try {
+            const response = await fetch('https://ecofin-app-production.up.railway.app/api/clientes');
+            const data = await response.json();
+            if (data.sucesso) {
+                setClientes(data.clientes);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar clientes:', err);
+            // Fallback: buscar do localStorage
+            const localClientes = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
+            setClientes(localClientes);
+        }
+    };
+    
+    if (view === 'admin') {
+        fetchClientes();
+    }
+}, [view]);
             const handleClientSubmit = async (data) => {
                 setLoading(true);
                 

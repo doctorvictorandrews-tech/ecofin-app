@@ -71,8 +71,8 @@ class FinanciamentoData(BaseModel):
     prazo_restante: int = Field(..., gt=0, le=720)
     sistema: str = Field("PRICE")
     tr_mensal: float = Field(0.0015)
-    seguro_mensal: float = Field(25)
-    taxa_admin_mensal: float = Field(50)
+    seguro_mensal: float = Field(0)
+    taxa_admin_mensal: float = Field(0)
 
 class RecursosData(BaseModel):
     valor_fgts: float = Field(0, ge=0)

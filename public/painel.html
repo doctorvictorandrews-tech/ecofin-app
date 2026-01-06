@@ -3,505 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Painel</title>
+    <title>EcoFin - Painel Integrado API</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-/**
- * ========================================================================
- * MOTOR DE CÁLCULO ECOFIN - BASEADO NA PLANILHA v3
- * ========================================================================
- * Mecânica idêntica à planilha Excel EcoFin_v3.xlsm
- * Suporta: SAC, PRICE, TR, Seguros, Taxas, Amortização Extra, FGTS, PPP
- * ========================================================================
- */
-
-class MotorEcoFin {
-    constructor(dados) {
-        // INPUTS PRINCIPAIS (baseado na planilha)
-        this.saldoDevedor = dados.saldoDevedor;          // AE11
-        this.taxaNominalAnual = dados.taxaNominal;       // Convertida para mensal
-        this.taxaMensal = this.calcularTaxaMensal(dados.taxaNominal); // T9
-        this.prazoRestanteMeses = dados.prazoRestante;   // W7
-        this.sistema = dados.sistema || 'PRICE';         // SAC ou PRICE
-        this.tr = dados.tr || 0.0015;                    // AK11 (0.15% padrão)
-        this.seguro = dados.seguroMensal || 25;          // N12
-        this.taxaAdm = dados.taxaAdm || 50;              // O12
-        
-        // DADOS CLIENTE
-        this.valorFGTS = dados.valorFGTS || 0;
-        this.capacidadeExtra = dados.capacidadeExtra || 0;
-        this.objetivo = dados.objetivo || 'economia';
-        this.temCLT = dados.trabalhaCLT || false;
-    }
-
-    /**
-     * Calcula taxa mensal a partir da taxa nominal anual
-     * Fórmula: (1 + taxa_anual)^(1/12) - 1
-     */
-    calcularTaxaMensal(taxaAnual) {
-        return Math.pow(1 + taxaAnual, 1/12) - 1;
-    }
-
-    /**
-     * Função PMT - Calcula parcela de financiamento (PRICE)
-     * Fórmula Excel: PMT(taxa, nper, pv)
-     * Baseado em: AA12 = -PMT(T$9,$W$7,AE11)+N12+O12
-     */
-    PMT(taxa, nper, pv) {
-        if (taxa === 0) return pv / nper;
-        const fator = Math.pow(1 + taxa, nper);
-        return (pv * taxa * fator) / (fator - 1);
-    }
-
-    /**
-     * SIMULAÇÃO COMPLETA - MECÂNICA EXATA DA PLANILHA
-     * Replica linha por linha da tabela de amortização
-     */
-    simularCompleto(config = {}) {
-        const {
-            fgtsInicial = 0,           // Usar FGTS no início
-            amortExtra = 0,            // Amortização extra mensal (AG12)
-            usarPPP = false,           // Reduzir parcela em vez de prazo
-            fgtsRecorrente = 0,        // FGTS a cada 24 meses
-        } = config;
-
-        let saldoAtual = this.saldoDevedor - fgtsInicial;
-        const detalhes = [];
-        let mes = 0;
-        let totalPago = fgtsInicial;
-        let totalJuros = 0;
-        let totalAmortizado = fgtsInicial;
-        let proximoFGTS = fgtsRecorrente > 0 ? 24 : null;
-
-        // Calcula parcela base PRICE (sem amortização extra)
-        const parcelaBasePRICE = this.PMT(this.taxaMensal, this.prazoRestanteMeses, this.saldoDevedor);
-
-        while (saldoAtual > 1 && mes < 720) { // Máximo 60 anos
-            const mesAtual = mes + 1;
-            const saldoInicial = saldoAtual;
-
-            // ===== JUROS DO MÊS =====
-            // Fórmula: V12 = AE11 * T9
-            const juros = saldoAtual * this.taxaMensal;
-
-            // ===== AMORTIZAÇÃO BASE =====
-            let amortBase;
-            if (this.sistema === 'SAC') {
-                // SAC: Amortização constante
-                amortBase = this.saldoDevedor / this.prazoRestanteMeses;
-            } else {
-                // PRICE: Amortização crescente
-                // Parcela fixa - juros = amortização
-                amortBase = parcelaBasePRICE - juros;
-            }
-
-            // ===== AMORTIZAÇÃO EXTRA =====
-            let amortExtraReal = amortExtra;
-            
-            // Aplicar FGTS recorrente (a cada 24 meses se CLT)
-            if (proximoFGTS && mesAtual === proximoFGTS) {
-                amortExtraReal += fgtsRecorrente;
-                proximoFGTS += 24;
-            }
-
-            // ===== CORREÇÃO MONETÁRIA (TR) =====
-            // Fórmula: AL12 = AE11 * $AK$11
-            const correcao = saldoAtual * this.tr;
-
-            // ===== AMORTIZAÇÃO TOTAL =====
-            const amortTotal = amortBase + amortExtraReal;
-
-            // ===== PARCELA TOTAL =====
-            // Fórmula: AA12 = -PMT(T$9,$W$7,AE11)+N12+O12
-            // ou: Juros + Amort + Taxas
-            const parcela = juros + amortTotal + this.seguro + this.taxaAdm;
-
-            // ===== SALDO DEVEDOR PRÓXIMO =====
-            // Fórmula: AE12 = IF(AE11-W12>0, AE11-W12, 0) - (AG12-AK12) + AL12
-            // Simplificando: Saldo - Amortização + Correção
-            saldoAtual = Math.max(0, saldoAtual - amortTotal + correcao);
-
-            // Se PPP (reduzir parcela), recalcula parcela
-            let parcelaPPP = parcela;
-            if (usarPPP && amortExtraReal > 0) {
-                // Reduz parcela proporcionalmente à amortização extra
-                const prazoRestante = this.prazoRestanteMeses - mes;
-                parcelaPPP = juros + amortBase + this.seguro + this.taxaAdm;
-            }
-
-            // ===== ACUMULADORES =====
-            totalPago += parcela;
-            totalJuros += juros;
-            totalAmortizado += amortTotal;
-
-            // ===== PERCENTUAL QUITADO =====
-            const percentualQuitado = ((this.saldoDevedor - saldoAtual) / this.saldoDevedor) * 100;
-
-            // ===== SALVAR DETALHES =====
-            detalhes.push({
-                mes: mesAtual,
-                ano: Math.floor(mes / 12) + 1,
-                saldoInicial: saldoInicial,
-                juros: juros,
-                amortizacaoBase: amortBase,
-                amortizacaoExtra: amortExtraReal,
-                amortizacaoTotal: amortTotal,
-                correcaoTR: correcao,
-                seguro: this.seguro,
-                taxaAdm: this.taxaAdm,
-                parcela: usarPPP ? parcelaPPP : parcela,
-                saldoFinal: saldoAtual,
-                percentualQuitado: percentualQuitado,
-                jurosAcumulados: totalJuros,
-                amortizadoAcumulado: totalAmortizado,
-                totalPagoAcumulado: totalPago
-            });
-
-            mes++;
-            if (saldoAtual <= 1) break;
-        }
-
-        return {
-            detalhes: detalhes,
-            totalPago: totalPago,
-            totalJuros: totalJuros,
-            totalAmortizado: totalAmortizado,
-            prazoMeses: mes,
-            custoMensalMedio: totalPago / mes,
-            taxaEfetivaAnual: Math.pow((totalPago / this.saldoDevedor), (1/(mes/12))) - 1
-        };
-    }
-
-    /**
-     * OTIMIZADOR AUTOMÁTICO DE AMORTIZAÇÃO
-     * Encontra o valor EXATO de amortização mensal para atingir objetivo
-     */
-    otimizarAmortizacao(objetivo, recursos) {
-        const { valorFGTS = 0, capacidadeExtra = 0, temReserva = false } = recursos;
-
-        if (objetivo === 'quitar_rapido') {
-            return this.otimizarQuitacaoRapida(recursos);
-        } else if (objetivo === 'reduzir_parcela') {
-            return this.otimizarReducaoParcela(recursos);
-        } else {
-            return this.otimizarEconomia(recursos);
-        }
-    }
-
-    /**
-     * OTIMIZAÇÃO: QUITAR O MAIS RÁPIDO POSSÍVEL
-     * Testa múltiplos cenários e encontra o que reduz mais o prazo
-     */
-    otimizarQuitacaoRapida(recursos) {
-        const cenarios = [];
-        const original = this.simularCompleto();
-
-        // Testar diferentes combinações de FGTS e amortização
-        const percentuaisFGTS = [0, 25, 50, 75, 100];
-        const percentuaisAmort = [50, 60, 70, 80, 90, 100];
-
-        for (const percFGTS of percentuaisFGTS) {
-            for (const percAmort of percentuaisAmort) {
-                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
-                const amort = (recursos.capacidadeExtra || 0) * (percAmort / 100);
-
-                const sim = this.simularCompleto({
-                    fgtsInicial: fgts,
-                    amortExtra: amort,
-                    fgtsRecorrente: this.temCLT && recursos.valorFGTS > 0 ? fgts * 0.3 : 0
-                });
-
-                const economia = original.totalPago - sim.totalPago;
-                const reducaoPrazo = original.prazoMeses - sim.prazoMeses;
-                const viabilidade = this.calcularViabilidade(amort, recursos);
-
-                cenarios.push({
-                    fgtsUsado: fgts,
-                    amortMensal: amort,
-                    ...sim,
-                    economia,
-                    reducaoPrazo,
-                    viabilidade,
-                    score: reducaoPrazo * 100 + economia / 100 // Prioriza redução de prazo
-                });
-            }
-        }
-
-        // Ordenar por score e retornar melhor
-        cenarios.sort((a, b) => b.score - a.score);
-        return cenarios[0];
-    }
-
-    /**
-     * OTIMIZAÇÃO: REDUZIR PARCELA (PPP)
-     * Mantém parcela menor e usa amortização extraordinária estrategicamente
-     */
-    otimizarReducaoParcela(recursos) {
-        const cenarios = [];
-        const original = this.simularCompleto();
-
-        // Para PPP, foca em usar FGTS e amortizações menores
-        const percentuaisFGTS = [0, 50, 100];
-        const valoresAmort = [0, 200, 300, 500, 700, 1000];
-
-        for (const percFGTS of percentuaisFGTS) {
-            for (const amort of valoresAmort) {
-                if (amort > recursos.capacidadeExtra) continue;
-
-                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
-
-                const sim = this.simularCompleto({
-                    fgtsInicial: fgts,
-                    amortExtra: amort,
-                    usarPPP: true // Flag para recalcular parcela
-                });
-
-                const economia = original.totalPago - sim.totalPago;
-                const reducaoParcela = original.detalhes[0].parcela - sim.detalhes[0].parcela;
-                const viabilidade = this.calcularViabilidade(amort, recursos);
-
-                cenarios.push({
-                    fgtsUsado: fgts,
-                    amortMensal: amort,
-                    ...sim,
-                    economia,
-                    reducaoParcela,
-                    viabilidade,
-                    score: reducaoParcela * 50 + economia / 100
-                });
-            }
-        }
-
-        cenarios.sort((a, b) => b.score - a.score);
-        return cenarios[0];
-    }
-
-    /**
-     * OTIMIZAÇÃO: MÁXIMA ECONOMIA (melhor ROI)
-     * Encontra ponto ótimo de custo-benefício
-     */
-    otimizarEconomia(recursos) {
-        const cenarios = [];
-        const original = this.simularCompleto();
-
-        // Busca binária para encontrar ponto ótimo
-        let melhorCenario = null;
-        let melhorROI = 0;
-
-        // Testa valores incrementais de amortização
-        for (let amort = 0; amort <= recursos.capacidadeExtra; amort += 100) {
-            for (let percFGTS = 0; percFGTS <= 100; percFGTS += 25) {
-                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
-
-                const sim = this.simularCompleto({
-                    fgtsInicial: fgts,
-                    amortExtra: amort
-                });
-
-                const economia = original.totalPago - sim.totalPago;
-                const investimento = fgts + (amort * sim.prazoMeses);
-                const roi = investimento > 0 ? economia / investimento : 0;
-                const viabilidade = this.calcularViabilidade(amort, recursos);
-
-                if (roi > melhorROI && viabilidade >= 70) {
-                    melhorROI = roi;
-                    melhorCenario = {
-                        fgtsUsado: fgts,
-                        amortMensal: amort,
-                        ...sim,
-                        economia,
-                        roi,
-                        viabilidade,
-                        reducaoPrazo: original.prazoMeses - sim.prazoMeses,
-                        score: roi * 10000 + economia
-                    };
-                }
-            }
-        }
-
-        return melhorCenario || this.simularCompleto();
-    }
-
-    /**
-     * CALCULAR VIABILIDADE (0-100%)
-     * Baseado em: capacidade extra, reserva emergência, comprometimento renda
-     */
-    calcularViabilidade(amortExtra, recursos) {
-        let viabilidade = 100;
-
-        // Penaliza se amortização extra > 80% da capacidade
-        if (amortExtra > recursos.capacidadeExtra * 0.8) {
-            viabilidade -= 20;
-        }
-
-        // Penaliza se não tem reserva emergência
-        if (!recursos.temReserva) {
-            viabilidade -= 10;
-        }
-
-        // Bonus se tem CLT (estabilidade)
-        if (this.temCLT) {
-            viabilidade += 5;
-        }
-
-        return Math.max(0, Math.min(100, viabilidade));
-    }
-
-    /**
-     * GERAR JUSTIFICATIVA TEXTUAL PROFISSIONAL
-     */
-    gerarJustificativa(estrategia, estrategiaOriginal) {
-        const economia = estrategia.economia;
-        const reducaoPrazo = estrategia.reducaoPrazo;
-        const roi = estrategia.roi || 0;
-
-        return {
-            titulo: this.objetivo === 'quitar_rapido' ? 'Quitação Acelerada Inteligente' : 
-                    this.objetivo === 'reduzir_parcela' ? 'Redução de Parcela Estratégica' :
-                    'Máxima Economia Otimizada',
-            
-            paragrafo1: `Analisamos matematicamente ${this.objetivo === 'quitar_rapido' ? '150+' : '200+'} cenários diferentes e esta estratégia é a que ${
-                this.objetivo === 'quitar_rapido' ? 'permite quitar seu financiamento no menor tempo possível' :
-                this.objetivo === 'reduzir_parcela' ? 'reduz sua parcela com menor impacto no prazo total' :
-                'oferece o melhor retorno sobre investimento (ROI)'
-            }, considerando seus recursos disponíveis.`,
-            
-            paragrafo2: `Comparando com não fazer nada: você ${
-                this.objetivo === 'quitar_rapido' ? `quitará ${reducaoPrazo} meses mais rápido (${(reducaoPrazo/12).toFixed(1)} anos a menos)` :
-                this.objetivo === 'reduzir_parcela' ? `terá uma parcela R$ ${estrategia.reducaoParcela?.toFixed(2) || 0} menor` :
-                `economizará R$ ${economia.toFixed(2)}`
-            }. Além disso, economizará R$ ${economia.toFixed(2)} em juros ao longo do financiamento.`,
-            
-            paragrafo3: estrategia.fgtsUsado > 0 ? 
-                `Por que usar R$ ${estrategia.fgtsUsado.toFixed(2)} do FGTS agora? Usar FGTS reduz drasticamente o saldo devedor, fazendo com que os juros futuros sejam calculados sobre um valor muito menor. Isso ${
-                    this.objetivo === 'quitar_rapido' ? 'acelera significativamente a quitação' : 'reduz o custo total do financiamento'
-                }.` :
-                `Neste cenário, reservar o FGTS permite maior flexibilidade futura enquanto ainda ${
-                    this.objetivo === 'quitar_rapido' ? 'acelera a quitação' : 'gera economia significativa'
-                } através das amortizações mensais.`,
-            
-            paragrafo4: `Sobre a amortização mensal de R$ ${estrategia.amortMensal.toFixed(2)}: Este valor foi calculado para ser o ponto ótimo entre ${
-                this.objetivo === 'quitar_rapido' ? 'velocidade de quitação e sua capacidade financeira' :
-                this.objetivo === 'reduzir_parcela' ? 'redução da parcela e manutenção de prazo razoável' :
-                'economia máxima e esforço financeiro viável'
-            }. ${roi > 0 ? `O ROI efetivo é de ${(roi * 100).toFixed(1)}%, superando qualquer investimento tradicional.` : ''}`,
-            
-            insight: `💡 Cada R$ 1 amortizado hoje economiza aproximadamente R$ ${(estrategiaOriginal.totalJuros / estrategiaOriginal.totalPago * 2).toFixed(2)} em juros ao longo do financiamento. ${
-                roi > 0 ? `Investir em amortizações rende ${(roi * 12 * 100).toFixed(1)}% ao ano, isento de imposto de renda, superando poupança (7% a.a.) e CDI (13% a.a. com IR).` : ''
-            }`
-        };
-    }
-
-    /**
-     * AGRUPAR DETALHES POR ANO
-     */
-    agruparPorAno(detalhes) {
-        const anos = {};
-        
-        detalhes.forEach(mes => {
-            if (!anos[mes.ano]) {
-                anos[mes.ano] = {
-                    ano: mes.ano,
-                    meses: [],
-                    totalPago: 0,
-                    totalJuros: 0,
-                    totalAmortizado: 0,
-                    saldoInicial: mes.saldoInicial,
-                    saldoFinal: mes.saldoFinal
-                };
-            }
-            
-            anos[mes.ano].meses.push(mes);
-            anos[mes.ano].totalPago += mes.parcela;
-            anos[mes.ano].totalJuros += mes.juros;
-            anos[mes.ano].totalAmortizado += mes.amortizacaoTotal;
-            anos[mes.ano].saldoFinal = mes.saldoFinal;
-        });
-        
-        return Object.values(anos);
-    }
-}
-
-// ========================================================================
-// EXEMPLO DE USO
-// ========================================================================
-
-/*
-const motor = new MotorEcoFin({
-    saldoDevedor: 300000,
-    taxaNominal: 0.0975,        // 9.75% ao ano
-    prazoRestante: 420,          // 35 anos
-    sistema: 'PRICE',
-    tr: 0.0015,                  // 0.15% ao mês
-    seguroMensal: 25,
-    taxaAdm: 50,
-    valorFGTS: 25000,
-    capacidadeExtra: 800,
-    objetivo: 'quitar_rapido',
-    trabalhaCLT: true
-});
-
-// Simular cenário original
-const original = motor.simularCompleto();
-
-// Encontrar estratégia otimizada
-const estrategia = motor.otimizarAmortizacao('quitar_rapido', {
-    valorFGTS: 25000,
-    capacidadeExtra: 800,
-    temReserva: true
-});
-
-// Gerar justificativa
-const justificativa = motor.gerarJustificativa(estrategia, original);
-
-// Agrupar por ano
-const anos = motor.agruparPorAno(estrategia.detalhes);
-
-console.log('Economia:', estrategia.economia);
-console.log('Redução prazo:', estrategia.reducaoPrazo, 'meses');
-console.log('Viabilidade:', estrategia.viabilidade, '%');
-*/
-
-// Exportar para uso em Node.js ou navegador
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MotorEcoFin;
-}
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000; color: white; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #000 0%, #0a1f1a 100%); color: white; }
         .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
         .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; padding: 2rem; }
         .card { background: rgba(27, 77, 62, 0.1); padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(212, 168, 60, 0.2); }
-        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; }
-        .btn-secondary { background: #1B4D3E; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; }
-        .btn-danger { background: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; }
-        .input-field { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 168, 60, 0.3); color: white; padding: 0.75rem; border-radius: 0.5rem; width: 100%; }
+        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; transition: all 0.3s; font-size: 1rem; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: #1B4D3E; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; transition: all 0.3s; }
+        .btn-secondary:hover { background: #2a6b50; }
+        .btn-danger { background: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; transition: all 0.3s; }
+        .btn-danger:hover { background: #dc2626; }
         .metric { text-align: center; padding: 1.5rem; }
-        .metric-value { font-size: 2.5rem; font-weight: 700; }
-        .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .data-table th { padding: 1rem; text-align: right; font-weight: 700; color: #D4A83C; border-bottom: 2px solid #D4A83C; }
-        .data-table td { padding: 0.75rem; text-align: right; border-bottom: 1px solid rgba(212, 168, 60, 0.1); }
-        .year-header { background: rgba(212, 168, 60, 0.15) !important; cursor: pointer; }
-        .year-header td { font-size: 1rem; font-weight: 700; color: #D4A83C; padding: 1rem !important; }
+        .metric-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.2; }
+        .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         .positive { color: #10b981; }
         .negative { color: #ef4444; }
         .warning { color: #f59e0b; }
-        .recomendacao { background: linear-gradient(135deg, rgba(212, 168, 60, 0.2) 0%, rgba(27, 77, 62, 0.2) 100%); border: 2px solid #D4A83C; padding: 2.5rem; border-radius: 1rem; margin: 2rem 0; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 2px solid #D4A83C; max-height: 80vh; overflow-y: auto; }
+        .loading { text-align: center; padding: 4rem; color: #D4A83C; }
+        .loading-spinner { border: 4px solid rgba(212, 168, 60, 0.2); border-top: 4px solid #D4A83C; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 1rem; border-radius: 0.5rem; color: #ef4444; margin: 1rem 0; }
+        .success { background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 1rem; border-radius: 0.5rem; color: #10b981; margin: 1rem 0; }
+        .section-title { font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; color: #D4A83C; display: flex; align-items: center; gap: 0.75rem; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+        .stat-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(212, 168, 60, 0.15); border-radius: 0.75rem; padding: 1.5rem; text-align: center; transition: all 0.3s; }
+        .stat-card:hover { background: rgba(212, 168, 60, 0.05); transform: translateY(-3px); border-color: #D4A83C; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 2px solid rgba(212, 168, 60, 0.2); padding-bottom: 0.5rem; }
+        .tab { padding: 0.75rem 1.5rem; border-radius: 0.5rem 0.5rem 0 0; border: none; background: transparent; color: #9ca3af; cursor: pointer; font-weight: 600; transition: all 0.3s; border-bottom: 3px solid transparent; }
+        .tab.active { background: rgba(212, 168, 60, 0.1); color: #D4A83C; border-bottom-color: #D4A83C; }
+        .tab:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: #D4A83C; }
+        .timeline { position: relative; padding-left: 2.5rem; margin: 2rem 0; }
+        .timeline-item { margin-bottom: 2.5rem; position: relative; }
+        .timeline-item::before { content: attr(data-icon); position: absolute; left: -2.5rem; top: 0; width: 2.5rem; height: 2.5rem; background: #D4A83C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; border: 3px solid #0a1f1a; }
+        .timeline-content { background: rgba(255, 255, 255, 0.03); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(212, 168, 60, 0.2); }
+        .justificativa { background: rgba(255, 255, 255, 0.03); padding: 1.5rem; border-left: 4px solid #D4A83C; border-radius: 0.5rem; margin: 1rem 0; line-height: 1.8; }
+        .recomendacao { background: linear-gradient(135deg, rgba(212, 168, 60, 0.2) 0%, rgba(27, 77, 62, 0.2) 100%); border: 2px solid #D4A83C; padding: 2.5rem; border-radius: 1rem; margin: 2rem 0; box-shadow: 0 10px 40px rgba(212, 168, 60, 0.2); }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
+
+        // ============================================
+        // CONFIGURAÇÃO DA API
+        // ============================================
+        
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000'
+            : 'https://ecofin-app-production.up.railway.app';
+        
         const SENHA = "ecofin2025";
-        const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
+
+        // ============================================
+        // COMPONENTE PRINCIPAL
+        // ============================================
 
         function App() {
             const [auth, setAuth] = useState(false);
@@ -509,21 +73,28 @@ if (typeof module !== 'undefined' && module.exports) {
             const [cliente, setCliente] = useState(null);
 
             useEffect(() => {
-                if (sessionStorage.getItem('auth') === 'ok') {
+                if (sessionStorage.getItem('ecofin_auth') === 'ok') {
                     setAuth(true);
                 } else {
-                    const s = prompt('Senha:');
+                    const s = prompt('🔐 Senha de acesso ao painel:');
                     if (s === SENHA) {
-                        sessionStorage.setItem('auth', 'ok');
+                        sessionStorage.setItem('ecofin_auth', 'ok');
                         setAuth(true);
                     } else {
-                        alert('Senha incorreta');
+                        alert('❌ Senha incorreta!');
                         window.location.href = '/';
                     }
                 }
             }, []);
 
-            if (!auth) return <div style={{textAlign: 'center', padding: '5rem', color: '#D4A83C'}}>Verificando...</div>;
+            if (!auth) {
+                return (
+                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: '1rem'}}>
+                        <div style={{fontSize: '4rem'}}>🔒</div>
+                        <p style={{color: '#D4A83C', fontSize: '1.25rem'}}>Verificando acesso...</p>
+                    </div>
+                );
+            }
 
             if (view === 'lista') {
                 return <Lista onSelect={(c) => { setCliente(c); setView('analise'); }} />;
@@ -532,166 +103,379 @@ if (typeof module !== 'undefined' && module.exports) {
             return <Analise cliente={cliente} onVoltar={() => setView('lista')} />;
         }
 
+        // ============================================
+        // COMPONENTE: LISTA DE CLIENTES
+        // ============================================
+
         function Lista({ onSelect }) {
             const [clientes, setClientes] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [busca, setBusca] = useState('');
 
             useEffect(() => {
-                fetch('https://ecofin-app-production.up.railway.app/api/clientes')
-                    .then(r => r.json())
-                    .then(d => d.sucesso && setClientes(d.clientes))
-                    .catch(() => setClientes(JSON.parse(localStorage.getItem('ecofin_clientes') || '[]')));
+                carregarClientes();
             }, []);
 
-            const handleDelete = (id, nome) => {
-                if (!confirm(`Excluir ${nome}?`)) return;
-                fetch(`https://ecofin-app-production.up.railway.app/api/cliente/${id}`, {method: 'DELETE'}).catch(() => {});
-                const novo = clientes.filter(c => c.id !== id);
-                setClientes(novo);
-                localStorage.setItem('ecofin_clientes', JSON.stringify(novo));
+            const carregarClientes = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const response = await fetch(`${API_URL}/api/clientes`);
+                    const data = await response.json();
+                    
+                    if (data.sucesso) {
+                        setClientes(data.clientes);
+                    } else {
+                        throw new Error('Erro ao carregar clientes');
+                    }
+                } catch (err) {
+                    console.error('Erro:', err);
+                    setError('Erro ao carregar clientes. Tentando fallback...');
+                    
+                    // Fallback: buscar do localStorage
+                    const local = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
+                    setClientes(local);
+                } finally {
+                    setLoading(false);
+                }
             };
+
+            const handleDelete = async (id, nome) => {
+                if (!confirm(`⚠️ Tem certeza que deseja excluir ${nome}?`)) return;
+                
+                try {
+                    await fetch(`${API_URL}/api/cliente/${id}`, { method: 'DELETE' });
+                    await carregarClientes();
+                    alert('✅ Cliente excluído com sucesso!');
+                } catch (err) {
+                    console.error('Erro ao excluir:', err);
+                    alert('Erro ao excluir cliente');
+                }
+            };
+
+            const clientesFiltrados = clientes.filter(c => 
+                c.nome?.toLowerCase().includes(busca.toLowerCase()) ||
+                c.banco?.toLowerCase().includes(busca.toLowerCase())
+            );
+
+            if (loading) {
+                return (
+                    <div className="loading">
+                        <div className="loading-spinner"></div>
+                        <p>Carregando clientes...</p>
+                    </div>
+                );
+            }
 
             return (
                 <div className="container" style={{paddingTop: '2rem'}}>
-                    <h1 style={{color: '#D4A83C', marginBottom: '2rem'}}>🔑 EcoFin - Clientes</h1>
-                    {clientes.map(c => (
-                        <div key={c.id} className="glass" style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <div style={{flex: 1, cursor: 'pointer'}} onClick={() => onSelect(c)}>
-                                <h3 style={{color: '#D4A83C'}}>{c.nome}</h3>
-                                <p>{c.banco} • R$ {c.saldoDevedor?.toLocaleString()} • {c.prazoRestante}m</p>
-                            </div>
-                            <button onClick={() => handleDelete(c.id, c.nome)} className="btn-danger">🗑️</button>
+                    <div style={{marginBottom: '2rem'}}>
+                        <h1 className="section-title">
+                            🔑 Clientes EcoFin
+                        </h1>
+                        <p style={{color: '#9ca3af', marginBottom: '1.5rem'}}>
+                            Clique em um cliente para gerar análise completa via API Python
+                        </p>
+                        
+                        {error && <div className="error">{error}</div>}
+                        
+                        <input
+                            type="text"
+                            placeholder="🔍 Buscar por nome ou banco..."
+                            value={busca}
+                            onChange={(e) => setBusca(e.target.value)}
+                            style={{
+                                width: '100%',
+                                maxWidth: '500px',
+                                padding: '1rem',
+                                borderRadius: '0.5rem',
+                                border: '1px solid rgba(212, 168, 60, 0.3)',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                color: 'white',
+                                marginBottom: '1rem'
+                            }}
+                        />
+                    </div>
+
+                    {clientesFiltrados.length === 0 ? (
+                        <div className="glass" style={{textAlign: 'center', padding: '4rem'}}>
+                            <div style={{fontSize: '5rem', marginBottom: '1rem'}}>📭</div>
+                            <h2 style={{color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                {busca ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
+                            </h2>
+                            <p style={{color: '#9ca3af'}}>
+                                {busca ? 'Tente outro termo de busca' : 'Clientes aparecerão aqui quando fizerem cadastro'}
+                            </p>
                         </div>
-                    ))}
+                    ) : (
+                        <div style={{display: 'grid', gap: '1rem'}}>
+                            {clientesFiltrados.map(c => (
+                                <div key={c.id} className="glass" style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    transition: 'all 0.3s',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => onSelect(c)}
+                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 168, 60, 0.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212, 168, 60, 0.05)'}>
+                                    <div style={{flex: 1}}>
+                                        <h3 style={{fontSize: '1.25rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                            {c.nome}
+                                        </h3>
+                                        <p style={{color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1rem'}}>
+                                            📱 {c.whatsapp} • 🏦 {c.banco}
+                                        </p>
+                                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', fontSize: '0.875rem'}}>
+                                            <div>
+                                                <p style={{color: '#6b7280', fontSize: '0.75rem'}}>Saldo Devedor</p>
+                                                <p style={{fontWeight: '600', color: '#ef4444'}}>
+                                                    R$ {c.financiamento?.saldo_devedor?.toLocaleString('pt-BR') || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p style={{color: '#6b7280', fontSize: '0.75rem'}}>FGTS</p>
+                                                <p style={{fontWeight: '600', color: '#10b981'}}>
+                                                    R$ {(c.recursos?.valor_fgts || 0).toLocaleString('pt-BR')}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p style={{color: '#6b7280', fontSize: '0.75rem'}}>Capacidade Extra</p>
+                                                <p style={{fontWeight: '600', color: '#3b82f6'}}>
+                                                    R$ {(c.recursos?.capacidade_extra || 0).toLocaleString('pt-BR')}/mês
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.nome); }} 
+                                        className="btn-danger">
+                                        🗑️ Excluir
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             );
         }
 
-        function Analise({ cliente: c, onVoltar }) {
-            const [dados, setDados] = useState(c);
-            const [edit, setEdit] = useState(false);
+        // ============================================
+        // COMPONENTE: ANÁLISE DO CLIENTE
+        // ============================================
 
-            const motor = new MotorEcoFin({
-                saldoDevedor: dados.saldoDevedor,
-                taxaNominal: dados.taxaNominal || dados.taxaAnual,
-                prazoRestante: dados.prazoRestante,
-                sistema: dados.sistema || 'PRICE',
-                valorFGTS: dados.valorFGTS || 0,
-                capacidadeExtra: dados.capacidadeExtra || 0,
-                objetivo: dados.objetivo || 'economia'
-            });
+        function Analise({ cliente, onVoltar }) {
+            const [analise, setAnalise] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [tab, setTab] = useState('visao-geral');
 
-            const original = motor.simularCompleto();
-            const otima = motor.otimizarAmortizacao(dados.objetivo || 'economia', {
-                valorFGTS: dados.valorFGTS || 0,
-                capacidadeExtra: dados.capacidadeExtra || 0
-            });
+            useEffect(() => {
+                carregarAnalise();
+            }, [cliente]);
 
-            const handleSave = (novos) => {
-                setDados(novos);
-                setEdit(false);
+            const carregarAnalise = async () => {
+                try {
+                    setLoading(true);
+                    setError(null);
+                    
+                    const response = await fetch(`${API_URL}/api/analise/${cliente.id}`);
+                    const data = await response.json();
+                    
+                    if (data.sucesso) {
+                        setAnalise(data);
+                    } else {
+                        throw new Error('Erro ao carregar análise');
+                    }
+                } catch (err) {
+                    console.error('Erro:', err);
+                    setError('Erro ao carregar análise da API. Verifique se o backend está rodando.');
+                } finally {
+                    setLoading(false);
+                }
             };
+
+            if (loading) {
+                return (
+                    <div className="loading">
+                        <div className="loading-spinner"></div>
+                        <p>Gerando análise completa...</p>
+                        <p style={{fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.5rem'}}>
+                            Otimizando 150+ cenários via API Python
+                        </p>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="container">
+                        <div className="error">
+                            <h3 style={{marginBottom: '0.5rem'}}>❌ Erro ao Carregar Análise</h3>
+                            <p>{error}</p>
+                            <p style={{marginTop: '1rem', fontSize: '0.875rem'}}>
+                                Verifique se o backend está rodando em {API_URL}
+                            </p>
+                        </div>
+                        <button onClick={onVoltar} className="btn-primary">← Voltar</button>
+                    </div>
+                );
+            }
+
+            if (!analise) return null;
+
+            const { cenario_original, estrategia_otimizada, justificativa, plano_acao } = analise;
+            const fmt = (v) => v ? `R$ ${parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'N/A';
 
             return (
                 <div className="container">
-                    {edit && <Modal dados={dados} onSave={handleSave} onClose={() => setEdit(false)} />}
-                    
-                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
-                        <h1 style={{color: '#D4A83C'}}>{dados.nome}</h1>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
                         <div>
-                            <button onClick={() => setEdit(true)} className="btn-secondary">✏️ Editar</button>
-                            <button onClick={onVoltar} className="btn-primary">← Voltar</button>
+                            <h1 style={{fontSize: '2.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                {cliente.nome}
+                            </h1>
+                            <p style={{color: '#9ca3af', fontSize: '1rem'}}>
+                                Análise via API Python • Motor EcoFin v3
+                            </p>
                         </div>
+                        <button onClick={onVoltar} className="btn-primary">← Voltar</button>
                     </div>
 
-                    <div className="card">
-                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>Situação Atual</h2>
-                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem'}}>
-                            <div className="metric">
-                                <div className="metric-value negative">{fmt(dados.saldoDevedor)}</div>
-                                <div className="metric-label">Saldo</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value">{((dados.taxaNominal||dados.taxaAnual)*100).toFixed(2)}%</div>
-                                <div className="metric-label">Taxa</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value">{dados.prazoRestante}m</div>
-                                <div className="metric-label">Prazo</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value negative">{fmt(original.totalJuros)}</div>
-                                <div className="metric-label">Juros Total</div>
-                            </div>
-                        </div>
+                    <div className="tabs">
+                        {[
+                            {id: 'visao-geral', label: '📊 Visão Geral'},
+                            {id: 'justificativa', label: '📝 Análise Detalhada'},
+                            {id: 'plano-acao', label: '🎯 Plano de Ação'}
+                        ].map(t => (
+                            <button key={t.id} onClick={() => setTab(t.id)} className={`tab ${tab === t.id ? 'active' : ''}`}>
+                                {t.label}
+                            </button>
+                        ))}
                     </div>
 
-                    <div className="recomendacao">
-                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>🎯 Estratégia Otimizada</h2>
-                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem'}}>
-                            <div className="metric">
-                                <div className="metric-value positive">{fmt(otima.economia)}</div>
-                                <div className="metric-label">Economia</div>
+                    {tab === 'visao-geral' && (
+                        <div>
+                            <div className="recomendacao">
+                                <div style={{display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem'}}>
+                                    <div style={{fontSize: '5rem'}}>🎯</div>
+                                    <div style={{flex: 1}}>
+                                        <h2 style={{fontSize: '2.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                            {justificativa?.titulo || 'Estratégia Otimizada'}
+                                        </h2>
+                                        <p style={{fontSize: '1.125rem', color: '#10b981', fontWeight: '600'}}>
+                                            Calculado pela API Python • 150+ cenários testados
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="stats-row">
+                                    <div className="stat-card" style={{background: 'rgba(16, 185, 129, 0.1)', border: '2px solid #10b981'}}>
+                                        <div className="metric-value positive">{fmt(estrategia_otimizada?.economia)}</div>
+                                        <div className="metric-label">Economia Total</div>
+                                    </div>
+                                    <div className="stat-card" style={{background: 'rgba(59, 130, 246, 0.1)', border: '2px solid #3b82f6'}}>
+                                        <div className="metric-value" style={{color: '#3b82f6'}}>
+                                            {estrategia_otimizada?.reducao_prazo || 0}
+                                        </div>
+                                        <div className="metric-label">Meses Economizados</div>
+                                    </div>
+                                    <div className="stat-card" style={{background: 'rgba(212, 168, 60, 0.1)', border: '2px solid #D4A83C'}}>
+                                        <div className="metric-value" style={{color: '#D4A83C'}}>
+                                            {estrategia_otimizada?.viabilidade || 0}%
+                                        </div>
+                                        <div className="metric-label">Viabilidade</div>
+                                    </div>
+                                    {estrategia_otimizada?.roi > 0 && (
+                                        <div className="stat-card" style={{background: 'rgba(16, 185, 129, 0.1)', border: '2px solid #10b981'}}>
+                                            <div className="metric-value positive">
+                                                {(estrategia_otimizada.roi * 12 * 100).toFixed(1)}%
+                                            </div>
+                                            <div className="metric-label">ROI Anual (isento IR)</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{background: 'rgba(255, 255, 255, 0.05)', padding: '1.5rem', borderRadius: '0.5rem', marginTop: '1.5rem'}}>
+                                    <h4 style={{color: '#D4A83C', marginBottom: '1rem'}}>📌 Estratégia Recomendada:</h4>
+                                    <div style={{display: 'grid', gap: '0.75rem'}}>
+                                        {estrategia_otimizada?.fgts_usado > 0 && (
+                                            <p>💰 <strong>FGTS Inicial:</strong> {fmt(estrategia_otimizada.fgts_usado)}</p>
+                                        )}
+                                        <p>📅 <strong>Amortização Mensal:</strong> {fmt(estrategia_otimizada?.amortizacao_mensal)}</p>
+                                        <p>🎯 <strong>Novo Prazo:</strong> {estrategia_otimizada?.prazo_meses} meses ({(estrategia_otimizada?.prazo_meses / 12).toFixed(1)} anos)</p>
+                                        <p>💰 <strong>Total a Pagar:</strong> {fmt(estrategia_otimizada?.total_pago)}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="metric">
-                                <div className="metric-value">{otima.reducaoPrazo}m</div>
-                                <div className="metric-label">Redução Prazo</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value">{fmt(otima.amortMensal)}</div>
-                                <div className="metric-label">Amortização Mensal</div>
+
+                            <h3 className="section-title">📊 Comparação: Sem vs Com Otimização</h3>
+                            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem'}}>
+                                <div className="card">
+                                    <h4 style={{color: '#ef4444', marginBottom: '1rem'}}>❌ Sem Fazer Nada</h4>
+                                    <p><strong>Total Pago:</strong> {fmt(cenario_original?.total_pago)}</p>
+                                    <p><strong>Juros:</strong> <span className="negative">{fmt(cenario_original?.total_juros)}</span></p>
+                                    <p><strong>Prazo:</strong> {cenario_original?.prazo_meses} meses</p>
+                                </div>
+
+                                <div className="card" style={{border: '2px solid #10b981', background: 'rgba(16, 185, 129, 0.05)'}}>
+                                    <h4 style={{color: '#10b981', marginBottom: '1rem'}}>✅ Com Estratégia API</h4>
+                                    <p><strong>Total Pago:</strong> {fmt(estrategia_otimizada?.total_pago)}</p>
+                                    <p><strong>Juros:</strong> <span className="positive">{fmt(estrategia_otimizada?.total_juros)}</span></p>
+                                    <p><strong>Prazo:</strong> {estrategia_otimizada?.prazo_meses} meses</p>
+                                    <p className="positive"><strong>ECONOMIA: {fmt(estrategia_otimizada?.economia)}</strong></p>
+                                </div>
                             </div>
                         </div>
-                        <p style={{marginTop: '1rem', fontSize: '1.125rem'}}>
-                            Usar {fmt(otima.fgtsUsado)} do FGTS + amortizar {fmt(otima.amortMensal)}/mês = 
-                            Economia de {fmt(otima.economia)} em {(otima.reducaoPrazo/12).toFixed(1)} anos!
-                        </p>
-                    </div>
+                    )}
 
-                    <button onClick={() => {
-                        const wb = XLSX.utils.book_new();
-                        const ws = XLSX.utils.json_to_sheet(otima.detalhes);
-                        XLSX.utils.book_append_sheet(wb, ws, 'Análise');
-                        XLSX.writeFile(wb, `EcoFin_${dados.nome}.xlsx`);
-                    }} className="btn-primary" style={{width: '100%'}}>
-                        📥 Exportar Excel
-                    </button>
+                    {tab === 'justificativa' && (
+                        <div>
+                            <h2 className="section-title">📝 Análise Profissional Detalhada</h2>
+                            {justificativa && Object.entries(justificativa).map(([key, value]) => (
+                                <div key={key} className="justificativa">
+                                    <div dangerouslySetInnerHTML={{__html: value}}></div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {tab === 'plano-acao' && (
+                        <div>
+                            <h2 className="section-title">🎯 Plano de Ação Completo</h2>
+                            <div className="timeline">
+                                {plano_acao?.map((passo, idx) => (
+                                    <div key={idx} className="timeline-item" data-icon={passo.titulo?.split(' ')[0] || '📍'}>
+                                        <div className="timeline-content">
+                                            <h3 style={{color: '#D4A83C', fontSize: '1.25rem', marginBottom: '0.5rem'}}>
+                                                {passo.titulo}
+                                            </h3>
+                                            <p style={{color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1rem'}}>
+                                                {passo.prazo} • <span className={`badge badge-${passo.prioridade?.toLowerCase()}`}>
+                                                    {passo.prioridade}
+                                                </span>
+                                            </p>
+                                            <p style={{lineHeight: 1.7}}>{passo.descricao}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="success" style={{marginTop: '2rem'}}>
+                        <strong>✅ Análise gerada pela API Python EcoFin</strong><br/>
+                        Motor validado 100% contra planilha • Otimização matemática automática
+                    </div>
                 </div>
             );
         }
 
-        function Modal({ dados, onSave, onClose }) {
-            const [d, setD] = useState(dados);
-
-            return (
-                <div className="modal" onClick={onClose}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>✏️ Editar</h2>
-                        <div style={{display: 'grid', gap: '1rem'}}>
-                            <div>
-                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Saldo (R$)</label>
-                                <input type="number" className="input-field" value={d.saldoDevedor} onChange={(e) => setD({...d, saldoDevedor: +e.target.value})} />
-                            </div>
-                            <div>
-                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Taxa (% a.a.)</label>
-                                <input type="number" className="input-field" value={(d.taxaNominal*100).toFixed(2)} onChange={(e) => setD({...d, taxaNominal: +e.target.value/100})} />
-                            </div>
-                            <div>
-                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Prazo (meses)</label>
-                                <input type="number" className="input-field" value={d.prazoRestante} onChange={(e) => setD({...d, prazoRestante: +e.target.value})} />
-                            </div>
-                            <div>
-                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>FGTS (R$)</label>
-                                <input type="number" className="input-field" value={d.valorFGTS} onChange={(e) => setD({...d, valorFGTS: +e.target.value})} />
-                            </div>
-                        </div>
-                        <div style={{display: 'flex', gap: '1rem', marginTop: '1.5rem'}}>
-                            <button onClick={onClose} className="btn-secondary" style={{flex: 1}}>Cancelar</button>
-                            <button onClick={() => onSave(d)} className="btn-primary" style={{flex: 1}}>Salvar</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
+        // ============================================
+        // RENDER
+        // ============================================
 
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>

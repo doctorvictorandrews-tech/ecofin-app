@@ -54,7 +54,8 @@ app.add_middleware(
         "https://meuecofin.com.br",
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://localhost:8000"
+        "http://localhost:8000",
+        "*"  # ← TEMPORÁRIO: Permite todas as origens para debug
     ],
     allow_credentials=True,
     allow_methods=["*"],

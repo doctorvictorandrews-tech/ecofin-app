@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Painel Administrativo</title>
+    <title>EcoFin - Painel</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
 /**
@@ -475,246 +474,226 @@ if (typeof module !== 'undefined' && module.exports) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000; color: white; }
         .container { max-width: 1600px; margin: 0 auto; padding: 2rem; }
-        .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; }
+        .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; padding: 2rem; }
         .card { background: rgba(27, 77, 62, 0.1); padding: 2rem; border-radius: 1rem; margin-bottom: 1.5rem; border: 1px solid rgba(212, 168, 60, 0.2); }
-        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; transition: all 0.3s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
+        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; }
         .btn-secondary { background: #1B4D3E; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; }
         .btn-danger { background: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 600; margin-left: 0.5rem; }
-        .btn-danger:hover { background: #dc2626; }
         .input-field { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 168, 60, 0.3); color: white; padding: 0.75rem; border-radius: 0.5rem; width: 100%; }
-        .input-field:focus { background: rgba(255, 255, 255, 0.12); border-color: #D4A83C; outline: none; }
         .metric { text-align: center; padding: 1.5rem; }
-        .metric-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .metric-value { font-size: 2.5rem; font-weight: 700; }
         .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        .data-table thead { background: rgba(212, 168, 60, 0.2); position: sticky; top: 0; z-index: 10; }
-        .data-table th { padding: 1rem 0.75rem; text-align: right; font-weight: 700; color: #D4A83C; border-bottom: 2px solid #D4A83C; }
-        .data-table th:first-child { text-align: left; }
+        .data-table th { padding: 1rem; text-align: right; font-weight: 700; color: #D4A83C; border-bottom: 2px solid #D4A83C; }
         .data-table td { padding: 0.75rem; text-align: right; border-bottom: 1px solid rgba(212, 168, 60, 0.1); }
-        .data-table td:first-child { text-align: left; font-weight: 600; }
-        .data-table tr:hover { background: rgba(212, 168, 60, 0.05); }
-        .year-header { background: rgba(212, 168, 60, 0.15) !important; cursor: pointer; user-select: none; }
-        .year-header:hover { background: rgba(212, 168, 60, 0.25) !important; }
+        .year-header { background: rgba(212, 168, 60, 0.15) !important; cursor: pointer; }
         .year-header td { font-size: 1rem; font-weight: 700; color: #D4A83C; padding: 1rem !important; }
-        .positive { color: #10b981; font-weight: 600; }
-        .negative { color: #ef4444; font-weight: 600; }
-        .warning { color: #f59e0b; font-weight: 600; }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .warning { color: #f59e0b; }
         .recomendacao { background: linear-gradient(135deg, rgba(212, 168, 60, 0.2) 0%, rgba(27, 77, 62, 0.2) 100%); border: 2px solid #D4A83C; padding: 2.5rem; border-radius: 1rem; margin: 2rem 0; }
-        .justificativa { background: rgba(255, 255, 255, 0.03); padding: 1.5rem; border-left: 4px solid #D4A83C; border-radius: 0.5rem; margin: 1rem 0; line-height: 1.8; }
-        .section-title { font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; color: #D4A83C; }
-        .toolbar { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .collapse-icon { display: inline-block; margin-right: 0.5rem; transition: transform 0.3s; }
-        .collapsed { transform: rotate(-90deg); }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 2px solid #D4A83C; max-height: 80vh; overflow-y: auto; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.6s ease-out; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-            const motor = new MotorEcoFin({
-                saldoDevedor: cliente.saldoDevedor,
-                taxaNominal: cliente.taxaNominal || cliente.taxaAnual,
-                prazoRestante: cliente.prazoRestante,
-                sistema: cliente.sistema || 'PRICE',
-                tr: cliente.tr || 0.0015,
-                seguroMensal: cliente.seguroMensal || 25,
-                taxaAdm: cliente.taxaAdm || 50,
-                valorFGTS: cliente.valorFGTS || 0,
-                capacidadeExtra: cliente.capacidadeExtra || 0,
-                objetivo: cliente.objetivo || 'economia',
-                trabalhaCLT: cliente.trabalhaCLT || false
-            });
+        const { useState, useEffect } = React;
+        const SENHA = "ecofin2025";
+        const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
 
-            const recursos = {
-                valorFGTS: cliente.valorFGTS || 0,
-                capacidadeExtra: cliente.capacidadeExtra || 0,
-                temReserva: cliente.temReservaEmergencia || false
-            };
-
-            const estrategiaOtima = motor.otimizarAmortizacao(cliente.objetivo || 'economia', recursos);
-            const estrategiaOriginal = motor.simularCompleto();
-            const justificativa = motor.gerarJustificativa(estrategiaOtima, estrategiaOriginal);
-
-            const handleSaveEdicao = (novosDados) => {
-                setCliente(novosDados);
-                setMostrarEdicao(false);
-                alert('✅ Dados salvos! Recalculando...');
-            };
-
-            return (
-                <div className="container">
-                    {mostrarEdicao && <ModalEdicao cliente={cliente} onSave={handleSaveEdicao} onClose={() => setMostrarEdicao(false)} />}
-
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem'}}>
-                        <h1 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C'}}>Análise - {cliente.nome}</h1>
-                        <div>
-                            <button onClick={() => setMostrarEdicao(true)} className="btn-secondary">✏️ Editar Dados</button>
-                            <button onClick={onVoltar} className="btn-primary" style={{marginLeft: '1rem'}}>← Voltar</button>
-                        </div>
-                    </div>
-
-                    <div className="glass" style={{padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
-                        {[
-                            {id: 'visao-geral', label: '📊 Visão Geral'},
-                            {id: 'tabela-completa', label: '📋 Tabela Completa'}
-                        ].map(tab => (
-                            <button key={tab.id} onClick={() => setTabAtiva(tab.id)}
-                                style={{
-                                    padding: '0.75rem 1.5rem', borderRadius: '0.5rem', border: 'none',
-                                    background: tabAtiva === tab.id ? '#D4A83C' : 'transparent',
-                                    color: tabAtiva === tab.id ? '#000' : '#D4A83C',
-                                    cursor: 'pointer', fontWeight: '700', transition: 'all 0.3s'
-                                }}>
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {tabAtiva === 'visao-geral' && (
-                        <div className="animate-in">
-                            <div className="card">
-                                <h2 style={{color: '#D4A83C', marginBottom: '1.5rem'}}>Situação Atual</h2>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem'}}>
-                                    <div className="metric">
-                                        <div className="metric-value negative">{formato(cliente.saldoDevedor)}</div>
-                                        <div className="metric-label">Saldo Devedor</div>
-                                    </div>
-                                    <div className="metric">
-                                        <div className="metric-value warning">{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</div>
-                                        <div className="metric-label">Taxa ao Ano</div>
-                                    </div>
-                                    <div className="metric">
-                                        <div className="metric-value" style={{color: '#1B4D3E'}}>{(cliente.prazoRestante/12).toFixed(1)}</div>
-                                        <div className="metric-label">Anos Restantes</div>
-                                    </div>
-                                    <div className="metric">
-                                        <div className="metric-value negative">{formato(estrategiaOriginal.totalJuros)}</div>
-                                        <div className="metric-label">Total em Juros</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="recomendacao">
-                                <div style={{fontSize: '3rem', marginBottom: '1rem'}}>🔑</div>
-                                <h3 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
-                                    {justificativa.titulo}
-                                </h3>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginTop: '2rem'}}>
-                                    <div className="metric">
-                                        <div className="metric-value positive">{formato(estrategiaOtima.economia)}</div>
-                                        <div className="metric-label">Economia Total</div>
-                                    </div>
-                                    <div className="metric">
-                                        <div className="metric-value" style={{color: '#1B4D3E'}}>{estrategiaOtima.reducaoPrazo || 0}</div>
-                                        <div className="metric-label">Meses Economizados</div>
-                                    </div>
-                                    <div className="metric">
-                                        <div className="metric-value" style={{color: '#D4A83C'}}>{(estrategiaOtima.prazoMeses/12).toFixed(1)}</div>
-                                        <div className="metric-label">Anos para Quitar</div>
-                                    </div>
-                                </div>
-                                <div style={{marginTop: '2rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '0.5rem'}}>
-                                    <p style={{fontSize: '1.125rem', lineHeight: '1.8'}}>
-                                        <strong style={{color: '#D4A83C'}}>Resumo:</strong> 
-                                        {estrategiaOtima.fgtsUsado > 0 && ` Usar ${formato(estrategiaOtima.fgtsUsado)} do FGTS + `}
-                                        Amortizar {formato(estrategiaOtima.amortMensal)}/mês = 
-                                        Economia de {formato(estrategiaOtima.economia)} em {((estrategiaOtima.reducaoPrazo||0)/12).toFixed(1)} anos a menos!
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="justificativa">
-                                <h4 style={{color: '#D4A83C', marginBottom: '1rem'}}>Por que essa é a melhor estratégia?</h4>
-                                <p style={{marginBottom: '1rem'}}>{justificativa.paragrafo1}</p>
-                                <p style={{marginBottom: '1rem'}}>{justificativa.paragrafo2}</p>
-                                <p style={{marginBottom: '1rem'}}>{justificativa.paragrafo3}</p>
-                                <p style={{marginBottom: '1rem'}}>{justificativa.paragrafo4}</p>
-                                <div style={{background: 'rgba(212, 168, 60, 0.1)', padding: '1rem', borderRadius: '0.5rem', marginTop: '1.5rem'}}>
-                                    <p>{justificativa.insight}</p>
-                                </div>
-                            </div>
-
-                            <button onClick={() => exportarExcel(estrategiaOtima, cliente)} className="btn-primary" style={{width: '100%', marginTop: '2rem'}}>
-                                📥 Exportar Excel Completo
-                            </button>
-                        </div>
-                    )}
-
-                    {tabAtiva === 'tabela-completa' && (
-                        <div className="animate-in">
-                            <div className="card">
-                                <h2 style={{color: '#D4A83C', marginBottom: '1.5rem'}}>📋 Tabela Mês a Mês</h2>
-                                <TabelaCompleta estrategia={estrategiaOtima} estrategiaOriginal={estrategiaOriginal} />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        // ==================== APP ====================
         function App() {
-            const [autenticado, setAutenticado] = useState(false);
+            const [auth, setAuth] = useState(false);
             const [view, setView] = useState('lista');
-            const [clienteSelecionado, setClienteSelecionado] = useState(null);
+            const [cliente, setCliente] = useState(null);
 
             useEffect(() => {
-                const auth = sessionStorage.getItem('ecofin_autenticado');
-                if (auth === 'true') {
-                    setAutenticado(true);
+                if (sessionStorage.getItem('auth') === 'ok') {
+                    setAuth(true);
                 } else {
-                    const senha = prompt('🔐 Senha de acesso:');
-                    if (senha === SENHA_ADMIN) {
-                        sessionStorage.setItem('ecofin_autenticado', 'true');
-                        setAutenticado(true);
+                    const s = prompt('Senha:');
+                    if (s === SENHA) {
+                        sessionStorage.setItem('auth', 'ok');
+                        setAuth(true);
                     } else {
-                        alert('❌ Senha incorreta!');
+                        alert('Senha incorreta');
                         window.location.href = '/';
                     }
                 }
             }, []);
 
-            if (!autenticado) {
-                return <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh'}}>
-                    <div style={{textAlign: 'center'}}>
-                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>🔒</div>
-                        <p style={{color: '#D4A83C', fontSize: '1.25rem'}}>Verificando acesso...</p>
-                    </div>
-                </div>;
+            if (!auth) return <div style={{textAlign: 'center', padding: '5rem', color: '#D4A83C'}}>Verificando...</div>;
+
+            if (view === 'lista') {
+                return <Lista onSelect={(c) => { setCliente(c); setView('analise'); }} />;
             }
 
-            return (
-                <div style={{minHeight: '100vh'}}>
-                    <nav style={{background: 'rgba(212, 168, 60, 0.1)', borderBottom: '2px solid #D4A83C', padding: '1.5rem'}}>
-                        <div className="container" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                            <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C'}}>🔑 EcoFin - Painel Profissional</h1>
-                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>Motor Definitivo v3.0</p>
-                        </div>
-                    </nav>
+            return <Analise cliente={cliente} onVoltar={() => setView('lista')} />;
+        }
 
-                    {view === 'lista' && (
-                        <div className="container" style={{paddingTop: '2rem'}}>
-                            <div style={{marginBottom: '2rem'}}>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>Clientes</h2>
-                                <p style={{color: '#9ca3af'}}>Clique para analisar • Exclua os que não precisar</p>
+        function Lista({ onSelect }) {
+            const [clientes, setClientes] = useState([]);
+
+            useEffect(() => {
+                fetch('https://ecofin-app-production.up.railway.app/api/clientes')
+                    .then(r => r.json())
+                    .then(d => d.sucesso && setClientes(d.clientes))
+                    .catch(() => setClientes(JSON.parse(localStorage.getItem('ecofin_clientes') || '[]')));
+            }, []);
+
+            const handleDelete = (id, nome) => {
+                if (!confirm(`Excluir ${nome}?`)) return;
+                fetch(`https://ecofin-app-production.up.railway.app/api/cliente/${id}`, {method: 'DELETE'}).catch(() => {});
+                const novo = clientes.filter(c => c.id !== id);
+                setClientes(novo);
+                localStorage.setItem('ecofin_clientes', JSON.stringify(novo));
+            };
+
+            return (
+                <div className="container" style={{paddingTop: '2rem'}}>
+                    <h1 style={{color: '#D4A83C', marginBottom: '2rem'}}>🔑 EcoFin - Clientes</h1>
+                    {clientes.map(c => (
+                        <div key={c.id} className="glass" style={{marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <div style={{flex: 1, cursor: 'pointer'}} onClick={() => onSelect(c)}>
+                                <h3 style={{color: '#D4A83C'}}>{c.nome}</h3>
+                                <p>{c.banco} • R$ {c.saldoDevedor?.toLocaleString()} • {c.prazoRestante}m</p>
                             </div>
-                            <ListaClientes onSelectCliente={(c) => { setClienteSelecionado(c); setView('analise'); }} />
+                            <button onClick={() => handleDelete(c.id, c.nome)} className="btn-danger">🗑️</button>
                         </div>
-                    )}
+                    ))}
+                </div>
+            );
+        }
+
+        function Analise({ cliente: c, onVoltar }) {
+            const [dados, setDados] = useState(c);
+            const [edit, setEdit] = useState(false);
+
+            const motor = new MotorEcoFin({
+                saldoDevedor: dados.saldoDevedor,
+                taxaNominal: dados.taxaNominal || dados.taxaAnual,
+                prazoRestante: dados.prazoRestante,
+                sistema: dados.sistema || 'PRICE',
+                valorFGTS: dados.valorFGTS || 0,
+                capacidadeExtra: dados.capacidadeExtra || 0,
+                objetivo: dados.objetivo || 'economia'
+            });
+
+            const original = motor.simularCompleto();
+            const otima = motor.otimizarAmortizacao(dados.objetivo || 'economia', {
+                valorFGTS: dados.valorFGTS || 0,
+                capacidadeExtra: dados.capacidadeExtra || 0
+            });
+
+            const handleSave = (novos) => {
+                setDados(novos);
+                setEdit(false);
+            };
+
+            return (
+                <div className="container">
+                    {edit && <Modal dados={dados} onSave={handleSave} onClose={() => setEdit(false)} />}
                     
-                    {view === 'analise' && clienteSelecionado && (
-                        <AnaliseCompleta cliente={clienteSelecionado} onVoltar={() => setView('lista')} />
-                    )}
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '2rem'}}>
+                        <h1 style={{color: '#D4A83C'}}>{dados.nome}</h1>
+                        <div>
+                            <button onClick={() => setEdit(true)} className="btn-secondary">✏️ Editar</button>
+                            <button onClick={onVoltar} className="btn-primary">← Voltar</button>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>Situação Atual</h2>
+                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem'}}>
+                            <div className="metric">
+                                <div className="metric-value negative">{fmt(dados.saldoDevedor)}</div>
+                                <div className="metric-label">Saldo</div>
+                            </div>
+                            <div className="metric">
+                                <div className="metric-value">{((dados.taxaNominal||dados.taxaAnual)*100).toFixed(2)}%</div>
+                                <div className="metric-label">Taxa</div>
+                            </div>
+                            <div className="metric">
+                                <div className="metric-value">{dados.prazoRestante}m</div>
+                                <div className="metric-label">Prazo</div>
+                            </div>
+                            <div className="metric">
+                                <div className="metric-value negative">{fmt(original.totalJuros)}</div>
+                                <div className="metric-label">Juros Total</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="recomendacao">
+                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>🎯 Estratégia Otimizada</h2>
+                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem'}}>
+                            <div className="metric">
+                                <div className="metric-value positive">{fmt(otima.economia)}</div>
+                                <div className="metric-label">Economia</div>
+                            </div>
+                            <div className="metric">
+                                <div className="metric-value">{otima.reducaoPrazo}m</div>
+                                <div className="metric-label">Redução Prazo</div>
+                            </div>
+                            <div className="metric">
+                                <div className="metric-value">{fmt(otima.amortMensal)}</div>
+                                <div className="metric-label">Amortização Mensal</div>
+                            </div>
+                        </div>
+                        <p style={{marginTop: '1rem', fontSize: '1.125rem'}}>
+                            Usar {fmt(otima.fgtsUsado)} do FGTS + amortizar {fmt(otima.amortMensal)}/mês = 
+                            Economia de {fmt(otima.economia)} em {(otima.reducaoPrazo/12).toFixed(1)} anos!
+                        </p>
+                    </div>
+
+                    <button onClick={() => {
+                        const wb = XLSX.utils.book_new();
+                        const ws = XLSX.utils.json_to_sheet(otima.detalhes);
+                        XLSX.utils.book_append_sheet(wb, ws, 'Análise');
+                        XLSX.writeFile(wb, `EcoFin_${dados.nome}.xlsx`);
+                    }} className="btn-primary" style={{width: '100%'}}>
+                        📥 Exportar Excel
+                    </button>
+                </div>
+            );
+        }
+
+        function Modal({ dados, onSave, onClose }) {
+            const [d, setD] = useState(dados);
+
+            return (
+                <div className="modal" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2 style={{color: '#D4A83C', marginBottom: '1rem'}}>✏️ Editar</h2>
+                        <div style={{display: 'grid', gap: '1rem'}}>
+                            <div>
+                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Saldo (R$)</label>
+                                <input type="number" className="input-field" value={d.saldoDevedor} onChange={(e) => setD({...d, saldoDevedor: +e.target.value})} />
+                            </div>
+                            <div>
+                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Taxa (% a.a.)</label>
+                                <input type="number" className="input-field" value={(d.taxaNominal*100).toFixed(2)} onChange={(e) => setD({...d, taxaNominal: +e.target.value/100})} />
+                            </div>
+                            <div>
+                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>Prazo (meses)</label>
+                                <input type="number" className="input-field" value={d.prazoRestante} onChange={(e) => setD({...d, prazoRestante: +e.target.value})} />
+                            </div>
+                            <div>
+                                <label style={{color: '#D4A83C', fontSize: '0.875rem'}}>FGTS (R$)</label>
+                                <input type="number" className="input-field" value={d.valorFGTS} onChange={(e) => setD({...d, valorFGTS: +e.target.value})} />
+                            </div>
+                        </div>
+                        <div style={{display: 'flex', gap: '1rem', marginTop: '1.5rem'}}>
+                            <button onClick={onClose} className="btn-secondary" style={{flex: 1}}>Cancelar</button>
+                            <button onClick={() => onSave(d)} className="btn-primary" style={{flex: 1}}>Salvar</button>
+                        </div>
+                    </div>
                 </div>
             );
         }
 
         ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
     </script>
 </body>
 </html>

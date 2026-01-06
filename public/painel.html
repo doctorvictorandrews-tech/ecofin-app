@@ -11,560 +11,97 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #0a0e14; color: #e4e7eb; line-height: 1.6; }
+        .container { max-width: 1800px; margin: 0 auto; padding: 2rem; }
         
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0a0e14;
-            color: #e4e7eb;
-            line-height: 1.6;
-        }
+        /* Header */
+        .header { background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%); border: 1px solid rgba(212, 168, 60, 0.15); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; position: relative; overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #D4A83C 0%, #E5B94D 50%, #D4A83C 100%); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; }
+        .client-info h1 { font-size: 2.5rem; font-weight: 800; color: #D4A83C; margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+        .client-meta { display: flex; gap: 2rem; flex-wrap: wrap; color: #8b92a0; font-size: 0.875rem; font-weight: 500; }
+        .client-meta-item { display: flex; align-items: center; gap: 0.5rem; }
         
-        .container { 
-            max-width: 1800px; 
-            margin: 0 auto; 
-            padding: 2rem; 
-        }
+        /* Botões */
+        .btn { padding: 0.875rem 1.75rem; border-radius: 0.5rem; border: none; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; box-shadow: 0 4px 12px rgba(212, 168, 60, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 168, 60, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #e4e7eb; border: 1px solid rgba(212, 168, 60, 0.2); }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.08); border-color: rgba(212, 168, 60, 0.4); }
         
-        /* Header Profissional */
-        .header {
-            background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
-            border: 1px solid rgba(212, 168, 60, 0.15);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
+        /* Tabs */
+        .tabs { display: flex; gap: 0.25rem; margin-bottom: 2rem; padding: 0.5rem; background: rgba(255, 255, 255, 0.02); border-radius: 0.75rem; border: 1px solid rgba(212, 168, 60, 0.1); overflow-x: auto; }
+        .tab { flex: 1; min-width: 120px; padding: 1rem 1.5rem; border-radius: 0.5rem; border: none; background: transparent; color: #8b92a0; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; white-space: nowrap; }
+        .tab:hover { background: rgba(255, 255, 255, 0.03); color: #D4A83C; }
+        .tab.active { background: rgba(212, 168, 60, 0.15); color: #D4A83C; box-shadow: 0 2px 8px rgba(212, 168, 60, 0.2); }
         
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #D4A83C 0%, #E5B94D 50%, #D4A83C 100%);
-        }
-        
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
-        
-        .client-info h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #D4A83C;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
-        
-        .client-meta {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            color: #8b92a0;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        .client-meta-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .client-meta-icon {
-            color: #D4A83C;
-            font-size: 1.125rem;
-        }
-        
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-        }
-        
-        /* Botões Profissionais */
-        .btn {
-            padding: 0.875rem 1.75rem;
-            border-radius: 0.5rem;
-            border: none;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%);
-            color: #000;
-            box-shadow: 0 4px 12px rgba(212, 168, 60, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212, 168, 60, 0.4);
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #e4e7eb;
-            border: 1px solid rgba(212, 168, 60, 0.2);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(212, 168, 60, 0.4);
-        }
-        
-        /* Tabs Profissionais */
-        .tabs {
-            display: flex;
-            gap: 0.25rem;
-            margin-bottom: 2rem;
-            padding: 0.5rem;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 0.75rem;
-            border: 1px solid rgba(212, 168, 60, 0.1);
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            border: none;
-            background: transparent;
-            color: #8b92a0;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .tab:hover {
-            background: rgba(255, 255, 255, 0.03);
-            color: #D4A83C;
-        }
-        
-        .tab.active {
-            background: rgba(212, 168, 60, 0.15);
-            color: #D4A83C;
-            box-shadow: 0 2px 8px rgba(212, 168, 60, 0.2);
-        }
-        
-        /* Cards de Métricas */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .metric-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-            border: 1px solid rgba(212, 168, 60, 0.15);
-            border-radius: 1rem;
-            padding: 1.75rem;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        
-        .metric-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(212, 168, 60, 0.3);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-        
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--card-color);
-            opacity: 0.6;
-        }
-        
+        /* Cards */
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .metric-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%); border: 1px solid rgba(212, 168, 60, 0.15); border-radius: 1rem; padding: 1.75rem; position: relative; overflow: hidden; transition: all 0.3s; }
+        .metric-card:hover { transform: translateY(-4px); border-color: rgba(212, 168, 60, 0.3); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--card-color); opacity: 0.6; }
         .metric-card.success { --card-color: #10b981; }
         .metric-card.info { --card-color: #3b82f6; }
         .metric-card.warning { --card-color: #f59e0b; }
         .metric-card.primary { --card-color: #D4A83C; }
+        .metric-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.9; }
+        .metric-value { font-size: 2.25rem; font-weight: 800; color: var(--card-color); margin-bottom: 0.5rem; letter-spacing: -0.02em; }
+        .metric-label { color: #8b92a0; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
         
-        .metric-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            opacity: 0.9;
-        }
+        /* Seção */
+        .section { background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%); border: 1px solid rgba(212, 168, 60, 0.1); border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; }
+        .section-title { font-size: 1.5rem; font-weight: 700; color: #D4A83C; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
         
-        .metric-value {
-            font-size: 2.25rem;
-            font-weight: 800;
-            color: var(--card-color);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
+        /* Tabela */
+        .table-container { overflow-x: auto; border-radius: 0.75rem; border: 1px solid rgba(212, 168, 60, 0.15); }
+        .table { width: 100%; border-collapse: collapse; }
+        .table thead { background: rgba(212, 168, 60, 0.1); position: sticky; top: 0; z-index: 10; }
+        .table th { padding: 1rem; text-align: left; font-weight: 700; font-size: 0.875rem; color: #D4A83C; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid rgba(212, 168, 60, 0.3); white-space: nowrap; }
+        .table td { padding: 0.875rem 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.875rem; }
+        .table tbody tr:hover { background: rgba(212, 168, 60, 0.05); }
+        .table tbody tr:nth-child(even) { background: rgba(0, 0, 0, 0.2); }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
         
-        .metric-label {
-            color: #8b92a0;
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .metric-change {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #8b92a0;
-        }
-        
-        .metric-change.positive { color: #10b981; }
-        .metric-change.negative { color: #ef4444; }
-        
-        /* Seções */
-        .section {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
-            border: 1px solid rgba(212, 168, 60, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #D4A83C;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .section-title-icon {
-            font-size: 1.75rem;
-        }
-        
-        /* Comparação Visual */
-        .comparison-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-        
-        .comparison-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 2px solid;
-            border-radius: 1rem;
-            padding: 2rem;
-            position: relative;
-        }
-        
-        .comparison-card.negative {
-            border-color: rgba(239, 68, 68, 0.3);
-        }
-        
-        .comparison-card.positive {
-            border-color: rgba(16, 185, 129, 0.3);
-            background: rgba(16, 185, 129, 0.03);
-        }
-        
-        .comparison-badge {
-            position: absolute;
-            top: -12px;
-            left: 2rem;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        
-        .comparison-badge.negative {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .comparison-badge.positive {
-            background: #10b981;
-            color: white;
-        }
-        
-        .comparison-stats {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-        
-        .comparison-stat {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .comparison-stat:last-child {
-            border-bottom: none;
-        }
-        
-        .comparison-stat-label {
-            color: #8b92a0;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        .comparison-stat-value {
-            font-size: 1.125rem;
-            font-weight: 700;
-        }
-        
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 3rem;
-        }
-        
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 1rem;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(180deg, #D4A83C 0%, rgba(212, 168, 60, 0.2) 100%);
-        }
-        
-        .timeline-item {
-            position: relative;
-            margin-bottom: 2rem;
-            padding-left: 1rem;
-        }
-        
-        .timeline-item::before {
-            content: attr(data-icon);
-            position: absolute;
-            left: -2.5rem;
-            width: 2.5rem;
-            height: 2.5rem;
-            background: #D4A83C;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            border: 3px solid #0a0e14;
-            box-shadow: 0 0 0 4px rgba(212, 168, 60, 0.2);
-        }
-        
-        .timeline-content {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(212, 168, 60, 0.15);
-        }
-        
-        .timeline-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: #D4A83C;
-            margin-bottom: 0.5rem;
-        }
-        
-        .timeline-meta {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-            color: #8b92a0;
-        }
-        
-        .timeline-description {
-            color: #e4e7eb;
-            line-height: 1.7;
-        }
-        
-        /* Gráfico Container */
-        .chart-container {
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 1rem;
-            padding: 2rem;
-            height: 400px;
-            position: relative;
-        }
-        
-        /* Estratégia Destacada */
-        .strategy-highlight {
-            background: linear-gradient(135deg, rgba(212, 168, 60, 0.15) 0%, rgba(229, 185, 77, 0.05) 100%);
-            border: 2px solid #D4A83C;
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .strategy-highlight::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(212, 168, 60, 0.1) 0%, transparent 70%);
-        }
-        
-        .strategy-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-        
-        .strategy-title {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #D4A83C;
-            margin-bottom: 0.5rem;
-        }
-        
-        .strategy-subtitle {
-            color: #10b981;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
-        
-        .strategy-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        
-        .strategy-detail {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 1.25rem;
-            border-radius: 0.75rem;
-            border: 1px solid rgba(212, 168, 60, 0.2);
-        }
-        
-        .strategy-detail-icon {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .strategy-detail-label {
-            color: #8b92a0;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        .strategy-detail-value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #e4e7eb;
-        }
+        /* Comparação */
+        .comparison-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .comparison-card { background: rgba(255, 255, 255, 0.02); border: 2px solid; border-radius: 1rem; padding: 2rem; position: relative; }
+        .comparison-card.negative { border-color: rgba(239, 68, 68, 0.3); }
+        .comparison-card.positive { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.03); }
+        .comparison-badge { position: absolute; top: -12px; left: 2rem; padding: 0.5rem 1rem; border-radius: 2rem; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .comparison-badge.negative { background: #ef4444; color: white; }
+        .comparison-badge.positive { background: #10b981; color: white; }
+        .comparison-stats { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+        .comparison-stat { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .comparison-stat:last-child { border-bottom: none; }
         
         /* Loading */
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            gap: 1.5rem;
-        }
+        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; gap: 1.5rem; }
+        .spinner { border: 4px solid rgba(212, 168, 60, 0.1); border-top: 4px solid #D4A83C; border-radius: 50%; width: 60px; height: 60px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .spinner {
-            border: 4px solid rgba(212, 168, 60, 0.1);
-            border-top: 4px solid #D4A83C;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-        }
+        /* Timeline */
+        .timeline { position: relative; padding-left: 3rem; }
+        .timeline::before { content: ''; position: absolute; left: 1rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, #D4A83C 0%, rgba(212, 168, 60, 0.2) 100%); }
+        .timeline-item { position: relative; margin-bottom: 2rem; padding-left: 1rem; }
+        .timeline-item::before { content: attr(data-icon); position: absolute; left: -2.5rem; width: 2.5rem; height: 2.5rem; background: #D4A83C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; border: 3px solid #0a0e14; box-shadow: 0 0 0 4px rgba(212, 168, 60, 0.2); }
+        .timeline-content { background: rgba(255, 255, 255, 0.03); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid rgba(212, 168, 60, 0.15); }
+        .timeline-title { font-size: 1.125rem; font-weight: 700; color: #D4A83C; margin-bottom: 0.5rem; }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        /* Gráfico */
+        .chart-container { background: rgba(255, 255, 255, 0.02); border-radius: 1rem; padding: 2rem; height: 400px; position: relative; }
         
-        .loading-text {
-            color: #D4A83C;
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
-        
-        .loading-subtext {
-            color: #8b92a0;
-            font-size: 0.875rem;
-        }
-        
-        /* Error */
-        .error-container {
-            background: rgba(239, 68, 68, 0.1);
-            border: 2px solid #ef4444;
-            border-radius: 1rem;
-            padding: 2rem;
-            text-align: center;
-        }
-        
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-        
-        .error-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #ef4444;
-            margin-bottom: 0.5rem;
-        }
-        
-        .error-message {
-            color: #8b92a0;
-            margin-bottom: 1.5rem;
-        }
+        /* Estratégia */
+        .strategy-highlight { background: linear-gradient(135deg, rgba(212, 168, 60, 0.15) 0%, rgba(229, 185, 77, 0.05) 100%); border: 2px solid #D4A83C; border-radius: 1rem; padding: 2rem; margin-bottom: 2rem; }
+        .strategy-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .strategy-detail { background: rgba(0, 0, 0, 0.2); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid rgba(212, 168, 60, 0.2); }
         
         /* Responsivo */
         @media (max-width: 768px) {
-            .comparison-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
-            
-            .client-info h1 {
-                font-size: 2rem;
-            }
+            .comparison-container { grid-template-columns: 1fr; }
+            .tabs { flex-direction: column; }
+            .client-info h1 { font-size: 2rem; }
+            .table-container { font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -618,7 +155,6 @@
         function Lista({ onSelect }) {
             const [clientes, setClientes] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [error, setError] = useState(null);
             const [busca, setBusca] = useState('');
 
             useEffect(() => {
@@ -628,15 +164,10 @@
             const carregarClientes = async () => {
                 try {
                     setLoading(true);
-                    setError(null);
-                    
                     const response = await fetch(`${API_URL}/api/clientes`);
                     const data = await response.json();
-                    
                     if (data.sucesso) {
                         setClientes(data.clientes);
-                    } else {
-                        throw new Error('Erro ao carregar clientes');
                     }
                 } catch (err) {
                     console.error('Erro:', err);
@@ -649,14 +180,11 @@
 
             const handleDelete = async (id, nome) => {
                 if (!confirm(`⚠️ Tem certeza que deseja excluir ${nome}?`)) return;
-                
                 try {
                     await fetch(`${API_URL}/api/cliente/${id}`, { method: 'DELETE' });
                     await carregarClientes();
-                    alert('✅ Cliente excluído com sucesso!');
                 } catch (err) {
-                    console.error('Erro ao excluir:', err);
-                    alert('Erro ao excluir cliente');
+                    console.error('Erro:', err);
                 }
             };
 
@@ -669,8 +197,7 @@
                 return (
                     <div className="loading">
                         <div className="spinner"></div>
-                        <p className="loading-text">Carregando clientes...</p>
-                        <p className="loading-subtext">Conectando à API Python</p>
+                        <p style={{color: '#D4A83C', fontSize: '1.125rem', fontWeight: '600'}}>Carregando clientes...</p>
                     </div>
                 );
             }
@@ -682,25 +209,11 @@
                             <div className="client-info">
                                 <h1>🔑 Painel EcoFin Pro</h1>
                                 <div className="client-meta">
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">📊</span>
-                                        <span>{clientes.length} clientes</span>
-                                    </div>
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">🎯</span>
-                                        <span>Motor Python v3</span>
-                                    </div>
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">✅</span>
-                                        <span>100% Validado</span>
-                                    </div>
+                                    <div className="client-meta-item"><span>📊</span> {clientes.length} clientes</div>
+                                    <div className="client-meta-item"><span>🎯</span> Motor Python v3</div>
                                 </div>
                             </div>
-                            <div className="header-actions">
-                                <button onClick={carregarClientes} className="btn btn-secondary">
-                                    🔄 Atualizar
-                                </button>
-                            </div>
+                            <button onClick={carregarClientes} className="btn btn-secondary">🔄 Atualizar</button>
                         </div>
                     </div>
                     
@@ -710,87 +223,26 @@
                             placeholder="🔍 Buscar por nome ou banco..."
                             value={busca}
                             onChange={(e) => setBusca(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '1rem 1.5rem',
-                                borderRadius: '0.75rem',
-                                border: '1px solid rgba(212, 168, 60, 0.2)',
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                color: '#e4e7eb',
-                                fontSize: '1rem',
-                                fontWeight: '500'
-                            }}
+                            style={{width: '100%', padding: '1rem 1.5rem', borderRadius: '0.75rem', border: '1px solid rgba(212, 168, 60, 0.2)', background: 'rgba(255, 255, 255, 0.03)', color: '#e4e7eb', fontSize: '1rem'}}
                         />
                     </div>
 
-                    {clientesFiltrados.length === 0 ? (
-                        <div className="error-container">
-                            <div className="error-icon">📭</div>
-                            <h2 className="error-title">
-                                {busca ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}
-                            </h2>
-                            <p className="error-message">
-                                {busca ? 'Tente outro termo de busca' : 'Clientes aparecerão aqui quando fizerem cadastro'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div style={{display: 'grid', gap: '1.5rem'}}>
-                            {clientesFiltrados.map(c => (
-                                <div key={c.id} className="section" style={{
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s'
-                                }}
-                                onClick={() => onSelect(c)}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(212, 168, 60, 0.4)';
-                                    e.currentTarget.style.transform = 'translateX(4px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(212, 168, 60, 0.1)';
-                                    e.currentTarget.style.transform = 'translateX(0)';
-                                }}>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem'}}>
-                                        <div>
-                                            <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
-                                                {c.nome}
-                                            </h3>
-                                            <div style={{display: 'flex', gap: '2rem', color: '#8b92a0', fontSize: '0.875rem'}}>
-                                                <span>📱 {c.whatsapp}</span>
-                                                <span>🏦 {c.banco}</span>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.nome); }} 
-                                            className="btn btn-secondary"
-                                            style={{background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444'}}>
-                                            🗑️ Excluir
-                                        </button>
-                                    </div>
-                                    
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem'}}>
-                                        <div style={{background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(239, 68, 68, 0.2)'}}>
-                                            <p style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem'}}>Saldo Devedor</p>
-                                            <p style={{fontSize: '1.25rem', fontWeight: '700', color: '#ef4444'}}>
-                                                R$ {c.financiamento?.saldo_devedor?.toLocaleString('pt-BR') || 'N/A'}
-                                            </p>
-                                        </div>
-                                        <div style={{background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(16, 185, 129, 0.2)'}}>
-                                            <p style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem'}}>FGTS Disponível</p>
-                                            <p style={{fontSize: '1.25rem', fontWeight: '700', color: '#10b981'}}>
-                                                R$ {(c.recursos?.valor_fgts || 0).toLocaleString('pt-BR')}
-                                            </p>
-                                        </div>
-                                        <div style={{background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '0.75rem', border: '1px solid rgba(59, 130, 246, 0.2)'}}>
-                                            <p style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem'}}>Capacidade Extra</p>
-                                            <p style={{fontSize: '1.25rem', fontWeight: '700', color: '#3b82f6'}}>
-                                                R$ {(c.recursos?.capacidade_extra || 0).toLocaleString('pt-BR')}/mês
-                                            </p>
+                    <div style={{display: 'grid', gap: '1.5rem'}}>
+                        {clientesFiltrados.map(c => (
+                            <div key={c.id} className="section" style={{cursor: 'pointer'}} onClick={() => onSelect(c)}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                                    <div>
+                                        <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>{c.nome}</h3>
+                                        <div style={{display: 'flex', gap: '2rem', color: '#8b92a0', fontSize: '0.875rem'}}>
+                                            <span>📱 {c.whatsapp}</span>
+                                            <span>🏦 {c.banco}</span>
                                         </div>
                                     </div>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.nome); }} className="btn btn-secondary" style={{background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444'}}>🗑️</button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         }
@@ -811,7 +263,6 @@
                 if (analise && tab === 'grafico' && chartRef.current) {
                     criarGrafico();
                 }
-                
                 return () => {
                     if (chartInstance.current) {
                         chartInstance.current.destroy();
@@ -822,50 +273,42 @@
             const carregarAnalise = async () => {
                 try {
                     setLoading(true);
-                    setError(null);
-                    
                     const response = await fetch(`${API_URL}/api/analise/${cliente.id}`);
                     const data = await response.json();
-                    
                     if (data.sucesso) {
                         setAnalise(data);
                     } else {
-                        throw new Error('Erro ao carregar análise');
+                        throw new Error('Erro');
                     }
                 } catch (err) {
                     console.error('Erro:', err);
-                    setError('Erro ao carregar análise da API. Verifique se o backend está rodando.');
+                    setError('Erro ao carregar análise');
                 } finally {
                     setLoading(false);
                 }
             };
 
             const criarGrafico = () => {
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
-                }
-
+                if (chartInstance.current) chartInstance.current.destroy();
                 const ctx = chartRef.current.getContext('2d');
                 const { estrategia_otimizada, cenario_original } = analise;
-                
-                const meses = Array.from({length: Math.max(estrategia_otimizada.prazo_meses, cenario_original.prazo_meses)}, (_, i) => i + 1);
                 
                 chartInstance.current = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: meses,
+                        labels: estrategia_otimizada.simulacao_completa?.map(m => `Mês ${m.mes}`) || [],
                         datasets: [
                             {
                                 label: 'Sem Otimização',
-                                data: meses.map(m => cenario_original.prazo_meses >= m ? cenario_original.saldo_devedor * (1 - m/cenario_original.prazo_meses) : 0),
+                                data: cenario_original.simulacao_completa?.map(m => m.saldo_devedor) || [],
                                 borderColor: '#ef4444',
                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                 borderWidth: 2,
                                 tension: 0.4
                             },
                             {
-                                label: 'Com Estratégia EcoFin',
-                                data: meses.map(m => estrategia_otimizada.prazo_meses >= m ? cenario_original.saldo_devedor * (1 - m/estrategia_otimizada.prazo_meses) : 0),
+                                label: 'Com Estratégia',
+                                data: estrategia_otimizada.simulacao_completa?.map(m => m.saldo_devedor) || [],
                                 borderColor: '#10b981',
                                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                                 borderWidth: 3,
@@ -877,51 +320,59 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: {
-                                labels: {
-                                    color: '#e4e7eb',
-                                    font: { size: 12, weight: '600' }
-                                }
-                            }
+                            legend: { labels: { color: '#e4e7eb', font: { size: 12, weight: '600' } } }
                         },
                         scales: {
-                            y: {
-                                ticks: { color: '#8b92a0' },
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                            },
-                            x: {
-                                ticks: { color: '#8b92a0' },
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                            }
+                            y: { ticks: { color: '#8b92a0' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                            x: { ticks: { color: '#8b92a0' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
                         }
                     }
                 });
+            };
+
+            const exportarCSV = () => {
+                if (!analise?.estrategia_otimizada?.simulacao_completa) return;
+                
+                const simulacao = analise.estrategia_otimizada.simulacao_completa;
+                const headers = ['Mês', 'Juros (R$)', 'Amortização (R$)', 'Parcela (R$)', 'Saldo Devedor (R$)'];
+                const rows = simulacao.map(m => [
+                    m.mes,
+                    m.juros?.toFixed(2) || '0.00',
+                    m.amortizacao?.toFixed(2) || '0.00',
+                    m.parcela?.toFixed(2) || '0.00',
+                    m.saldo_devedor?.toFixed(2) || '0.00'
+                ]);
+                
+                const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ecofin_simulacao_${cliente.nome.replace(/\s+/g, '_')}.csv`;
+                a.click();
             };
 
             if (loading) {
                 return (
                     <div className="loading">
                         <div className="spinner"></div>
-                        <p className="loading-text">Gerando análise profissional...</p>
-                        <p className="loading-subtext">Otimizando 150+ cenários via Motor Python</p>
+                        <p style={{color: '#D4A83C', fontSize: '1.125rem', fontWeight: '600'}}>Gerando análise...</p>
                     </div>
                 );
             }
 
-            if (error) {
+            if (error || !analise) {
                 return (
                     <div className="container">
-                        <div className="error-container">
-                            <div className="error-icon">❌</div>
-                            <h2 className="error-title">Erro ao Carregar Análise</h2>
-                            <p className="error-message">{error}</p>
+                        <div className="section" style={{textAlign: 'center', padding: '4rem'}}>
+                            <div style={{fontSize: '4rem', marginBottom: '1rem'}}>❌</div>
+                            <h2 style={{color: '#ef4444', marginBottom: '1rem'}}>Erro ao Carregar</h2>
+                            <p style={{color: '#8b92a0', marginBottom: '2rem'}}>{error}</p>
                             <button onClick={onVoltar} className="btn btn-primary">← Voltar</button>
                         </div>
                     </div>
                 );
             }
-
-            if (!analise) return null;
 
             const { cenario_original, estrategia_otimizada, justificativa, plano_acao } = analise;
             const fmt = (v) => v ? `R$ ${parseFloat(v).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'N/A';
@@ -933,25 +384,13 @@
                             <div className="client-info">
                                 <h1>{cliente.nome}</h1>
                                 <div className="client-meta">
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">🔮</span>
-                                        <span>Análise via Motor Python v3</span>
-                                    </div>
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">🎯</span>
-                                        <span>150+ cenários testados</span>
-                                    </div>
-                                    <div className="client-meta-item">
-                                        <span className="client-meta-icon">✅</span>
-                                        <span>100% Validado</span>
-                                    </div>
+                                    <div className="client-meta-item"><span>🔮</span> Análise via Motor Python</div>
+                                    <div className="client-meta-item"><span>🎯</span> 150+ cenários testados</div>
                                 </div>
                             </div>
-                            <div className="header-actions">
+                            <div style={{display: 'flex', gap: '1rem'}}>
                                 <button onClick={onVoltar} className="btn btn-primary">← Voltar</button>
-                                <button onClick={() => window.print()} className="btn btn-secondary">
-                                    📄 Baixar PDF
-                                </button>
+                                <button onClick={() => window.print()} className="btn btn-secondary">📄 Imprimir</button>
                             </div>
                         </div>
                     </div>
@@ -959,14 +398,13 @@
                     <div className="tabs">
                         {[
                             {id: 'visao-geral', icon: '📊', label: 'Visão Geral'},
+                            {id: 'simulacao', icon: '📋', label: 'Simulação Completa'},
                             {id: 'comparacao', icon: '⚖️', label: 'Comparação'},
-                            {id: 'grafico', icon: '📈', label: 'Evolução'},
-                            {id: 'plano-acao', icon: '🎯', label: 'Plano de Ação'},
-                            {id: 'detalhes', icon: '📝', label: 'Análise Detalhada'}
+                            {id: 'grafico', icon: '📈', label: 'Gráfico'},
+                            {id: 'plano-acao', icon: '🎯', label: 'Plano de Ação'}
                         ].map(t => (
                             <button key={t.id} onClick={() => setTab(t.id)} className={`tab ${tab === t.id ? 'active' : ''}`}>
-                                <span>{t.icon}</span>
-                                <span>{t.label}</span>
+                                <span>{t.icon}</span><span>{t.label}</span>
                             </button>
                         ))}
                     </div>
@@ -974,31 +412,34 @@
                     {tab === 'visao-geral' && (
                         <div>
                             <div className="strategy-highlight">
-                                <div className="strategy-icon">🎯</div>
-                                <h2 className="strategy-title">{justificativa?.titulo || 'Estratégia Otimizada Inteligente'}</h2>
-                                <p className="strategy-subtitle">Calculado pela API Python • 150+ cenários testados matematicamente</p>
-                                
+                                <div style={{fontSize: '4rem', marginBottom: '1rem'}}>🎯</div>
+                                <h2 style={{fontSize: '2rem', fontWeight: '800', color: '#D4A83C', marginBottom: '0.5rem'}}>
+                                    Estratégia Otimizada Inteligente
+                                </h2>
+                                <p style={{color: '#10b981', fontSize: '1rem', fontWeight: '600', marginBottom: '1.5rem'}}>
+                                    Calculado pela API Python • 150+ cenários testados
+                                </p>
                                 <div className="strategy-details">
                                     <div className="strategy-detail">
-                                        <div className="strategy-detail-icon">💰</div>
-                                        <div className="strategy-detail-label">Economia Total</div>
-                                        <div className="strategy-detail-value">{fmt(estrategia_otimizada?.economia)}</div>
+                                        <div style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>💰</div>
+                                        <div style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.25rem'}}>Economia Total</div>
+                                        <div style={{fontSize: '1.25rem', fontWeight: '700', color: '#e4e7eb'}}>{fmt(estrategia_otimizada?.economia)}</div>
                                     </div>
                                     <div className="strategy-detail">
-                                        <div className="strategy-detail-icon">⏱️</div>
-                                        <div className="strategy-detail-label">Meses Economizados</div>
-                                        <div className="strategy-detail-value">{estrategia_otimizada?.reducao_prazo || 0}</div>
+                                        <div style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>⏱️</div>
+                                        <div style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.25rem'}}>Meses Economizados</div>
+                                        <div style={{fontSize: '1.25rem', fontWeight: '700', color: '#e4e7eb'}}>{estrategia_otimizada?.reducao_prazo || 0}</div>
                                     </div>
                                     <div className="strategy-detail">
-                                        <div className="strategy-detail-icon">📅</div>
-                                        <div className="strategy-detail-label">Amortização Mensal</div>
-                                        <div className="strategy-detail-value">{fmt(estrategia_otimizada?.amortizacao_mensal)}</div>
+                                        <div style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>📅</div>
+                                        <div style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.25rem'}}>Amortização Mensal</div>
+                                        <div style={{fontSize: '1.25rem', fontWeight: '700', color: '#e4e7eb'}}>{fmt(estrategia_otimizada?.amortizacao_mensal)}</div>
                                     </div>
                                     {estrategia_otimizada?.roi > 0 && (
                                         <div className="strategy-detail">
-                                            <div className="strategy-detail-icon">📈</div>
-                                            <div className="strategy-detail-label">ROI Anual (isento IR)</div>
-                                            <div className="strategy-detail-value">{(estrategia_otimizada.roi * 12 * 100).toFixed(1)}%</div>
+                                            <div style={{fontSize: '1.5rem', marginBottom: '0.5rem'}}>📈</div>
+                                            <div style={{color: '#8b92a0', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.25rem'}}>ROI Anual (isento IR)</div>
+                                            <div style={{fontSize: '1.25rem', fontWeight: '700', color: '#e4e7eb'}}>{(estrategia_otimizada.roi * 12 * 100).toFixed(1)}%</div>
                                         </div>
                                     )}
                                 </div>
@@ -1009,31 +450,55 @@
                                     <div className="metric-icon">💚</div>
                                     <div className="metric-value">{fmt(estrategia_otimizada?.economia)}</div>
                                     <div className="metric-label">Economia Total</div>
-                                    <div className="metric-change positive">
-                                        ↑ {((estrategia_otimizada?.economia / cenario_original?.total_pago) * 100).toFixed(1)}% menos
-                                    </div>
                                 </div>
-
                                 <div className="metric-card info">
                                     <div className="metric-icon">📅</div>
                                     <div className="metric-value">{estrategia_otimizada?.prazo_meses}</div>
                                     <div className="metric-label">Meses para quitar</div>
-                                    <div className="metric-change positive">
-                                        ↓ {estrategia_otimizada?.reducao_prazo} meses menos
-                                    </div>
                                 </div>
-
                                 <div className="metric-card warning">
                                     <div className="metric-icon">⚡</div>
                                     <div className="metric-value">{estrategia_otimizada?.viabilidade || 0}%</div>
                                     <div className="metric-label">Viabilidade</div>
                                 </div>
-
                                 <div className="metric-card primary">
                                     <div className="metric-icon">💰</div>
                                     <div className="metric-value">{fmt(estrategia_otimizada?.total_pago)}</div>
                                     <div className="metric-label">Total a Pagar</div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {tab === 'simulacao' && (
+                        <div className="section">
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                                <h2 className="section-title"><span>📋</span> Simulação Mês a Mês</h2>
+                                <button onClick={exportarCSV} className="btn btn-secondary">📥 Exportar CSV</button>
+                            </div>
+                            <div className="table-container" style={{maxHeight: '600px', overflowY: 'auto'}}>
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th className="text-center">Mês</th>
+                                            <th className="text-right">Juros</th>
+                                            <th className="text-right">Amortização</th>
+                                            <th className="text-right">Parcela</th>
+                                            <th className="text-right">Saldo Devedor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {estrategia_otimizada?.simulacao_completa?.map((mes, idx) => (
+                                            <tr key={idx}>
+                                                <td className="text-center" style={{fontWeight: '600'}}>{mes.mes}</td>
+                                                <td className="text-right" style={{color: '#ef4444'}}>{fmt(mes.juros)}</td>
+                                                <td className="text-right" style={{color: '#10b981'}}>{fmt(mes.amortizacao)}</td>
+                                                <td className="text-right" style={{color: '#3b82f6'}}>{fmt(mes.parcela)}</td>
+                                                <td className="text-right" style={{fontWeight: '700', color: '#D4A83C'}}>{fmt(mes.saldo_devedor)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
@@ -1044,38 +509,38 @@
                                 <div className="comparison-badge negative">❌ Sem Fazer Nada</div>
                                 <div className="comparison-stats">
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Total Pago</span>
-                                        <span className="comparison-stat-value" style={{color: '#ef4444'}}>{fmt(cenario_original?.total_pago)}</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Total Pago</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700', color: '#ef4444'}}>{fmt(cenario_original?.total_pago)}</span>
                                     </div>
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Total em Juros</span>
-                                        <span className="comparison-stat-value" style={{color: '#ef4444'}}>{fmt(cenario_original?.total_juros)}</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Total Juros</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700', color: '#ef4444'}}>{fmt(cenario_original?.total_juros)}</span>
                                     </div>
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Prazo</span>
-                                        <span className="comparison-stat-value">{cenario_original?.prazo_meses} meses</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Prazo</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700'}}>{cenario_original?.prazo_meses} meses</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="comparison-card positive">
-                                <div className="comparison-badge positive">✅ Com Estratégia EcoFin</div>
+                                <div className="comparison-badge positive">✅ Com Estratégia</div>
                                 <div className="comparison-stats">
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Total Pago</span>
-                                        <span className="comparison-stat-value" style={{color: '#10b981'}}>{fmt(estrategia_otimizada?.total_pago)}</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Total Pago</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700', color: '#10b981'}}>{fmt(estrategia_otimizada?.total_pago)}</span>
                                     </div>
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Total em Juros</span>
-                                        <span className="comparison-stat-value" style={{color: '#10b981'}}>{fmt(estrategia_otimizada?.total_juros)}</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Total Juros</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700', color: '#10b981'}}>{fmt(estrategia_otimizada?.total_juros)}</span>
                                     </div>
                                     <div className="comparison-stat">
-                                        <span className="comparison-stat-label">Prazo</span>
-                                        <span className="comparison-stat-value">{estrategia_otimizada?.prazo_meses} meses</span>
+                                        <span style={{color: '#8b92a0', fontSize: '0.875rem'}}>Prazo</span>
+                                        <span style={{fontSize: '1.125rem', fontWeight: '700'}}>{estrategia_otimizada?.prazo_meses} meses</span>
                                     </div>
                                     <div className="comparison-stat" style={{marginTop: '1rem', paddingTop: '1rem', borderTop: '2px solid rgba(16, 185, 129, 0.3)'}}>
-                                        <span className="comparison-stat-label" style={{color: '#10b981', fontWeight: '700'}}>💰 ECONOMIA</span>
-                                        <span className="comparison-stat-value" style={{color: '#10b981', fontSize: '1.5rem'}}>{fmt(estrategia_otimizada?.economia)}</span>
+                                        <span style={{color: '#10b981', fontWeight: '700'}}>💰 ECONOMIA</span>
+                                        <span style={{fontSize: '1.5rem', fontWeight: '700', color: '#10b981'}}>{fmt(estrategia_otimizada?.economia)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1084,10 +549,7 @@
 
                     {tab === 'grafico' && (
                         <div className="section">
-                            <h2 className="section-title">
-                                <span className="section-title-icon">📈</span>
-                                Evolução do Saldo Devedor
-                            </h2>
+                            <h2 className="section-title"><span>📈</span> Evolução do Saldo Devedor</h2>
                             <div className="chart-container">
                                 <canvas ref={chartRef}></canvas>
                             </div>
@@ -1096,33 +558,19 @@
 
                     {tab === 'plano-acao' && (
                         <div className="section">
-                            <h2 className="section-title">
-                                <span className="section-title-icon">🎯</span>
-                                Plano de Ação Completo
-                            </h2>
+                            <h2 className="section-title"><span>🎯</span> Plano de Ação Completo</h2>
                             <div className="timeline">
                                 {plano_acao?.map((passo, idx) => (
                                     <div key={idx} className="timeline-item" data-icon={passo.titulo?.split(' ')[0] || '📍'}>
                                         <div className="timeline-content">
                                             <h3 className="timeline-title">{passo.titulo}</h3>
-                                            <div className="timeline-meta">
+                                            <div style={{display: 'flex', gap: '1rem', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#8b92a0'}}>
                                                 <span>⏱️ {passo.prazo}</span>
-                                                <span style={{
-                                                    padding: '0.25rem 0.75rem',
-                                                    borderRadius: '1rem',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '700',
-                                                    background: passo.prioridade === 'ALTA' ? 'rgba(239, 68, 68, 0.2)' : 
-                                                               passo.prioridade === 'CONQUISTA' ? 'rgba(16, 185, 129, 0.2)' : 
-                                                               'rgba(212, 168, 60, 0.2)',
-                                                    color: passo.prioridade === 'ALTA' ? '#ef4444' : 
-                                                           passo.prioridade === 'CONQUISTA' ? '#10b981' : 
-                                                           '#D4A83C'
-                                                }}>
+                                                <span style={{padding: '0.25rem 0.75rem', borderRadius: '1rem', fontSize: '0.75rem', fontWeight: '700', background: passo.prioridade === 'ALTA' ? 'rgba(239, 68, 68, 0.2)' : passo.prioridade === 'CONQUISTA' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(212, 168, 60, 0.2)', color: passo.prioridade === 'ALTA' ? '#ef4444' : passo.prioridade === 'CONQUISTA' ? '#10b981' : '#D4A83C'}}>
                                                     {passo.prioridade}
                                                 </span>
                                             </div>
-                                            <p className="timeline-description">{passo.descricao}</p>
+                                            <p style={{color: '#e4e7eb', lineHeight: '1.7'}}>{passo.descricao}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -1130,30 +578,9 @@
                         </div>
                     )}
 
-                    {tab === 'detalhes' && (
-                        <div className="section">
-                            <h2 className="section-title">
-                                <span className="section-title-icon">📝</span>
-                                Análise Profissional Detalhada
-                            </h2>
-                            {justificativa && Object.entries(justificativa).map(([key, value]) => (
-                                <div key={key} style={{
-                                    background: 'rgba(255, 255, 255, 0.02)',
-                                    padding: '1.5rem',
-                                    borderLeft: '4px solid #D4A83C',
-                                    borderRadius: '0.75rem',
-                                    marginBottom: '1.5rem',
-                                    lineHeight: '1.8'
-                                }}>
-                                    <div dangerouslySetInnerHTML={{__html: value}}></div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
                     <div className="section" style={{background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.3)'}}>
                         <strong style={{color: '#10b981', fontSize: '1.125rem'}}>✅ Análise gerada pela API Python EcoFin</strong><br/>
-                        <span style={{color: '#8b92a0'}}>Motor validado 100% contra planilha • Otimização matemática automática • 150+ cenários testados</span>
+                        <span style={{color: '#8b92a0'}}>Motor validado 100% • Otimização matemática • 150+ cenários testados</span>
                     </div>
                 </div>
             );

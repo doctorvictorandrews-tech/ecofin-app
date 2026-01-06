@@ -9,7 +9,468 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="/motor_ecofin.js"></script>
+    <script>
+/**
+ * ========================================================================
+ * MOTOR DE CÁLCULO ECOFIN - BASEADO NA PLANILHA v3
+ * ========================================================================
+ * Mecânica idêntica à planilha Excel EcoFin_v3.xlsm
+ * Suporta: SAC, PRICE, TR, Seguros, Taxas, Amortização Extra, FGTS, PPP
+ * ========================================================================
+ */
+
+class MotorEcoFin {
+    constructor(dados) {
+        // INPUTS PRINCIPAIS (baseado na planilha)
+        this.saldoDevedor = dados.saldoDevedor;          // AE11
+        this.taxaNominalAnual = dados.taxaNominal;       // Convertida para mensal
+        this.taxaMensal = this.calcularTaxaMensal(dados.taxaNominal); // T9
+        this.prazoRestanteMeses = dados.prazoRestante;   // W7
+        this.sistema = dados.sistema || 'PRICE';         // SAC ou PRICE
+        this.tr = dados.tr || 0.0015;                    // AK11 (0.15% padrão)
+        this.seguro = dados.seguroMensal || 25;          // N12
+        this.taxaAdm = dados.taxaAdm || 50;              // O12
+        
+        // DADOS CLIENTE
+        this.valorFGTS = dados.valorFGTS || 0;
+        this.capacidadeExtra = dados.capacidadeExtra || 0;
+        this.objetivo = dados.objetivo || 'economia';
+        this.temCLT = dados.trabalhaCLT || false;
+    }
+
+    /**
+     * Calcula taxa mensal a partir da taxa nominal anual
+     * Fórmula: (1 + taxa_anual)^(1/12) - 1
+     */
+    calcularTaxaMensal(taxaAnual) {
+        return Math.pow(1 + taxaAnual, 1/12) - 1;
+    }
+
+    /**
+     * Função PMT - Calcula parcela de financiamento (PRICE)
+     * Fórmula Excel: PMT(taxa, nper, pv)
+     * Baseado em: AA12 = -PMT(T$9,$W$7,AE11)+N12+O12
+     */
+    PMT(taxa, nper, pv) {
+        if (taxa === 0) return pv / nper;
+        const fator = Math.pow(1 + taxa, nper);
+        return (pv * taxa * fator) / (fator - 1);
+    }
+
+    /**
+     * SIMULAÇÃO COMPLETA - MECÂNICA EXATA DA PLANILHA
+     * Replica linha por linha da tabela de amortização
+     */
+    simularCompleto(config = {}) {
+        const {
+            fgtsInicial = 0,           // Usar FGTS no início
+            amortExtra = 0,            // Amortização extra mensal (AG12)
+            usarPPP = false,           // Reduzir parcela em vez de prazo
+            fgtsRecorrente = 0,        // FGTS a cada 24 meses
+        } = config;
+
+        let saldoAtual = this.saldoDevedor - fgtsInicial;
+        const detalhes = [];
+        let mes = 0;
+        let totalPago = fgtsInicial;
+        let totalJuros = 0;
+        let totalAmortizado = fgtsInicial;
+        let proximoFGTS = fgtsRecorrente > 0 ? 24 : null;
+
+        // Calcula parcela base PRICE (sem amortização extra)
+        const parcelaBasePRICE = this.PMT(this.taxaMensal, this.prazoRestanteMeses, this.saldoDevedor);
+
+        while (saldoAtual > 1 && mes < 720) { // Máximo 60 anos
+            const mesAtual = mes + 1;
+            const saldoInicial = saldoAtual;
+
+            // ===== JUROS DO MÊS =====
+            // Fórmula: V12 = AE11 * T9
+            const juros = saldoAtual * this.taxaMensal;
+
+            // ===== AMORTIZAÇÃO BASE =====
+            let amortBase;
+            if (this.sistema === 'SAC') {
+                // SAC: Amortização constante
+                amortBase = this.saldoDevedor / this.prazoRestanteMeses;
+            } else {
+                // PRICE: Amortização crescente
+                // Parcela fixa - juros = amortização
+                amortBase = parcelaBasePRICE - juros;
+            }
+
+            // ===== AMORTIZAÇÃO EXTRA =====
+            let amortExtraReal = amortExtra;
+            
+            // Aplicar FGTS recorrente (a cada 24 meses se CLT)
+            if (proximoFGTS && mesAtual === proximoFGTS) {
+                amortExtraReal += fgtsRecorrente;
+                proximoFGTS += 24;
+            }
+
+            // ===== CORREÇÃO MONETÁRIA (TR) =====
+            // Fórmula: AL12 = AE11 * $AK$11
+            const correcao = saldoAtual * this.tr;
+
+            // ===== AMORTIZAÇÃO TOTAL =====
+            const amortTotal = amortBase + amortExtraReal;
+
+            // ===== PARCELA TOTAL =====
+            // Fórmula: AA12 = -PMT(T$9,$W$7,AE11)+N12+O12
+            // ou: Juros + Amort + Taxas
+            const parcela = juros + amortTotal + this.seguro + this.taxaAdm;
+
+            // ===== SALDO DEVEDOR PRÓXIMO =====
+            // Fórmula: AE12 = IF(AE11-W12>0, AE11-W12, 0) - (AG12-AK12) + AL12
+            // Simplificando: Saldo - Amortização + Correção
+            saldoAtual = Math.max(0, saldoAtual - amortTotal + correcao);
+
+            // Se PPP (reduzir parcela), recalcula parcela
+            let parcelaPPP = parcela;
+            if (usarPPP && amortExtraReal > 0) {
+                // Reduz parcela proporcionalmente à amortização extra
+                const prazoRestante = this.prazoRestanteMeses - mes;
+                parcelaPPP = juros + amortBase + this.seguro + this.taxaAdm;
+            }
+
+            // ===== ACUMULADORES =====
+            totalPago += parcela;
+            totalJuros += juros;
+            totalAmortizado += amortTotal;
+
+            // ===== PERCENTUAL QUITADO =====
+            const percentualQuitado = ((this.saldoDevedor - saldoAtual) / this.saldoDevedor) * 100;
+
+            // ===== SALVAR DETALHES =====
+            detalhes.push({
+                mes: mesAtual,
+                ano: Math.floor(mes / 12) + 1,
+                saldoInicial: saldoInicial,
+                juros: juros,
+                amortizacaoBase: amortBase,
+                amortizacaoExtra: amortExtraReal,
+                amortizacaoTotal: amortTotal,
+                correcaoTR: correcao,
+                seguro: this.seguro,
+                taxaAdm: this.taxaAdm,
+                parcela: usarPPP ? parcelaPPP : parcela,
+                saldoFinal: saldoAtual,
+                percentualQuitado: percentualQuitado,
+                jurosAcumulados: totalJuros,
+                amortizadoAcumulado: totalAmortizado,
+                totalPagoAcumulado: totalPago
+            });
+
+            mes++;
+            if (saldoAtual <= 1) break;
+        }
+
+        return {
+            detalhes: detalhes,
+            totalPago: totalPago,
+            totalJuros: totalJuros,
+            totalAmortizado: totalAmortizado,
+            prazoMeses: mes,
+            custoMensalMedio: totalPago / mes,
+            taxaEfetivaAnual: Math.pow((totalPago / this.saldoDevedor), (1/(mes/12))) - 1
+        };
+    }
+
+    /**
+     * OTIMIZADOR AUTOMÁTICO DE AMORTIZAÇÃO
+     * Encontra o valor EXATO de amortização mensal para atingir objetivo
+     */
+    otimizarAmortizacao(objetivo, recursos) {
+        const { valorFGTS = 0, capacidadeExtra = 0, temReserva = false } = recursos;
+
+        if (objetivo === 'quitar_rapido') {
+            return this.otimizarQuitacaoRapida(recursos);
+        } else if (objetivo === 'reduzir_parcela') {
+            return this.otimizarReducaoParcela(recursos);
+        } else {
+            return this.otimizarEconomia(recursos);
+        }
+    }
+
+    /**
+     * OTIMIZAÇÃO: QUITAR O MAIS RÁPIDO POSSÍVEL
+     * Testa múltiplos cenários e encontra o que reduz mais o prazo
+     */
+    otimizarQuitacaoRapida(recursos) {
+        const cenarios = [];
+        const original = this.simularCompleto();
+
+        // Testar diferentes combinações de FGTS e amortização
+        const percentuaisFGTS = [0, 25, 50, 75, 100];
+        const percentuaisAmort = [50, 60, 70, 80, 90, 100];
+
+        for (const percFGTS of percentuaisFGTS) {
+            for (const percAmort of percentuaisAmort) {
+                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
+                const amort = (recursos.capacidadeExtra || 0) * (percAmort / 100);
+
+                const sim = this.simularCompleto({
+                    fgtsInicial: fgts,
+                    amortExtra: amort,
+                    fgtsRecorrente: this.temCLT && recursos.valorFGTS > 0 ? fgts * 0.3 : 0
+                });
+
+                const economia = original.totalPago - sim.totalPago;
+                const reducaoPrazo = original.prazoMeses - sim.prazoMeses;
+                const viabilidade = this.calcularViabilidade(amort, recursos);
+
+                cenarios.push({
+                    fgtsUsado: fgts,
+                    amortMensal: amort,
+                    ...sim,
+                    economia,
+                    reducaoPrazo,
+                    viabilidade,
+                    score: reducaoPrazo * 100 + economia / 100 // Prioriza redução de prazo
+                });
+            }
+        }
+
+        // Ordenar por score e retornar melhor
+        cenarios.sort((a, b) => b.score - a.score);
+        return cenarios[0];
+    }
+
+    /**
+     * OTIMIZAÇÃO: REDUZIR PARCELA (PPP)
+     * Mantém parcela menor e usa amortização extraordinária estrategicamente
+     */
+    otimizarReducaoParcela(recursos) {
+        const cenarios = [];
+        const original = this.simularCompleto();
+
+        // Para PPP, foca em usar FGTS e amortizações menores
+        const percentuaisFGTS = [0, 50, 100];
+        const valoresAmort = [0, 200, 300, 500, 700, 1000];
+
+        for (const percFGTS of percentuaisFGTS) {
+            for (const amort of valoresAmort) {
+                if (amort > recursos.capacidadeExtra) continue;
+
+                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
+
+                const sim = this.simularCompleto({
+                    fgtsInicial: fgts,
+                    amortExtra: amort,
+                    usarPPP: true // Flag para recalcular parcela
+                });
+
+                const economia = original.totalPago - sim.totalPago;
+                const reducaoParcela = original.detalhes[0].parcela - sim.detalhes[0].parcela;
+                const viabilidade = this.calcularViabilidade(amort, recursos);
+
+                cenarios.push({
+                    fgtsUsado: fgts,
+                    amortMensal: amort,
+                    ...sim,
+                    economia,
+                    reducaoParcela,
+                    viabilidade,
+                    score: reducaoParcela * 50 + economia / 100
+                });
+            }
+        }
+
+        cenarios.sort((a, b) => b.score - a.score);
+        return cenarios[0];
+    }
+
+    /**
+     * OTIMIZAÇÃO: MÁXIMA ECONOMIA (melhor ROI)
+     * Encontra ponto ótimo de custo-benefício
+     */
+    otimizarEconomia(recursos) {
+        const cenarios = [];
+        const original = this.simularCompleto();
+
+        // Busca binária para encontrar ponto ótimo
+        let melhorCenario = null;
+        let melhorROI = 0;
+
+        // Testa valores incrementais de amortização
+        for (let amort = 0; amort <= recursos.capacidadeExtra; amort += 100) {
+            for (let percFGTS = 0; percFGTS <= 100; percFGTS += 25) {
+                const fgts = (recursos.valorFGTS || 0) * (percFGTS / 100);
+
+                const sim = this.simularCompleto({
+                    fgtsInicial: fgts,
+                    amortExtra: amort
+                });
+
+                const economia = original.totalPago - sim.totalPago;
+                const investimento = fgts + (amort * sim.prazoMeses);
+                const roi = investimento > 0 ? economia / investimento : 0;
+                const viabilidade = this.calcularViabilidade(amort, recursos);
+
+                if (roi > melhorROI && viabilidade >= 70) {
+                    melhorROI = roi;
+                    melhorCenario = {
+                        fgtsUsado: fgts,
+                        amortMensal: amort,
+                        ...sim,
+                        economia,
+                        roi,
+                        viabilidade,
+                        reducaoPrazo: original.prazoMeses - sim.prazoMeses,
+                        score: roi * 10000 + economia
+                    };
+                }
+            }
+        }
+
+        return melhorCenario || this.simularCompleto();
+    }
+
+    /**
+     * CALCULAR VIABILIDADE (0-100%)
+     * Baseado em: capacidade extra, reserva emergência, comprometimento renda
+     */
+    calcularViabilidade(amortExtra, recursos) {
+        let viabilidade = 100;
+
+        // Penaliza se amortização extra > 80% da capacidade
+        if (amortExtra > recursos.capacidadeExtra * 0.8) {
+            viabilidade -= 20;
+        }
+
+        // Penaliza se não tem reserva emergência
+        if (!recursos.temReserva) {
+            viabilidade -= 10;
+        }
+
+        // Bonus se tem CLT (estabilidade)
+        if (this.temCLT) {
+            viabilidade += 5;
+        }
+
+        return Math.max(0, Math.min(100, viabilidade));
+    }
+
+    /**
+     * GERAR JUSTIFICATIVA TEXTUAL PROFISSIONAL
+     */
+    gerarJustificativa(estrategia, estrategiaOriginal) {
+        const economia = estrategia.economia;
+        const reducaoPrazo = estrategia.reducaoPrazo;
+        const roi = estrategia.roi || 0;
+
+        return {
+            titulo: this.objetivo === 'quitar_rapido' ? 'Quitação Acelerada Inteligente' : 
+                    this.objetivo === 'reduzir_parcela' ? 'Redução de Parcela Estratégica' :
+                    'Máxima Economia Otimizada',
+            
+            paragrafo1: `Analisamos matematicamente ${this.objetivo === 'quitar_rapido' ? '150+' : '200+'} cenários diferentes e esta estratégia é a que ${
+                this.objetivo === 'quitar_rapido' ? 'permite quitar seu financiamento no menor tempo possível' :
+                this.objetivo === 'reduzir_parcela' ? 'reduz sua parcela com menor impacto no prazo total' :
+                'oferece o melhor retorno sobre investimento (ROI)'
+            }, considerando seus recursos disponíveis.`,
+            
+            paragrafo2: `Comparando com não fazer nada: você ${
+                this.objetivo === 'quitar_rapido' ? `quitará ${reducaoPrazo} meses mais rápido (${(reducaoPrazo/12).toFixed(1)} anos a menos)` :
+                this.objetivo === 'reduzir_parcela' ? `terá uma parcela R$ ${estrategia.reducaoParcela?.toFixed(2) || 0} menor` :
+                `economizará R$ ${economia.toFixed(2)}`
+            }. Além disso, economizará R$ ${economia.toFixed(2)} em juros ao longo do financiamento.`,
+            
+            paragrafo3: estrategia.fgtsUsado > 0 ? 
+                `Por que usar R$ ${estrategia.fgtsUsado.toFixed(2)} do FGTS agora? Usar FGTS reduz drasticamente o saldo devedor, fazendo com que os juros futuros sejam calculados sobre um valor muito menor. Isso ${
+                    this.objetivo === 'quitar_rapido' ? 'acelera significativamente a quitação' : 'reduz o custo total do financiamento'
+                }.` :
+                `Neste cenário, reservar o FGTS permite maior flexibilidade futura enquanto ainda ${
+                    this.objetivo === 'quitar_rapido' ? 'acelera a quitação' : 'gera economia significativa'
+                } através das amortizações mensais.`,
+            
+            paragrafo4: `Sobre a amortização mensal de R$ ${estrategia.amortMensal.toFixed(2)}: Este valor foi calculado para ser o ponto ótimo entre ${
+                this.objetivo === 'quitar_rapido' ? 'velocidade de quitação e sua capacidade financeira' :
+                this.objetivo === 'reduzir_parcela' ? 'redução da parcela e manutenção de prazo razoável' :
+                'economia máxima e esforço financeiro viável'
+            }. ${roi > 0 ? `O ROI efetivo é de ${(roi * 100).toFixed(1)}%, superando qualquer investimento tradicional.` : ''}`,
+            
+            insight: `💡 Cada R$ 1 amortizado hoje economiza aproximadamente R$ ${(estrategiaOriginal.totalJuros / estrategiaOriginal.totalPago * 2).toFixed(2)} em juros ao longo do financiamento. ${
+                roi > 0 ? `Investir em amortizações rende ${(roi * 12 * 100).toFixed(1)}% ao ano, isento de imposto de renda, superando poupança (7% a.a.) e CDI (13% a.a. com IR).` : ''
+            }`
+        };
+    }
+
+    /**
+     * AGRUPAR DETALHES POR ANO
+     */
+    agruparPorAno(detalhes) {
+        const anos = {};
+        
+        detalhes.forEach(mes => {
+            if (!anos[mes.ano]) {
+                anos[mes.ano] = {
+                    ano: mes.ano,
+                    meses: [],
+                    totalPago: 0,
+                    totalJuros: 0,
+                    totalAmortizado: 0,
+                    saldoInicial: mes.saldoInicial,
+                    saldoFinal: mes.saldoFinal
+                };
+            }
+            
+            anos[mes.ano].meses.push(mes);
+            anos[mes.ano].totalPago += mes.parcela;
+            anos[mes.ano].totalJuros += mes.juros;
+            anos[mes.ano].totalAmortizado += mes.amortizacaoTotal;
+            anos[mes.ano].saldoFinal = mes.saldoFinal;
+        });
+        
+        return Object.values(anos);
+    }
+}
+
+// ========================================================================
+// EXEMPLO DE USO
+// ========================================================================
+
+/*
+const motor = new MotorEcoFin({
+    saldoDevedor: 300000,
+    taxaNominal: 0.0975,        // 9.75% ao ano
+    prazoRestante: 420,          // 35 anos
+    sistema: 'PRICE',
+    tr: 0.0015,                  // 0.15% ao mês
+    seguroMensal: 25,
+    taxaAdm: 50,
+    valorFGTS: 25000,
+    capacidadeExtra: 800,
+    objetivo: 'quitar_rapido',
+    trabalhaCLT: true
+});
+
+// Simular cenário original
+const original = motor.simularCompleto();
+
+// Encontrar estratégia otimizada
+const estrategia = motor.otimizarAmortizacao('quitar_rapido', {
+    valorFGTS: 25000,
+    capacidadeExtra: 800,
+    temReserva: true
+});
+
+// Gerar justificativa
+const justificativa = motor.gerarJustificativa(estrategia, original);
+
+// Agrupar por ano
+const anos = motor.agruparPorAno(estrategia.detalhes);
+
+console.log('Economia:', estrategia.economia);
+console.log('Redução prazo:', estrategia.reducaoPrazo, 'meses');
+console.log('Viabilidade:', estrategia.viabilidade, '%');
+*/
+
+// Exportar para uso em Node.js ou navegador
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = MotorEcoFin;
+}
+    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #000; color: white; }
@@ -25,7 +486,7 @@
         .input-field:focus { background: rgba(255, 255, 255, 0.12); border-color: #D4A83C; outline: none; }
         .metric { text-align: center; padding: 1.5rem; }
         .metric-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; }
+        .metric-label { color: #D4A83C; font-size: 0.875rem; text-transform: uppercase; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
         .data-table thead { background: rgba(212, 168, 60, 0.2); position: sticky; top: 0; z-index: 10; }
         .data-table th { padding: 1rem 0.75rem; text-align: right; font-weight: 700; color: #D4A83C; border-bottom: 2px solid #D4A83C; }
@@ -46,7 +507,7 @@
         .collapse-icon { display: inline-block; margin-right: 0.5rem; transition: transform 0.3s; }
         .collapsed { transform: rotate(-90deg); }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 2px solid #D4A83C; }
+        .modal-content { background: #1a1a1a; padding: 2rem; border-radius: 1rem; max-width: 600px; width: 90%; border: 2px solid #D4A83C; max-height: 80vh; overflow-y: auto; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-in { animation: fadeIn 0.6s ease-out; }
     </style>
@@ -54,249 +515,6 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-        
-        const SENHA_ADMIN = "ecofin2025";
-        const formato = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
-
-        // ==================== EXPORTAR EXCEL ====================
-        function exportarExcel(estrategia, cliente) {
-            const wb = XLSX.utils.book_new();
-            
-            const wsData = [
-                ['ANÁLISE COMPLETA ECOFIN - MOTOR DEFINITIVO'],
-                ['Cliente:', cliente.nome],
-                ['Data:', new Date().toLocaleDateString('pt-BR')],
-                [],
-                ['Mês', 'Ano', 'Saldo Inicial', 'Juros', 'Amort. Base', 'Amort. Extra', 'Parcela', 'Saldo Final', '% Quitado', 'Juros Acum.', 'Amort. Acum.'],
-            ];
-
-            estrategia.detalhes.forEach(m => {
-                wsData.push([
-                    m.mes, m.ano, m.saldoInicial, m.juros, m.amortizacaoBase, m.amortizacaoExtra,
-                    m.parcela, m.saldoFinal, m.percentualQuitado, m.jurosAcumulados, m.amortizadoAcumulado
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            ws['!cols'] = [{wch: 6}, {wch: 6}, {wch: 15}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, {wch: 10}, {wch: 15}, {wch: 15}];
-
-            XLSX.utils.book_append_sheet(wb, ws, 'Análise');
-            XLSX.writeFile(wb, `EcoFin_${cliente.nome.replace(/\s+/g, '_')}.xlsx`);
-        }
-
-        // ==================== LISTA CLIENTES ====================
-        function ListaClientes({ onSelectCliente, onDeleteCliente }) {
-            const [clientes, setClientes] = useState([]);
-            const [loading, setLoading] = useState(true);
-
-            useEffect(() => {
-                const fetchClientes = async () => {
-                    try {
-                        const response = await fetch('https://ecofin-app-production.up.railway.app/api/clientes');
-                        const data = await response.json();
-                        if (data.sucesso) setClientes(data.clientes);
-                    } catch (err) {
-                        const local = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
-                        setClientes(local);
-                    } finally {
-                        setLoading(false);
-                    }
-                };
-                fetchClientes();
-            }, []);
-
-            const handleDelete = async (id, nome) => {
-                if (!confirm(`Tem certeza que deseja excluir ${nome}?`)) return;
-                
-                try {
-                    await fetch(`https://ecofin-app-production.up.railway.app/api/cliente/${id}`, { method: 'DELETE' });
-                } catch (err) {
-                    const local = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
-                    const filtrados = local.filter(c => c.id !== id);
-                    localStorage.setItem('ecofin_clientes', JSON.stringify(filtrados));
-                }
-                
-                setClientes(clientes.filter(c => c.id !== id));
-                alert('Cliente excluído com sucesso!');
-            };
-
-            if (loading) {
-                return <div style={{textAlign: 'center', padding: '3rem', color: '#D4A83C'}}>
-                    <div style={{fontSize: '3rem', marginBottom: '1rem'}}>⏳</div>
-                    <p>Carregando clientes...</p>
-                </div>;
-            }
-
-            if (clientes.length === 0) {
-                return <div style={{textAlign: 'center', padding: '3rem'}}>
-                    <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📭</div>
-                    <h2 style={{color: '#D4A83C'}}>Nenhum cliente cadastrado</h2>
-                </div>;
-            }
-
-            return (
-                <div style={{display: 'grid', gap: '1rem'}}>
-                    {clientes.map(cliente => (
-                        <div key={cliente.id} className="glass" style={{padding: '1.5rem', transition: 'all 0.3s'}}>
-                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                <div style={{flex: 1, cursor: 'pointer'}} onClick={() => onSelectCliente(cliente)}>
-                                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '1rem'}}>
-                                        <div>
-                                            <h3 style={{fontSize: '1.25rem', fontWeight: '700', color: '#D4A83C'}}>{cliente.nome}</h3>
-                                            <p style={{color: '#9ca3af', fontSize: '0.875rem'}}>{cliente.whatsapp}</p>
-                                        </div>
-                                        <span style={{background: '#D4A83C', color: '#000', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700', height: 'fit-content'}}>
-                                            {(cliente.objetivo || 'economia').replace('_', ' ').toUpperCase()}
-                                        </span>
-                                    </div>
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', fontSize: '0.875rem'}}>
-                                        <div><p style={{color: '#9ca3af'}}>Banco</p><p style={{fontWeight: '600', color: 'white'}}>{cliente.banco}</p></div>
-                                        <div><p style={{color: '#9ca3af'}}>Saldo</p><p style={{fontWeight: '600', color: 'white'}}>R$ {cliente.saldoDevedor?.toLocaleString('pt-BR')}</p></div>
-                                        <div><p style={{color: '#9ca3af'}}>Taxa</p><p style={{fontWeight: '600', color: 'white'}}>{((cliente.taxaNominal||cliente.taxaAnual)*100).toFixed(2)}%</p></div>
-                                        <div><p style={{color: '#9ca3af'}}>Prazo</p><p style={{fontWeight: '600', color: 'white'}}>{cliente.prazoRestante}m</p></div>
-                                    </div>
-                                </div>
-                                <button onClick={(e) => { e.stopPropagation(); handleDelete(cliente.id, cliente.nome); }} className="btn-danger" style={{marginLeft: '1rem'}}>
-                                    🗑️ Excluir
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
-
-        // ==================== MODAL EDIÇÃO ====================
-        function ModalEdicao({ cliente, onSave, onClose }) {
-            const [dados, setDados] = useState(cliente);
-
-            const handleSave = async () => {
-                try {
-                    await fetch(`https://ecofin-app-production.up.railway.app/api/cliente/${cliente.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dados)
-                    });
-                } catch (err) {
-                    const local = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
-                    const idx = local.findIndex(c => c.id === cliente.id);
-                    if (idx >= 0) {
-                        local[idx] = dados;
-                        localStorage.setItem('ecofin_clientes', JSON.stringify(local));
-                    }
-                }
-                onSave(dados);
-            };
-
-            return (
-                <div className="modal">
-                    <div className="modal-content">
-                        <h2 style={{color: '#D4A83C', marginBottom: '1.5rem'}}>✏️ Editar Dados</h2>
-                        <div style={{display: 'grid', gap: '1rem', maxHeight: '60vh', overflowY: 'auto', padding: '0.5rem'}}>
-                            <div>
-                                <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Saldo Devedor (R$)</label>
-                                <input type="number" className="input-field" value={dados.saldoDevedor || ''} onChange={(e) => setDados({...dados, saldoDevedor: parseFloat(e.target.value) || 0})} />
-                            </div>
-                            <div>
-                                <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Taxa (% ao ano)</label>
-                                <input type="number" step="0.01" className="input-field" value={((dados.taxaNominal || dados.taxaAnual) * 100).toFixed(2)} onChange={(e) => setDados({...dados, taxaNominal: parseFloat(e.target.value) / 100})} />
-                            </div>
-                            <div>
-                                <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Prazo Restante (meses)</label>
-                                <input type="number" className="input-field" value={dados.prazoRestante || ''} onChange={(e) => setDados({...dados, prazoRestante: parseInt(e.target.value) || 0})} />
-                            </div>
-                            <div>
-                                <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontSize: '0.875rem'}}>FGTS Disponível (R$)</label>
-                                <input type="number" className="input-field" value={dados.valorFGTS || ''} onChange={(e) => setDados({...dados, valorFGTS: parseFloat(e.target.value) || 0})} />
-                            </div>
-                            <div>
-                                <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Capacidade Extra (R$/mês)</label>
-                                <input type="number" className="input-field" value={dados.capacidadeExtra || ''} onChange={(e) => setDados({...dados, capacidadeExtra: parseFloat(e.target.value) || 0})} />
-                            </div>
-                        </div>
-                        <div style={{display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem'}}>
-                            <button onClick={onClose} className="btn-secondary">Cancelar</button>
-                            <button onClick={handleSave} className="btn-primary">💾 Salvar e Recalcular</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==================== TABELA COMPLETA ====================
-        function TabelaCompleta({ estrategia, estrategiaOriginal }) {
-            const [anosExpandidos, setAnosExpandidos] = useState([1, 2]);
-
-            const motor = new MotorEcoFin({ saldoDevedor: 1, taxaNominal: 0.01, prazoRestante: 1 });
-            const anosDados = motor.agruparPorAno(estrategia.detalhes);
-
-            const toggleAno = (ano) => {
-                setAnosExpandidos(prev => prev.includes(ano) ? prev.filter(a => a !== ano) : [...prev, ano]);
-            };
-
-            return (
-                <div>
-                    <div className="toolbar">
-                        <button onClick={() => setAnosExpandidos(anosDados.map(a => a.ano))} className="btn-primary">▼ Expandir Todos</button>
-                        <button onClick={() => setAnosExpandidos([])} className="btn-secondary">▶ Colapsar Todos</button>
-                    </div>
-                    <div style={{overflowX: 'auto'}}>
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Mês</th>
-                                    <th>Saldo Inicial</th>
-                                    <th>Juros</th>
-                                    <th>Amort. Base</th>
-                                    <th>Amort. Extra</th>
-                                    <th>Parcela</th>
-                                    <th>Saldo Final</th>
-                                    <th>% Quitado</th>
-                                    <th>Juros Acum.</th>
-                                    <th>Amort. Acum.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {anosDados.map(ano => (
-                                    <React.Fragment key={ano.ano}>
-                                        <tr className="year-header" onClick={() => toggleAno(ano.ano)}>
-                                            <td colSpan="10">
-                                                <span className={`collapse-icon ${!anosExpandidos.includes(ano.ano) ? 'collapsed' : ''}`}>▼</span>
-                                                <strong>Ano {ano.ano}</strong> ({ano.meses.length} meses) - 
-                                                Saldo: {formato(ano.saldoInicial)} → {formato(ano.saldoFinal)} | 
-                                                Total Pago: {formato(ano.totalPago)}
-                                            </td>
-                                        </tr>
-                                        {anosExpandidos.includes(ano.ano) && ano.meses.map(mes => (
-                                            <tr key={mes.mes}>
-                                                <td>{mes.mes}</td>
-                                                <td>{formato(mes.saldoInicial)}</td>
-                                                <td className="negative">{formato(mes.juros)}</td>
-                                                <td className="positive">{formato(mes.amortizacaoBase)}</td>
-                                                <td className="warning">{formato(mes.amortizacaoExtra)}</td>
-                                                <td><strong>{formato(mes.parcela)}</strong></td>
-                                                <td>{formato(mes.saldoFinal)}</td>
-                                                <td>{mes.percentualQuitado.toFixed(1)}%</td>
-                                                <td className="negative">{formato(mes.jurosAcumulados)}</td>
-                                                <td className="positive">{formato(mes.amortizadoAcumulado)}</td>
-                                            </tr>
-                                        ))}
-                                    </React.Fragment>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==================== ANÁLISE COMPLETA ====================
-        function AnaliseCompleta({ cliente: clienteInicial, onVoltar }) {
-            const [cliente, setCliente] = useState(clienteInicial);
-            const [mostrarEdicao, setMostrarEdicao] = useState(false);
-            const [tabAtiva, setTabAtiva] = useState('visao-geral');
-
             const motor = new MotorEcoFin({
                 saldoDevedor: cliente.saldoDevedor,
                 taxaNominal: cliente.taxaNominal || cliente.taxaAnual,
@@ -496,6 +714,7 @@
         }
 
         ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
     </script>
 </body>
 </html>

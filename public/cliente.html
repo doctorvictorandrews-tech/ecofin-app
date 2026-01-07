@@ -2,608 +2,913 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Análise Gratuita</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Análise Gratuita | Ecofin</title>
+    <meta name="description" content="Preencha seus dados e descubra quanto você pode economizar no seu financiamento imobiliário.">
+    
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #000 0%, #1B4D3E 100%); color: white; min-height: 100vh; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
-        .glass { background: rgba(212, 168, 60, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 168, 60, 0.2); border-radius: 1rem; padding: 2rem; }
-        .input-field { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(212, 168, 60, 0.3); color: white; padding: 0.75rem; border-radius: 0.5rem; width: 100%; transition: all 0.3s; }
-        .input-field:focus { background: rgba(255, 255, 255, 0.12); border-color: #D4A83C; outline: none; box-shadow: 0 0 0 3px rgba(212, 168, 60, 0.1); }
-        .btn-primary { background: linear-gradient(135deg, #D4A83C 0%, #E5B94D 100%); color: #000; padding: 1rem 2rem; border-radius: 0.5rem; border: none; cursor: pointer; font-weight: 700; transition: all 0.3s; font-size: 1rem; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 168, 60, 0.4); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; border: 1px solid rgba(212, 168, 60, 0.3); cursor: pointer; font-weight: 600; }
-        .option-card { padding: 2rem; border-radius: 1rem; cursor: pointer; transition: all 0.3s; background: rgba(255, 255, 255, 0.05); border: 2px solid transparent; }
-        .option-card:hover { background: rgba(212, 168, 60, 0.1); transform: translateY(-5px); }
-        .option-card.selected { background: rgba(212, 168, 60, 0.2); border-color: #D4A83C; }
-        .upload-zone { border: 2px dashed rgba(212, 168, 60, 0.5); border-radius: 1rem; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(255, 255, 255, 0.03); }
-        .upload-zone:hover { border-color: #D4A83C; background: rgba(212, 168, 60, 0.1); }
-        .file-preview { background: rgba(212, 168, 60, 0.15); border: 1px solid #D4A83C; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; }
-        .progress-bar { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; overflow: hidden; margin-top: 1rem; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #D4A83C 0%, #E5B94D 100%); transition: width 0.3s; }
-        .step-indicator { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
-        .step { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 3px solid rgba(212, 168, 60, 0.3); background: rgba(0, 0, 0, 0.3); transition: all 0.3s; }
-        .step.active { background: #D4A83C; color: #000; border-color: #D4A83C; transform: scale(1.1); }
-        .step.completed { background: #1B4D3E; border-color: #1B4D3E; color: white; }
-        .guide-box { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 0.5rem; padding: 1.5rem; margin: 1.5rem 0; }
-        .guide-step { display: flex; gap: 1rem; margin-bottom: 1rem; }
-        .guide-number { background: #D4A83C; color: #000; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
-        .ocr-status { background: rgba(212, 168, 60, 0.1); border: 1px solid #D4A83C; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .spinner { border: 4px solid rgba(212, 168, 60, 0.1); border-top: 4px solid #D4A83C; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        /* ========================================================================
+           DESIGN SYSTEM - MATCHING LANDING PAGE
+           ======================================================================== */
+        :root {
+            --bg-body: #050505;
+            --bg-surface: #0F0F0F;
+            --bg-surface-light: #161616;
+            
+            --gold-primary: #D9890D;
+            --gold-hover: #F59E0B;
+            --gold-glow: rgba(217, 137, 13, 0.6);
+            
+            --text-primary: #FFFFFF;
+            --text-secondary: #C4C4C4;
+            
+            --border-light: rgba(255, 255, 255, 0.1);
+            --success: #10B981;
+            --danger: #EF4444;
+
+            --font-sans: 'Manrope', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Background */
+        .bg-blob {
+            position: fixed; filter: blur(120px); z-index: -1; opacity: 0.15;
+            animation: blobMove 20s infinite alternate ease-in-out; border-radius: 50%;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--gold-primary); }
+        .blob-2 { bottom: -20%; right: -20%; width: 60vw; height: 60vw; background: #5a3a00; animation-delay: -10s; }
+        @keyframes blobMove { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+
+        /* Container */
+        .container { width: 90%; max-width: 900px; margin: 0 auto; padding: 40px 0; position: relative; z-index: 2; }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 50px; }
+        .header img { height: 40px; margin: 0 auto 30px; }
+        .header h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 800; color: white; margin-bottom: 15px; letter-spacing: -1px; }
+        .header p { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+
+        /* Progress Bar */
+        .progress-wrapper { margin-bottom: 50px; }
+        .progress-steps { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; position: relative; }
+        .progress-line { position: absolute; top: 20px; left: 0; width: 100%; height: 3px; background: var(--border-light); z-index: 0; }
+        .progress-line-fill { height: 100%; background: var(--gold-primary); transition: width 0.5s ease; box-shadow: 0 0 10px var(--gold-glow); }
+        .step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .step-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-surface); border: 3px solid var(--border-light); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; transition: all 0.3s; }
+        .step.active .step-circle { background: var(--gold-primary); border-color: var(--gold-primary); color: #000; box-shadow: 0 0 20px var(--gold-glow); }
+        .step.completed .step-circle { background: var(--success); border-color: var(--success); color: white; }
+        .step-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; text-align: center; }
+        .step.active .step-label { color: var(--gold-primary); }
+
+        /* Card */
+        .card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 20px; padding: 50px; box-shadow: 0 0 50px rgba(0,0,0,0.5); animation: fadeInUp 0.5s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-title { font-size: 28px; font-weight: 800; color: white; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+        .card-subtitle { font-size: 16px; color: var(--text-secondary); margin-bottom: 40px; }
+
+        /* Form */
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 25px; margin-bottom: 40px; }
+        @media(min-width: 768px) { .form-grid { grid-template-columns: repeat(2, 1fr); } }
+        .form-group { display: flex; flex-direction: column; }
+        .form-label { font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { background: #1A1A1A; border: 1px solid var(--border-light); color: white; padding: 16px; border-radius: 10px; font-family: var(--font-body); font-size: 16px; outline: none; transition: 0.3s; }
+        .form-input:focus { border-color: var(--gold-primary); box-shadow: 0 0 0 4px rgba(217,137,13,0.1); }
+        .form-input::placeholder { color: #666; }
+
+        /* Select */
+        .form-select { background: #1A1A1A url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23D9890D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center; appearance: none; }
+
+        /* Option Cards */
+        .option-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 40px; }
+        @media(min-width: 768px) { .option-grid { grid-template-columns: repeat(2, 1fr); } }
+        .option-card { background: #1A1A1A; border: 2px solid var(--border-light); border-radius: 16px; padding: 30px; cursor: pointer; transition: all 0.3s; text-align: center; position: relative; overflow: hidden; }
+        .option-card:hover { border-color: var(--gold-primary); transform: translateY(-5px); }
+        .option-card.selected { background: rgba(217, 137, 13, 0.1); border-color: var(--gold-primary); box-shadow: 0 0 30px rgba(217, 137, 13, 0.2); }
+        .option-card.selected::before { content: '✓'; position: absolute; top: 15px; right: 15px; width: 28px; height: 28px; background: var(--gold-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-weight: bold; font-size: 18px; }
+        .option-icon { font-size: 48px; margin-bottom: 20px; }
+        .option-title { font-size: 20px; font-weight: 700; color: white; margin-bottom: 10px; }
+        .option-desc { font-size: 14px; color: var(--text-secondary); }
+
+        /* Upload Zone */
+        .upload-zone { border: 2px dashed var(--border-light); border-radius: 16px; padding: 50px 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #1A1A1A; position: relative; }
+        .upload-zone:hover { border-color: var(--gold-primary); background: rgba(217, 137, 13, 0.05); }
+        .upload-zone.dragover { border-color: var(--gold-primary); background: rgba(217, 137, 13, 0.1); transform: scale(1.02); }
+        .upload-icon { font-size: 64px; color: var(--gold-primary); margin-bottom: 20px; }
+        .upload-text { font-size: 18px; font-weight: 600; color: white; margin-bottom: 10px; }
+        .upload-hint { font-size: 14px; color: var(--text-secondary); }
+        .upload-preview { margin-top: 30px; }
+        .upload-preview img { max-width: 100%; border-radius: 12px; border: 1px solid var(--border-light); }
+
+        /* Loading */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(5, 5, 5, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        .loading-spinner { width: 60px; height: 60px; border: 4px solid var(--border-light); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 18px; font-weight: 600; color: white; margin-bottom: 10px; }
+        .loading-subtext { font-size: 14px; color: var(--text-secondary); }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 15px; justify-content: space-between; padding-top: 40px; border-top: 1px solid var(--border-light); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 18px 36px; font-weight: 800; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.5px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.3s ease; font-size: 14px; }
+        .btn-primary { background: var(--gold-primary); color: #000; box-shadow: 0 0 20px rgba(217, 137, 13, 0.3); }
+        .btn-primary:hover:not(:disabled) { background: var(--gold-hover); box-shadow: 0 0 50px rgba(217, 137, 13, 0.6); transform: translateY(-2px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border-light); color: white; }
+        .btn-secondary:hover { border-color: var(--gold-primary); color: var(--gold-primary); }
+
+        /* Success Screen */
+        .success-screen { text-align: center; padding: 60px 20px; }
+        .success-icon { font-size: 120px; margin-bottom: 30px; animation: scaleIn 0.5s ease-out; }
+        @keyframes scaleIn { from { transform: scale(0); } to { transform: scale(1); } }
+        .success-title { font-size: 36px; font-weight: 800; color: var(--gold-primary); margin-bottom: 20px; }
+        .success-text { font-size: 18px; color: var(--text-secondary); max-width: 500px; margin: 0 auto 40px; line-height: 1.8; }
+
+        /* Badge */
+        .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(217, 137, 13, 0.1); border: 1px solid rgba(217, 137, 13, 0.3); border-radius: 100px; font-size: 12px; font-weight: 700; color: var(--gold-primary); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Info Box */
+        .info-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 30px; }
+        .info-box p { margin: 0; font-size: 14px; color: var(--success); display: flex; align-items: center; gap: 10px; }
+
+        /* Mobile */
+        @media(max-width: 768px) {
+            .container { padding: 20px 0; }
+            .card { padding: 30px 20px; }
+            .btn-group { flex-direction: column-reverse; }
+            .btn { width: 100%; }
+            .progress-steps { display: none; }
+        }
+
+        /* Skeleton */
+        .skeleton { background: linear-gradient(90deg, #1A1A1A 25%, #2A2A2A 50%, #1A1A1A 75%); background-size: 200% 100%; animation: skeleton 1.5s ease-in-out infinite; border-radius: 8px; height: 20px; }
+        @keyframes skeleton { to { background-position: -200% 0; } }
     </style>
 </head>
 <body>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
     <div id="root"></div>
+
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:8000'
-            : 'https://ecofin-app-production.up.railway.app';
+        // ============================================
+        // CONFIGURAÇÃO DA API
+        // ============================================
+        const API_URL = 'https://ecofin-app-production.up.railway.app';
+        
+        // ATUALIZAR ESTA URL COM A DO SEU RAILWAY!
+        // const API_URL = 'https://SEU-RAILWAY.up.railway.app';
 
-        const GUIAS_BANCOS = {
-            'caixa': {
-                nome: 'Caixa Econômica Federal',
-                passos: [
-                    'Abra o aplicativo "Habitação Caixa"',
-                    'Faça login com seu CPF e senha',
-                    'Toque em "Meu Imóvel"',
-                    'Na tela principal, você verá: Saldo Devedor, Taxa de Juros, Parcela',
-                    'Tire um print ou foto nítida da tela',
-                    'Faça o upload aqui'
-                ],
-                dicas: 'Certifique-se que a foto está nítida e todos os números estão legíveis'
-            },
-            'itau': {
-                nome: 'Itaú',
-                passos: [
-                    'Abra o app Itaú',
-                    'Vá em "Empréstimos e Financiamentos"',
-                    'Selecione "Financiamento Imobiliário"',
-                    'Toque em "Ver detalhes"',
-                    'Tire print da tela com: Saldo, Taxa, Prazo, Parcela',
-                    'Faça o upload aqui'
-                ],
-                dicas: 'O app Itaú mostra todos os dados em uma única tela. Capture tudo!'
-            },
-            'bradesco': {
-                nome: 'Bradesco',
-                passos: [
-                    'Abra o app Bradesco',
-                    'Menu "Empréstimos"',
-                    'Selecione "Financiamento Imobiliário"',
-                    'Toque em "Consultar contrato"',
-                    'Tire print dos dados principais',
-                    'Upload aqui'
-                ],
-                dicas: 'No Bradesco, os dados podem estar em abas diferentes. Capture a aba principal.'
-            },
-            'santander': {
-                nome: 'Santander',
-                passos: [
-                    'Abra o app Santander',
-                    'Vá em "Empréstimos"',
-                    'Selecione seu financiamento',
-                    'Toque em "Detalhes do contrato"',
-                    'Tire print da tela',
-                    'Upload aqui'
-                ],
-                dicas: 'O Santander mostra um resumo completo. Uma foto é suficiente.'
-            },
-            'bb': {
-                nome: 'Banco do Brasil',
-                passos: [
-                    'Abra o app BB',
-                    'Menu "Empréstimos e Financiamentos"',
-                    'Selecione "Crédito Imobiliário"',
-                    'Toque em "Posição do contrato"',
-                    'Tire print da posição',
-                    'Upload aqui'
-                ],
-                dicas: 'O BB tem uma tela de "Posição" com todos os dados necessários.'
-            }
-        };
-
-        async function extrairDadosOCR(file) {
-            const { data: { text } } = await Tesseract.recognize(file, 'por', {
-                logger: m => console.log(m)
-            });
-
-            const extrair = (regex, defaultValue = 0) => {
-                const match = text.match(regex);
-                if (!match) return defaultValue;
-                const numero = match[1].replace(/[^\d,.-]/g, '').replace(',', '.');
-                return parseFloat(numero) || defaultValue;
-            };
-
-            return {
-                saldo_devedor: extrair(/saldo.*?devedor.*?(\d+[.,]?\d*)/i) || extrair(/devedor.*?(\d+[.,]?\d*)/i),
-                taxa_nominal: (extrair(/taxa.*?juros.*?(\d+[.,]?\d*)/i) || extrair(/taxa.*?(\d+[.,]?\d*)/i)) / 100,
-                prazo_restante: extrair(/prazo.*?restante.*?(\d+)/i) || extrair(/prazo.*?(\d+)/i),
-                valor_parcela: extrair(/parcela.*?(\d+[.,]?\d*)/i) || extrair(/valor.*?parcela.*?(\d+[.,]?\d*)/i),
-                seguro_mensal: extrair(/seguro.*?(\d+[.,]?\d*)/i) || 0,
-                taxa_admin_mensal: extrair(/taxa.*?admin.*?(\d+[.,]?\d*)/i) || extrair(/taxa.*?adm.*?(\d+[.,]?\d*)/i) || 0
-            };
-        }
-
+        // ============================================
+        // COMPONENTE PRINCIPAL
+        // ============================================
         function FormularioCliente() {
             const [step, setStep] = useState(1);
-            const [metodoInput, setMetodoInput] = useState(null);
-            const [bancoSelecionado, setBancoSelecionado] = useState('');
-            const [arquivoContrato, setArquivoContrato] = useState(null);
-            const [processandoOCR, setProcessandoOCR] = useState(false);
-            const [progressoOCR, setProgressoOCR] = useState(0);
-            const [dadosExtraidos, setDadosExtraidos] = useState(null);
             const [loading, setLoading] = useState(false);
+            const [loadingText, setLoadingText] = useState('');
             const [submitted, setSubmitted] = useState(false);
 
             const [formData, setFormData] = useState({
-                nome: '', whatsapp: '', email: '', objetivo: '',
-                banco: '', sistema: 'PRICE',
-                saldo_devedor: 0, taxa_nominal: 0, prazo_restante: 0,
-                seguro_mensal: 0, taxa_admin_mensal: 0, tr_mensal: 0.0015,
-                valor_fgts: 0, capacidade_extra: 0
+                // Step 1: Dados Pessoais
+                nome: '',
+                whatsapp: '',
+                email: '',
+                objetivo: '',
+                
+                // Step 2: Método
+                metodo: '', // 'ocr' ou 'manual'
+                
+                // Step 2.5: Banco (se OCR)
+                banco: '',
+                
+                // Step 3: Upload (se OCR)
+                imagemContrato: null,
+                imagemPreview: null,
+                
+                // Step 4: Dados Financiamento (manual ou confirmação OCR)
+                saldoDevedor: '',
+                taxaNominal: '',
+                prazoRestante: '',
+                sistema: 'PRICE',
+                seguroMensal: '',
+                taxaAdminMensal: '',
+                
+                // Step 5: Recursos
+                valorFGTS: '',
+                capacidadeExtra: ''
             });
 
-            const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
-
-            const handleFileUpload = async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('Arquivo muito grande! Máximo 10MB');
-                    return;
-                }
-
-                setArquivoContrato(file);
-                setProcessandoOCR(true);
-                setProgressoOCR(10);
-
-                try {
-                    setProgressoOCR(30);
-                    const dados = await extrairDadosOCR(file);
-                    setProgressoOCR(80);
-                    
-                    setDadosExtraidos(dados);
-                    updateField('saldo_devedor', dados.saldo_devedor);
-                    updateField('taxa_nominal', dados.taxa_nominal);
-                    updateField('prazo_restante', dados.prazo_restante);
-                    updateField('seguro_mensal', dados.seguro_mensal);
-                    updateField('taxa_admin_mensal', dados.taxa_admin_mensal);
-                    updateField('banco', bancoSelecionado);
-                    
-                    setProgressoOCR(100);
-                    setTimeout(() => {
-                        setProcessandoOCR(false);
-                        setStep(4);
-                    }, 500);
-                } catch (err) {
-                    console.error('Erro OCR:', err);
-                    alert('Não conseguimos ler o documento automaticamente. Por favor, preencha manualmente.');
-                    setProcessandoOCR(false);
-                    setMetodoInput('manual');
-                    setStep(3);
-                }
+            const updateField = (field, value) => {
+                setFormData(prev => ({ ...prev, [field]: value }));
             };
 
-            const handleSubmit = async () => {
-                setLoading(true);
-                
-                const payload = {
-                    nome: formData.nome,
-                    email: formData.email || null,
-                    whatsapp: formData.whatsapp,
-                    banco: formData.banco,
-                    objetivo: formData.objetivo,
-                    financiamento: {
-                        saldo_devedor: formData.saldo_devedor,
-                        taxa_nominal: formData.taxa_nominal,
-                        prazo_restante: formData.prazo_restante,
-                        sistema: formData.sistema,
-                        tr_mensal: formData.tr_mensal,
-                        seguro_mensal: formData.seguro_mensal,
-                        taxa_admin_mensal: formData.taxa_admin_mensal
-                    },
-                    recursos: {
-                        valor_fgts: formData.valor_fgts,
-                        capacidade_extra: formData.capacidade_extra,
-                        tem_reserva_emergencia: false,
-                        trabalha_clt: false
+            // ============================================
+            // STEP 1: DADOS PESSOAIS
+            // ============================================
+            const Step1DadosPessoais = () => (
+                <div className="card">
+                    <div className="badge">
+                        <i className="ph-fill ph-user"></i> Etapa 1 de 5
+                    </div>
+                    
+                    <div className="card-title">
+                        <i className="ph-fill ph-identification-card" style={{color: 'var(--gold-primary)'}}></i>
+                        Seus Dados
+                    </div>
+                    <div className="card-subtitle">
+                        Vamos começar com suas informações básicas
+                    </div>
+
+                    <div className="form-grid">
+                        <div className="form-group" style={{gridColumn: 'span 2'}}>
+                            <label className="form-label">Nome Completo *</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="João Silva Santos"
+                                value={formData.nome}
+                                onChange={(e) => updateField('nome', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">WhatsApp *</label>
+                            <input 
+                                type="tel" 
+                                className="form-input" 
+                                placeholder="(11) 99999-9999"
+                                value={formData.whatsapp}
+                                onChange={(e) => updateField('whatsapp', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Email (Opcional)</label>
+                            <input 
+                                type="email" 
+                                className="form-input" 
+                                placeholder="seu@email.com"
+                                value={formData.email}
+                                onChange={(e) => updateField('email', e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-group" style={{marginBottom: '40px'}}>
+                        <label className="form-label">Qual seu principal objetivo? *</label>
+                        <div className="option-grid">
+                            <div 
+                                className={`option-card ${formData.objetivo === 'economia' ? 'selected' : ''}`}
+                                onClick={() => updateField('objetivo', 'economia')}
+                            >
+                                <div className="option-icon">💰</div>
+                                <div className="option-title">Economizar Máximo</div>
+                                <div className="option-desc">Pagar menos juros ao longo do tempo</div>
+                            </div>
+
+                            <div 
+                                className={`option-card ${formData.objetivo === 'quitar_rapido' ? 'selected' : ''}`}
+                                onClick={() => updateField('objetivo', 'quitar_rapido')}
+                            >
+                                <div className="option-icon">🏃‍♂️</div>
+                                <div className="option-title">Quitar Rápido</div>
+                                <div className="option-desc">Liberdade financeira o quanto antes</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="btn-group">
+                        <a href="/" className="btn btn-secondary">
+                            <i className="ph-bold ph-arrow-left"></i>
+                            Voltar
+                        </a>
+                        <button 
+                            className="btn btn-primary"
+                            disabled={!formData.nome || !formData.whatsapp || !formData.objetivo}
+                            onClick={() => setStep(2)}
+                        >
+                            Próxima Etapa
+                            <i className="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // ============================================
+            // STEP 2: ESCOLHER MÉTODO
+            // ============================================
+            const Step2EscolhaMetodo = () => (
+                <div className="card">
+                    <div className="badge">
+                        <i className="ph-fill ph-gear"></i> Etapa 2 de 5
+                    </div>
+                    
+                    <div className="card-title">
+                        <i className="ph-fill ph-path" style={{color: 'var(--gold-primary)'}}></i>
+                        Escolha o Método
+                    </div>
+                    <div className="card-subtitle">
+                        Como você prefere inserir os dados do financiamento?
+                    </div>
+
+                    <div className="option-grid">
+                        <div 
+                            className={`option-card ${formData.metodo === 'ocr' ? 'selected' : ''}`}
+                            onClick={() => updateField('metodo', 'ocr')}
+                        >
+                            <div className="option-icon">📸</div>
+                            <div className="option-title">Tirar Foto (Recomendado)</div>
+                            <div className="option-desc">Nossa IA extrai automaticamente os dados do app do banco</div>
+                        </div>
+
+                        <div 
+                            className={`option-card ${formData.metodo === 'manual' ? 'selected' : ''}`}
+                            onClick={() => updateField('metodo', 'manual')}
+                        >
+                            <div className="option-icon">✍️</div>
+                            <div className="option-title">Preencher Manual</div>
+                            <div className="option-desc">Digite os dados manualmente (2 minutos)</div>
+                        </div>
+                    </div>
+
+                    <div className="btn-group">
+                        <button className="btn btn-secondary" onClick={() => setStep(1)}>
+                            <i className="ph-bold ph-arrow-left"></i>
+                            Voltar
+                        </button>
+                        <button 
+                            className="btn btn-primary"
+                            disabled={!formData.metodo}
+                            onClick={() => {
+                                if (formData.metodo === 'ocr') {
+                                    setStep(2.5); // Escolher banco
+                                } else {
+                                    setStep(4); // Manual direto
+                                }
+                            }}
+                        >
+                            Próxima Etapa
+                            <i className="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // ============================================
+            // STEP 2.5: ESCOLHER BANCO (para OCR)
+            // ============================================
+            const Step25EscolherBanco = () => (
+                <div className="card">
+                    <div className="badge">
+                        <i className="ph-fill ph-bank"></i> Etapa 2.5 de 5
+                    </div>
+                    
+                    <div className="card-title">
+                        <i className="ph-fill ph-bank" style={{color: 'var(--gold-primary)'}}></i>
+                        Qual é o seu banco?
+                    </div>
+                    <div className="card-subtitle">
+                        Isso nos ajuda a processar a foto com mais precisão
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Selecione o banco *</label>
+                        <select 
+                            className="form-input form-select"
+                            value={formData.banco}
+                            onChange={(e) => updateField('banco', e.target.value)}
+                        >
+                            <option value="">Selecione...</option>
+                            <option value="Caixa">Caixa Econômica Federal</option>
+                            <option value="Itaú">Itaú Unibanco</option>
+                            <option value="Bradesco">Bradesco</option>
+                            <option value="Santander">Santander</option>
+                            <option value="Banco do Brasil">Banco do Brasil</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <div className="info-box">
+                        <p>
+                            <i className="ph-fill ph-lightbulb" style={{fontSize: '24px'}}></i>
+                            <span>Na próxima tela, vamos te mostrar como tirar a foto ideal do app do {formData.banco || 'seu banco'}</span>
+                        </p>
+                    </div>
+
+                    <div className="btn-group">
+                        <button className="btn btn-secondary" onClick={() => setStep(2)}>
+                            <i className="ph-bold ph-arrow-left"></i>
+                            Voltar
+                        </button>
+                        <button 
+                            className="btn btn-primary"
+                            disabled={!formData.banco}
+                            onClick={() => setStep(3)}
+                        >
+                            Próxima Etapa
+                            <i className="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // ============================================
+            // STEP 3: UPLOAD E OCR
+            // ============================================
+            const Step3Upload = () => {
+                const handleFileChange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    // Preview
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        updateField('imagemPreview', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    updateField('imagemContrato', file);
+
+                    // OCR
+                    setLoading(true);
+                    setLoadingText('Processando imagem...');
+
+                    try {
+                        const { data: { text } } = await Tesseract.recognize(file, 'por', {
+                            logger: (m) => {
+                                if (m.status === 'recognizing text') {
+                                    setLoadingText(`Extraindo dados... ${Math.round(m.progress * 100)}%`);
+                                }
+                            }
+                        });
+
+                        // Extrair dados (regex básico)
+                        const saldoMatch = text.match(/saldo.*?devedor.*?R?\$?\s*([0-9.,]+)/i);
+                        const taxaMatch = text.match(/taxa.*?([0-9,]+)%/i);
+                        const prazoMatch = text.match(/prazo.*?([0-9]+).*?mes/i);
+
+                        if (saldoMatch) updateField('saldoDevedor', saldoMatch[1].replace(/\./g, '').replace(',', '.'));
+                        if (taxaMatch) updateField('taxaNominal', taxaMatch[1].replace(',', '.'));
+                        if (prazoMatch) updateField('prazoRestante', prazoMatch[1]);
+
+                        setLoading(false);
+                        setStep(4); // Ir para confirmação
+                    } catch (error) {
+                        console.error('Erro no OCR:', error);
+                        alert('Erro ao processar imagem. Tente novamente ou preencha manualmente.');
+                        setLoading(false);
                     }
                 };
-                
-                console.log('📤 Enviando para API:', payload);
-                
-                try {
-                    const response = await fetch(`${API_URL}/api/cliente`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    console.log('📥 Status:', response.status);
-                    
-                    const data = await response.json();
-                    console.log('📥 Resposta:', data);
-                    
-                    if (data.sucesso) {
-                        setSubmitted(true);
-                    } else {
-                        throw new Error('Erro ao enviar');
-                    }
-                } catch (err) {
-                    console.error('❌ Erro:', err);
-                    const clientes = JSON.parse(localStorage.getItem('ecofin_clientes') || '[]');
-                    clientes.push({ ...payload, id: Date.now(), data: new Date().toISOString(), status: 'pendente' });
-                    localStorage.setItem('ecofin_clientes', JSON.stringify(clientes));
-                    setSubmitted(true);
-                } finally {
-                    setLoading(false);
-                }
+
+                return (
+                    <div className="card">
+                        <div className="badge">
+                            <i className="ph-fill ph-camera"></i> Etapa 3 de 5
+                        </div>
+                        
+                        <div className="card-title">
+                            <i className="ph-fill ph-image" style={{color: 'var(--gold-primary)'}}></i>
+                            Tire uma Foto do Contrato
+                        </div>
+                        <div className="card-subtitle">
+                            Abra o app do {formData.banco} e tire uma foto da tela de "Detalhes do Financiamento"
+                        </div>
+
+                        <div className="info-box">
+                            <p>
+                                <i className="ph-fill ph-info" style={{fontSize: '24px'}}></i>
+                                <span><strong>Dica:</strong> Certifique-se que o saldo devedor, taxa de juros e prazo estão visíveis e legíveis</span>
+                            </p>
+                        </div>
+
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            capture="environment"
+                            id="fileInput" 
+                            style={{display: 'none'}}
+                            onChange={handleFileChange}
+                        />
+
+                        <label htmlFor="fileInput" className="upload-zone">
+                            {formData.imagemPreview ? (
+                                <div className="upload-preview">
+                                    <img src={formData.imagemPreview} alt="Preview" />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="upload-icon">
+                                        <i className="ph-fill ph-camera-plus"></i>
+                                    </div>
+                                    <div className="upload-text">Clique para tirar foto ou selecionar arquivo</div>
+                                    <div className="upload-hint">Formatos: JPG, PNG (máx. 10MB)</div>
+                                </>
+                            )}
+                        </label>
+
+                        <div className="btn-group">
+                            <button className="btn btn-secondary" onClick={() => setStep(2.5)}>
+                                <i className="ph-bold ph-arrow-left"></i>
+                                Voltar
+                            </button>
+                            <button 
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    updateField('metodo', 'manual');
+                                    setStep(4);
+                                }}
+                            >
+                                Preencher Manual
+                            </button>
+                        </div>
+                    </div>
+                );
             };
 
+            // ============================================
+            // STEP 4: DADOS FINANCIAMENTO
+            // ============================================
+            const Step4DadosFinanciamento = () => (
+                <div className="card">
+                    <div className="badge">
+                        <i className="ph-fill ph-house"></i> Etapa 4 de 5
+                    </div>
+                    
+                    <div className="card-title">
+                        <i className="ph-fill ph-file-text" style={{color: 'var(--gold-primary)'}}></i>
+                        {formData.metodo === 'ocr' ? 'Confirme os Dados Extraídos' : 'Dados do Financiamento'}
+                    </div>
+                    <div className="card-subtitle">
+                        {formData.metodo === 'ocr' 
+                            ? 'Verifique se os dados foram extraídos corretamente e corrija se necessário' 
+                            : 'Preencha os dados do seu contrato de financiamento'}
+                    </div>
+
+                    <div className="form-grid">
+                        {formData.metodo !== 'ocr' && (
+                            <div className="form-group" style={{gridColumn: 'span 2'}}>
+                                <label className="form-label">Banco *</label>
+                                <select 
+                                    className="form-input form-select"
+                                    value={formData.banco}
+                                    onChange={(e) => updateField('banco', e.target.value)}
+                                >
+                                    <option value="">Selecione...</option>
+                                    <option value="Caixa">Caixa Econômica Federal</option>
+                                    <option value="Itaú">Itaú Unibanco</option>
+                                    <option value="Bradesco">Bradesco</option>
+                                    <option value="Santander">Santander</option>
+                                    <option value="Banco do Brasil">Banco do Brasil</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                        )}
+
+                        <div className="form-group" style={{gridColumn: 'span 2'}}>
+                            <label className="form-label">Saldo Devedor (R$) *</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Ex: 250000"
+                                value={formData.saldoDevedor}
+                                onChange={(e) => updateField('saldoDevedor', e.target.value.replace(/\D/g, ''))}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Taxa de Juros (% ao ano) *</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Ex: 9.75"
+                                value={formData.taxaNominal}
+                                onChange={(e) => updateField('taxaNominal', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Prazo Restante (meses) *</label>
+                            <input 
+                                type="number" 
+                                className="form-input" 
+                                placeholder="Ex: 360"
+                                value={formData.prazoRestante}
+                                onChange={(e) => updateField('prazoRestante', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Sistema *</label>
+                            <select 
+                                className="form-input form-select"
+                                value={formData.sistema}
+                                onChange={(e) => updateField('sistema', e.target.value)}
+                            >
+                                <option value="PRICE">PRICE</option>
+                                <option value="SAC">SAC</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Seguro Mensal (R$)</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Ex: 15.84"
+                                value={formData.seguroMensal}
+                                onChange={(e) => updateField('seguroMensal', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{gridColumn: 'span 2'}}>
+                            <label className="form-label">Taxa de Administração Mensal (R$)</label>
+                            <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="Ex: 25.00"
+                                value={formData.taxaAdminMensal}
+                                onChange={(e) => updateField('taxaAdminMensal', e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="btn-group">
+                        <button className="btn btn-secondary" onClick={() => setStep(formData.metodo === 'ocr' ? 3 : 2)}>
+                            <i className="ph-bold ph-arrow-left"></i>
+                            Voltar
+                        </button>
+                        <button 
+                            className="btn btn-primary"
+                            disabled={!formData.banco || !formData.saldoDevedor || !formData.taxaNominal || !formData.prazoRestante}
+                            onClick={() => setStep(5)}
+                        >
+                            Próxima Etapa
+                            <i className="ph-bold ph-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // ============================================
+            // STEP 5: RECURSOS
+            // ============================================
+            const Step5Recursos = () => {
+                const handleSubmit = async () => {
+                    setLoading(true);
+                    setLoadingText('Enviando seus dados...');
+
+                    const payload = {
+                        nome: formData.nome,
+                        email: formData.email || null,
+                        whatsapp: formData.whatsapp,
+                        banco: formData.banco,
+                        objetivo: formData.objetivo,
+                        financiamento: {
+                            saldo_devedor: parseFloat(formData.saldoDevedor),
+                            taxa_nominal: parseFloat(formData.taxaNominal) / 100,
+                            prazo_restante: parseInt(formData.prazoRestante),
+                            sistema: formData.sistema,
+                            tr_mensal: 0.0015,
+                            seguro_mensal: parseFloat(formData.seguroMensal) || 0,
+                            taxa_admin_mensal: parseFloat(formData.taxaAdminMensal) || 0
+                        },
+                        recursos: {
+                            valor_fgts: parseFloat(formData.valorFGTS) || 0,
+                            capacidade_extra: parseFloat(formData.capacidadeExtra) || 0,
+                            tem_reserva_emergencia: false,
+                            trabalha_clt: false
+                        }
+                    };
+
+                    try {
+                        const response = await fetch(`${API_URL}/api/cliente`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.sucesso) {
+                            setLoading(false);
+                            setSubmitted(true);
+                        } else {
+                            throw new Error(data.mensagem || 'Erro ao enviar');
+                        }
+                    } catch (error) {
+                        console.error('Erro:', error);
+                        alert('Erro ao enviar. Tente novamente ou entre em contato via WhatsApp.');
+                        setLoading(false);
+                    }
+                };
+
+                return (
+                    <div className="card">
+                        <div className="badge">
+                            <i className="ph-fill ph-wallet"></i> Etapa 5 de 5
+                        </div>
+                        
+                        <div className="card-title">
+                            <i className="ph-fill ph-coins" style={{color: 'var(--gold-primary)'}}></i>
+                            Recursos Disponíveis
+                        </div>
+                        <div className="card-subtitle">
+                            Informe os recursos que você pode usar para amortizar
+                        </div>
+
+                        <div className="form-grid">
+                            <div className="form-group">
+                                <label className="form-label">Valor FGTS Disponível (R$)</label>
+                                <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    placeholder="Ex: 25000"
+                                    value={formData.valorFGTS}
+                                    onChange={(e) => updateField('valorFGTS', e.target.value.replace(/\D/g, ''))}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Capacidade Extra Mensal (R$)</label>
+                                <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    placeholder="Ex: 500"
+                                    value={formData.capacidadeExtra}
+                                    onChange={(e) => updateField('capacidadeExtra', e.target.value.replace(/\D/g, ''))}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="info-box">
+                            <p>
+                                <i className="ph-fill ph-info" style={{fontSize: '24px'}}></i>
+                                <span>Quanto mais recursos você alocar, maior será a economia. Mas não se preocupe, vamos te mostrar o melhor caminho!</span>
+                            </p>
+                        </div>
+
+                        <div className="btn-group">
+                            <button className="btn btn-secondary" onClick={() => setStep(4)}>
+                                <i className="ph-bold ph-arrow-left"></i>
+                                Voltar
+                            </button>
+                            <button 
+                                className="btn btn-primary"
+                                onClick={handleSubmit}
+                                style={{minWidth: '200px'}}
+                            >
+                                <i className="ph-bold ph-paper-plane-tilt"></i>
+                                Enviar Análise
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // ============================================
+            // TELA DE SUCESSO
+            // ============================================
+            const SuccessScreen = () => {
+                const whatsappLink = `https://wa.me/5583991014456?text=Olá! Acabei de enviar minha análise pelo site.%0A%0ANome: ${formData.nome}%0AObjetivo: ${formData.objetivo === 'economia' ? 'Economizar Máximo' : 'Quitar Rápido'}%0A%0AQuero entender melhor os resultados!`;
+
+                return (
+                    <div className="card">
+                        <div className="success-screen">
+                            <div className="success-icon">🎉</div>
+                            <h1 className="success-title">Perfeito, {formData.nome.split(' ')[0]}!</h1>
+                            <p className="success-text">
+                                Recebemos sua solicitação! Nossa equipe vai analisar seu caso e entrar em contato 
+                                em até <strong style={{color: 'var(--gold-primary)'}}>24 horas</strong> com uma 
+                                análise completa e personalizada do seu financiamento.
+                            </p>
+
+                            <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{minWidth: '280px', marginBottom: '20px'}}>
+                                <i className="ph-fill ph-whatsapp-logo"></i>
+                                Falar Agora no WhatsApp
+                            </a>
+
+                            <a href="/" className="btn btn-secondary" style={{minWidth: '280px'}}>
+                                Voltar para o Início
+                            </a>
+                        </div>
+                    </div>
+                );
+            };
+
+            // ============================================
+            // LOADING OVERLAY
+            // ============================================
+            const LoadingOverlay = () => (
+                <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                    <div className="loading-text">{loadingText}</div>
+                    <div className="loading-subtext">Isso pode levar alguns segundos...</div>
+                </div>
+            );
+
+            // ============================================
+            // PROGRESS BAR
+            // ============================================
+            const ProgressBar = () => {
+                const steps = [
+                    { num: 1, label: 'Dados' },
+                    { num: 2, label: 'Método' },
+                    { num: 3, label: 'Upload' },
+                    { num: 4, label: 'Financ.' },
+                    { num: 5, label: 'Recursos' }
+                ];
+
+                const currentStep = Math.floor(step);
+                const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
+
+                return (
+                    <div className="progress-wrapper">
+                        <div className="progress-steps">
+                            <div className="progress-line">
+                                <div className="progress-line-fill" style={{width: `${progress}%`}}></div>
+                            </div>
+                            {steps.map((s) => (
+                                <div key={s.num} className={`step ${currentStep === s.num ? 'active' : ''} ${currentStep > s.num ? 'completed' : ''}`}>
+                                    <div className="step-circle">
+                                        {currentStep > s.num ? '✓' : s.num}
+                                    </div>
+                                    <div className="step-label">{s.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            // ============================================
+            // RENDER
+            // ============================================
             if (submitted) {
                 return (
                     <div className="container">
-                        <div className="glass animate-in" style={{textAlign: 'center', padding: '3rem', maxWidth: '600px', margin: '5rem auto'}}>
-                            <div style={{fontSize: '5rem', marginBottom: '1.5rem'}}>🎉</div>
-                            <h1 style={{fontSize: '2.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
-                                Perfeito, {formData.nome}!
-                            </h1>
-                            <p style={{fontSize: '1.25rem', color: '#ccc', marginBottom: '2rem', lineHeight: '1.8'}}>
-                                Recebemos sua solicitação! Victor analisará seu caso e entrará em contato 
-                                em até <strong style={{color: '#D4A83C'}}>24 horas</strong> com uma análise 
-                                completa e personalizada.
-                            </p>
-                            <a href="/" style={{display: 'inline-block', textDecoration: 'none'}}>
-                                <button className="btn-primary">Voltar para o Início</button>
-                            </a>
-                        </div>
+                        <SuccessScreen />
                     </div>
                 );
             }
 
             return (
-                <div className="container">
-                    <div style={{textAlign: 'center', marginBottom: '3rem'}} className="animate-in">
-                        <div style={{fontSize: '5rem', marginBottom: '1rem'}}>🔑</div>
-                        <h1 style={{fontSize: '3rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
-                            Análise Gratuita EcoFin
-                        </h1>
-                        <p style={{fontSize: '1.25rem', color: '#ccc'}}>
-                            Descubra quanto você pode economizar no seu financiamento
-                        </p>
+                <>
+                    {loading && <LoadingOverlay />}
+                    
+                    <div className="container">
+                        <div className="header">
+                            <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" alt="Ecofin Logo" />
+                            <h1>Análise Gratuita de Financiamento</h1>
+                            <p>Descubra quanto você pode economizar em menos de 5 minutos</p>
+                        </div>
+
+                        {!submitted && <ProgressBar />}
+
+                        {step === 1 && <Step1DadosPessoais />}
+                        {step === 2 && <Step2EscolhaMetodo />}
+                        {step === 2.5 && <Step25EscolherBanco />}
+                        {step === 3 && <Step3Upload />}
+                        {step === 4 && <Step4DadosFinanciamento />}
+                        {step === 5 && <Step5Recursos />}
                     </div>
-
-                    <div className="step-indicator">
-                        {[1, 2, 3, 4, 5].map(s => (
-                            <div key={s} className={`step ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
-                                {step > s ? '✓' : s}
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="glass animate-in">
-                        {/* STEP 1: Dados Pessoais */}
-                        {step === 1 && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
-                                    📋 Seus Dados
-                                </h2>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Nome Completo *</label>
-                                        <input type="text" className="input-field" placeholder="José da Silva" value={formData.nome} onChange={(e) => updateField('nome', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>WhatsApp *</label>
-                                        <input type="tel" className="input-field" placeholder="(11) 99999-9999" value={formData.whatsapp} onChange={(e) => updateField('whatsapp', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Email</label>
-                                        <input type="email" className="input-field" placeholder="seu@email.com" value={formData.email} onChange={(e) => updateField('email', e.target.value)} />
-                                    </div>
-                                </div>
-                                <div style={{marginTop: '1.5rem'}}>
-                                    <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.75rem', fontWeight: '600'}}>Qual seu principal objetivo? *</label>
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
-                                        {[
-                                            { value: 'quitar_rapido', icon: '🏃‍♂️', label: 'Quitar Rápido', desc: 'Liberdade financeira' },
-                                            { value: 'economia', icon: '💰', label: 'Economizar Máximo', desc: 'Pagar menos juros' }
-                                        ].map(opt => (
-                                            <div key={opt.value} className={`option-card ${formData.objetivo === opt.value ? 'selected' : ''}`} onClick={() => updateField('objetivo', opt.value)}>
-                                                <div style={{fontSize: '3rem', marginBottom: '0.5rem'}}>{opt.icon}</div>
-                                                <div style={{fontWeight: '700', color: 'white', marginBottom: '0.25rem'}}>{opt.label}</div>
-                                                <div style={{fontSize: '0.875rem', color: '#999'}}>{opt.desc}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(2)} className="btn-primary" disabled={!formData.nome || !formData.whatsapp || !formData.objetivo}>
-                                        Próxima Etapa →
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 2: Escolher Método */}
-                        {step === 2 && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
-                                    📄 Como você quer informar os dados do financiamento?
-                                </h2>
-                                <p style={{color: '#ccc', marginBottom: '2rem'}}>Escolha a forma mais fácil para você:</p>
-                                
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem'}}>
-                                    <div className={`option-card ${metodoInput === 'upload' ? 'selected' : ''}`} onClick={() => { setMetodoInput('upload'); setStep(2.5); }}>
-                                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📸</div>
-                                        <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>Upload Automático</h3>
-                                        <p style={{color: '#ccc', fontSize: '0.875rem', marginBottom: '1rem'}}>Recomendado - Mais Rápido!</p>
-                                        <ul style={{textAlign: 'left', color: '#999', fontSize: '0.875rem', lineHeight: '1.8'}}>
-                                            <li>✅ Tire foto do app do banco</li>
-                                            <li>✅ Sistema lê automaticamente</li>
-                                            <li>✅ Você só confirma os dados</li>
-                                        </ul>
-                                    </div>
-
-                                    <div className={`option-card ${metodoInput === 'manual' ? 'selected' : ''}`} onClick={() => { setMetodoInput('manual'); setStep(3); }}>
-                                        <div style={{fontSize: '4rem', marginBottom: '1rem'}}>⌨️</div>
-                                        <h3 style={{fontSize: '1.5rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>Preencher Manualmente</h3>
-                                        <p style={{color: '#ccc', fontSize: '0.875rem', marginBottom: '1rem'}}>Tradicional</p>
-                                        <ul style={{textAlign: 'left', color: '#999', fontSize: '0.875rem', lineHeight: '1.8'}}>
-                                            <li>📝 Preencha todos os campos</li>
-                                            <li>📋 Consulte seu contrato</li>
-                                            <li>⏱️ Leva ~5 minutos</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(1)} className="btn-secondary">← Voltar</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 2.5: Escolher Banco */}
-                        {step === 2.5 && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
-                                    🏦 Qual é o seu banco?
-                                </h2>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
-                                    {Object.entries(GUIAS_BANCOS).map(([key, banco]) => (
-                                        <div key={key} className={`option-card ${bancoSelecionado === key ? 'selected' : ''}`} 
-                                            onClick={() => { setBancoSelecionado(key); setStep(2.7); }}
-                                            style={{padding: '1.5rem'}}>
-                                            <div style={{fontSize: '2.5rem', marginBottom: '0.5rem'}}>🏦</div>
-                                            <div style={{fontWeight: '700', color: 'white'}}>{banco.nome}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(2)} className="btn-secondary">← Voltar</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 2.7: Guia do Banco */}
-                        {step === 2.7 && bancoSelecionado && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '1rem'}}>
-                                    📱 Como tirar a foto no {GUIAS_BANCOS[bancoSelecionado].nome}
-                                </h2>
-                                
-                                <div className="guide-box">
-                                    <p style={{fontWeight: '600', color: '#D4A83C', marginBottom: '1.5rem'}}>Siga estes passos:</p>
-                                    {GUIAS_BANCOS[bancoSelecionado].passos.map((passo, idx) => (
-                                        <div key={idx} className="guide-step">
-                                            <div className="guide-number">{idx + 1}</div>
-                                            <p style={{color: 'white', lineHeight: '1.6'}}>{passo}</p>
-                                        </div>
-                                    ))}
-                                    <div style={{background: 'rgba(212, 168, 60, 0.1)', padding: '1rem', borderRadius: '0.5rem', marginTop: '1rem'}}>
-                                        <p style={{fontSize: '0.875rem', color: '#D4A83C'}}>
-                                            💡 <strong>Dica:</strong> {GUIAS_BANCOS[bancoSelecionado].dicas}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div style={{marginTop: '2rem'}}>
-                                    <input type="file" id="upload-contrato" accept="image/*,.pdf" style={{display: 'none'}} onChange={handleFileUpload} />
-                                    <label htmlFor="upload-contrato">
-                                        <div className="upload-zone">
-                                            <div style={{fontSize: '4rem', marginBottom: '1rem'}}>📸</div>
-                                            <p style={{fontSize: '1.25rem', fontWeight: '700', color: '#D4A83C', marginBottom: '0.5rem'}}>
-                                                Clique para fazer upload
-                                            </p>
-                                            <p style={{color: '#999', fontSize: '0.875rem'}}>
-                                                Foto, print ou PDF (máx 10MB)
-                                            </p>
-                                        </div>
-                                    </label>
-                                    
-                                    {arquivoContrato && (
-                                        <div className="file-preview">
-                                            <span style={{color: 'white'}}>📄 {arquivoContrato.name}</span>
-                                            <button onClick={() => setArquivoContrato(null)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.5rem'}}>×</button>
-                                        </div>
-                                    )}
-
-                                    {processandoOCR && (
-                                        <div className="ocr-status">
-                                            <div className="spinner" style={{marginBottom: '1rem'}}></div>
-                                            <p style={{textAlign: 'center', color: '#D4A83C', fontWeight: '600'}}>
-                                                Processando documento... {progressoOCR}%
-                                            </p>
-                                            <div className="progress-bar">
-                                                <div className="progress-fill" style={{width: `${progressoOCR}%`}}></div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(2.5)} className="btn-secondary">← Voltar</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 3: Manual */}
-                        {step === 3 && metodoInput === 'manual' && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
-                                    📄 Dados do Financiamento
-                                </h2>
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Banco *</label>
-                                        <input type="text" className="input-field" placeholder="Caixa, Itaú..." value={formData.banco} onChange={(e) => updateField('banco', e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Sistema *</label>
-                                        <select className="input-field" value={formData.sistema} onChange={(e) => updateField('sistema', e.target.value)}>
-                                            <option value="SAC">SAC</option>
-                                            <option value="PRICE">PRICE</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Saldo Devedor (R$) *</label>
-                                        <input type="number" className="input-field" placeholder="250000" value={formData.saldo_devedor || ''} onChange={(e) => updateField('saldo_devedor', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa (% ao ano) *</label>
-                                        <input type="number" step="0.01" className="input-field" placeholder="9.75" value={formData.taxa_nominal * 100 || ''} onChange={(e) => updateField('taxa_nominal', (parseFloat(e.target.value) || 0) / 100)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Prazo Restante (meses) *</label>
-                                        <input type="number" className="input-field" placeholder="360" value={formData.prazo_restante || ''} onChange={(e) => updateField('prazo_restante', parseInt(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Seguro Mensal (R$) *</label>
-                                        <input type="number" className="input-field" placeholder="15.84" value={formData.seguro_mensal || ''} onChange={(e) => updateField('seguro_mensal', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa Administrativa (R$) *</label>
-                                        <input type="number" className="input-field" placeholder="25.00" value={formData.taxa_admin_mensal || ''} onChange={(e) => updateField('taxa_admin_mensal', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Valor FGTS (R$)</label>
-                                        <input type="number" className="input-field" placeholder="25000" value={formData.valor_fgts || ''} onChange={(e) => updateField('valor_fgts', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Capacidade Extra (R$/mês)</label>
-                                        <input type="number" className="input-field" placeholder="500" value={formData.capacidade_extra || ''} onChange={(e) => updateField('capacidade_extra', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                </div>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(2)} className="btn-secondary">← Voltar</button>
-                                    <button onClick={() => setStep(5)} className="btn-primary" disabled={!formData.banco || !formData.saldo_devedor || !formData.taxa_nominal || !formData.prazo_restante}>
-                                        Finalizar →
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 4: Confirmar Dados Extraídos */}
-                        {step === 4 && dadosExtraidos && (
-                            <div>
-                                <div style={{background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem'}}>
-                                    <p style={{color: '#10b981', fontWeight: '700', fontSize: '1.125rem', marginBottom: '0.5rem'}}>
-                                        ✅ Documento processado com sucesso!
-                                    </p>
-                                    <p style={{color: '#ccc', fontSize: '0.875rem'}}>
-                                        Verifique se os dados abaixo estão corretos. Você pode corrigir qualquer valor se necessário.
-                                    </p>
-                                </div>
-
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
-                                    🔍 Confirme os Dados Extraídos
-                                </h2>
-                                
-                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem'}}>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Saldo Devedor (R$)</label>
-                                        <input type="number" className="input-field" value={formData.saldo_devedor || ''} onChange={(e) => updateField('saldo_devedor', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa (% ao ano)</label>
-                                        <input type="number" step="0.01" className="input-field" value={(formData.taxa_nominal * 100).toFixed(2) || ''} onChange={(e) => updateField('taxa_nominal', (parseFloat(e.target.value) || 0) / 100)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Prazo Restante (meses)</label>
-                                        <input type="number" className="input-field" value={formData.prazo_restante || ''} onChange={(e) => updateField('prazo_restante', parseInt(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Seguro Mensal (R$)</label>
-                                        <input type="number" className="input-field" value={formData.seguro_mensal || ''} onChange={(e) => updateField('seguro_mensal', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Taxa Admin (R$)</label>
-                                        <input type="number" className="input-field" value={formData.taxa_admin_mensal || ''} onChange={(e) => updateField('taxa_admin_mensal', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Valor FGTS (R$)</label>
-                                        <input type="number" className="input-field" placeholder="25000" value={formData.valor_fgts || ''} onChange={(e) => updateField('valor_fgts', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div>
-                                        <label style={{display: 'block', color: '#D4A83C', marginBottom: '0.5rem', fontWeight: '600'}}>Capacidade Extra (R$/mês)</label>
-                                        <input type="number" className="input-field" placeholder="500" value={formData.capacidade_extra || ''} onChange={(e) => updateField('capacidade_extra', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                </div>
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(2.5)} className="btn-secondary">← Voltar</button>
-                                    <button onClick={() => setStep(5)} className="btn-primary">
-                                        Confirmar e Finalizar →
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 5: Resumo */}
-                        {step === 5 && (
-                            <div>
-                                <h2 style={{fontSize: '2rem', fontWeight: '700', color: '#D4A83C', marginBottom: '2rem'}}>
-                                    ✅ Resumo da Solicitação
-                                </h2>
-                                
-                                <div style={{background: 'rgba(212, 168, 60, 0.1)', border: '1px solid #D4A83C', borderRadius: '0.5rem', padding: '2rem', marginBottom: '2rem'}}>
-                                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', fontSize: '0.875rem'}}>
-                                        <div><p style={{color: '#999'}}>Nome:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.nome}</p></div>
-                                        <div><p style={{color: '#999'}}>WhatsApp:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.whatsapp}</p></div>
-                                        <div><p style={{color: '#999'}}>Banco:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.banco}</p></div>
-                                        <div><p style={{color: '#999'}}>Saldo:</p><p style={{fontWeight: '700', color: '#D4A83C'}}>R$ {formData.saldo_devedor?.toLocaleString('pt-BR')}</p></div>
-                                        <div><p style={{color: '#999'}}>Taxa:</p><p style={{fontWeight: '700', color: 'white'}}>{(formData.taxa_nominal * 100).toFixed(2)}% a.a.</p></div>
-                                        <div><p style={{color: '#999'}}>Prazo:</p><p style={{fontWeight: '700', color: 'white'}}>{formData.prazo_restante} meses</p></div>
-                                        <div><p style={{color: '#999'}}>Seguro:</p><p style={{fontWeight: '700', color: 'white'}}>R$ {formData.seguro_mensal?.toLocaleString('pt-BR')}</p></div>
-                                        <div><p style={{color: '#999'}}>Taxa Admin:</p><p style={{fontWeight: '700', color: 'white'}}>R$ {formData.taxa_admin_mensal?.toLocaleString('pt-BR')}</p></div>
-                                    </div>
-                                </div>
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(212, 168, 60, 0.2)'}}>
-                                    <button onClick={() => setStep(metodoInput === 'upload' ? 4 : 3)} className="btn-secondary">← Voltar</button>
-                                    <button onClick={handleSubmit} className="btn-primary" disabled={loading} style={{fontSize: '1.125rem', padding: '1.25rem 2.5rem'}}>
-                                        {loading ? 'Enviando...' : '🚀 Enviar Solicitação'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                </>
             );
         }
 
+        // ============================================
+        // RENDER APP
+        // ============================================
         ReactDOM.render(<FormularioCliente />, document.getElementById('root'));
     </script>
 </body>

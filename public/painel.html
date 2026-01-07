@@ -80,25 +80,45 @@
                 let totalJuros = 0;
                 let totalAmortizado = fgtsInicial || 0;
                 let mes = 0;
+                
+                // Taxa e TR
+                const tr = 0.0015; // 0.15% ao mês
+                const taxaAdmin = this.dados.taxaAdm || 25;
+                const seguro = this.dados.seguroMensal || 50;
 
                 while (saldo > 1 && mes < 600) {
                     const saldoInicial = saldo;
                     const juros = saldo * this.taxaMensal;
                     
+                    // Amortização base
                     let amortBase;
                     if (this.dados.sistema === 'SAC') {
+                        // SAC: Amortização constante (simplificado)
                         amortBase = this.dados.saldoDevedor / this.dados.prazoRestante;
                     } else {
-                        const pmt = this.calcularPMT(this.taxaMensal, Math.max(1, this.dados.prazoRestante - mes), saldo);
+                        // PRICE: PMT recalcula prazo restante
+                        const prazoRestante = Math.max(1, this.dados.prazoRestante - mes);
+                        const pmt = this.calcularPMT(this.taxaMensal, prazoRestante, saldo);
                         amortBase = Math.max(0, pmt - juros);
                     }
 
                     const amortExtra = amortMensal || 0;
-                    const taxas = (this.dados.taxaAdm || 25) + (this.dados.seguroMensal || 50);
-                    const parcela = juros + amortBase + amortExtra + taxas;
+                    const parcela = juros + amortBase + amortExtra + taxaAdmin + seguro;
                     
-                    saldo = Math.max(0, saldo - amortBase - amortExtra);
-                    saldo *= (1 + ((this.dados.tr || 0.15) / 100));
+                    // Atualizar saldo COM TR correta
+                    if (mes === 0) {
+                        // Mês 1: Sem TR
+                        saldo = Math.max(0, saldo - amortBase - amortExtra);
+                    } else if (amortExtra > 0) {
+                        // Com amort extra: TR reduz a amortização extra
+                        const correcaoTR = saldo * tr;
+                        const amortExtraLiquida = Math.max(0, amortExtra - correcaoTR);
+                        saldo = Math.max(0, saldo - amortBase - amortExtraLiquida);
+                    } else {
+                        // Sem amort extra: TR aumenta o saldo
+                        const correcaoTR = saldo * tr;
+                        saldo = Math.max(0, saldo - amortBase + correcaoTR);
+                    }
 
                     totalPago += parcela;
                     totalJuros += juros;

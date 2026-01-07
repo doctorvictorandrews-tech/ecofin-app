@@ -3,12 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoFin - Sua Estratégia Personalizada</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>EcoFin - Painel Administrativo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         :root {
@@ -39,19 +36,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Background Effects */
-        .bg-blob {
-            position: fixed;
-            filter: blur(120px);
-            z-index: -1;
-            opacity: 0.15;
-            animation: blobMove 20s infinite alternate ease-in-out;
-            border-radius: 50%;
-        }
-        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--gold-primary); }
-        .blob-2 { bottom: -20%; right: -20%; width: 60vw; height: 60vw; background: #5a3a00; animation-delay: -10s; }
-        @keyframes blobMove { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
-
         .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
         
         /* Header */
@@ -69,8 +53,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
         }
         
         .logo img { height: 40px; }
@@ -80,137 +62,109 @@
             gap: 12px;
             align-items: center;
         }
-        
-        .client-badge {
+
+        /* Login Screen */
+        .login-screen {
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: rgba(217,137,13,0.1);
-            border: 1px solid rgba(217,137,13,0.3);
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 13px;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            padding: 48px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .login-title {
+            font-family: var(--font-sans);
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-light);
+            color: white;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 3px rgba(217,137,13,0.1);
         }
 
         /* Main Content */
         .main-content {
-            padding: 40px 0 80px;
+            padding: 40px 0;
         }
 
-        /* Hero Card */
-        .hero-card {
-            background: linear-gradient(135deg, rgba(217,137,13,0.15) 0%, rgba(0,0,0,0.9) 100%);
-            border: 2px solid var(--gold-primary);
-            border-radius: 24px;
-            padding: 48px;
-            margin-bottom: 32px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 60px rgba(217,137,13,0.2);
-        }
-        
-        .hero-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(217,137,13,0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-        
-        .hero-title {
-            font-family: var(--font-sans);
-            font-size: 36px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .hero-subtitle {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .hero-metrics {
+        /* Stats Cards */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            position: relative;
-            z-index: 1;
+            margin-bottom: 32px;
         }
         
-        .metric-box {
-            background: rgba(0,0,0,0.6);
-            padding: 28px;
-            border-radius: 16px;
+        .stat-card {
+            background: var(--bg-card);
             border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 24px;
             transition: all 0.3s;
         }
         
-        .metric-box:hover {
+        .stat-card:hover {
             border-color: var(--gold-primary);
-            transform: translateY(-5px);
+            transform: translateY(-3px);
             box-shadow: 0 10px 30px rgba(217,137,13,0.2);
         }
         
-        .metric-label {
-            font-size: 11px;
+        .stat-label {
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             color: var(--text-secondary);
             margin-bottom: 8px;
             font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
         
-        .metric-value {
+        .stat-value {
             font-family: var(--font-mono);
             font-size: 32px;
             font-weight: 700;
-            line-height: 1.2;
-            color: var(--text-primary);
-        }
-        
-        .metric-value.success { color: var(--success); text-shadow: 0 0 20px rgba(16,185,129,0.3); }
-        .metric-value.warning { color: var(--warning); text-shadow: 0 0 20px rgba(245,158,11,0.3); }
-        .metric-value.gold { color: var(--gold-primary); text-shadow: 0 0 20px rgba(217,137,13,0.3); }
-
-        /* Grid Layout */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        
-        @media(min-width: 992px) {
-            .grid-2 { grid-template-columns: 1fr 1fr; }
+            color: var(--gold-primary);
         }
 
-        /* Cards */
+        /* Card */
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-light);
             border-radius: 20px;
             padding: 32px;
-            transition: all 0.3s;
-        }
-        
-        .card:hover {
-            border-color: rgba(217,137,13,0.5);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         
         .card-header {
@@ -224,184 +178,43 @@
         
         .card-title {
             font-family: var(--font-sans);
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-        
-        .card-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(217,137,13,0.15);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--gold-primary);
-            font-size: 20px;
+            gap: 12px;
         }
 
-        /* Comparison Boxes */
-        .comparison-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        /* Search */
+        .search-box {
+            position: relative;
             margin-bottom: 24px;
         }
         
-        .comparison-box {
-            background: rgba(255,255,255,0.03);
-            padding: 24px;
-            border-radius: 12px;
-            border-left: 4px solid;
-            transition: all 0.3s;
-        }
-        
-        .comparison-box:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-        }
-        
-        .comparison-box.danger { 
-            border-left-color: var(--danger); 
-            background: linear-gradient(135deg, rgba(239,68,68,0.05) 0%, rgba(0,0,0,0.3) 100%);
-        }
-        
-        .comparison-box.success { 
-            border-left-color: var(--success); 
-            background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(0,0,0,0.3) 100%);
-        }
-        
-        .comparison-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            font-weight: 700;
-            opacity: 0.8;
-        }
-        
-        .comparison-value {
-            font-family: var(--font-mono);
-            font-size: 26px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        
-        .comparison-subtitle {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 6px;
-        }
-
-        /* Progress Bars */
-        .progress-container {
-            margin-bottom: 20px;
-        }
-        
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-        
-        .progress-bar {
-            height: 14px;
+        .search-input {
+            width: 100%;
+            padding: 14px 14px 14px 48px;
             background: rgba(255,255,255,0.05);
-            border-radius: 7px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            border-radius: 7px;
-            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
-            position: relative;
-        }
-        
-        .progress-fill.danger { 
-            background: linear-gradient(90deg, var(--danger) 0%, #DC2626 100%);
-            box-shadow: 0 0 15px rgba(239,68,68,0.5); 
-        }
-        
-        .progress-fill.success { 
-            background: linear-gradient(90deg, var(--success) 0%, #059669 100%);
-            box-shadow: 0 0 15px rgba(16,185,129,0.5); 
-        }
-
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 50px;
-        }
-        
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 20px;
-            top: 10px;
-            bottom: 10px;
-            width: 3px;
-            background: linear-gradient(to bottom, var(--gold-primary), transparent);
-        }
-        
-        .timeline-item {
-            position: relative;
-            margin-bottom: 32px;
-            padding: 20px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
             border: 1px solid var(--border-light);
+            color: white;
+            border-radius: 12px;
+            font-size: 14px;
             transition: all 0.3s;
         }
         
-        .timeline-item:hover {
+        .search-input:focus {
+            outline: none;
             border-color: var(--gold-primary);
-            transform: translateX(5px);
+            box-shadow: 0 0 0 3px rgba(217,137,13,0.1);
         }
         
-        .timeline-item::before {
-            content: '';
+        .search-icon {
             position: absolute;
-            left: -34px;
-            top: 25px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: var(--gold-primary);
-            border: 3px solid var(--bg-card);
-            box-shadow: 0 0 15px rgba(217,137,13,0.6);
-        }
-        
-        .timeline-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: var(--gold-primary);
-            color: #000;
-            border-radius: 50%;
-            font-weight: 800;
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-        
-        .timeline-title {
-            font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 6px;
-        }
-        
-        .timeline-description {
-            font-size: 14px;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
             color: var(--text-secondary);
-            line-height: 1.6;
+            font-size: 20px;
         }
 
         /* Table */
@@ -414,21 +227,18 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 14px;
         }
         
         thead {
             background: rgba(255,255,255,0.05);
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
         
         thead th {
             text-align: left;
-            padding: 16px 12px;
+            padding: 16px;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-secondary);
@@ -436,21 +246,20 @@
         }
         
         tbody td {
-            padding: 14px 12px;
+            padding: 16px;
             border-bottom: 1px solid var(--border-light);
-            font-family: var(--font-mono);
-            font-size: 12px;
+        }
+        
+        tbody tr {
+            transition: all 0.2s;
+            cursor: pointer;
         }
         
         tbody tr:hover {
             background: rgba(217,137,13,0.05);
         }
-        
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
 
-        /* Badges */
+        /* Badge */
         .badge {
             display: inline-flex;
             align-items: center;
@@ -476,18 +285,12 @@
         }
         
         .badge.info {
-            background: rgba(217,137,13,0.15);
-            color: var(--gold-primary);
-            border: 1px solid rgba(217,137,13,0.3);
-        }
-        
-        .badge.danger {
-            background: rgba(239,68,68,0.15);
-            color: var(--danger);
-            border: 1px solid rgba(239,68,68,0.3);
+            background: rgba(59,130,246,0.15);
+            color: #3B82F6;
+            border: 1px solid rgba(59,130,246,0.3);
         }
 
-        /* Buttons */
+        /* Button */
         .btn {
             display: inline-flex;
             align-items: center;
@@ -504,7 +307,7 @@
             border: none;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 13px;
+            font-size: 14px;
             text-decoration: none;
         }
         
@@ -523,144 +326,20 @@
         .btn-outline:hover {
             border-color: var(--gold-primary);
             color: var(--gold-primary);
-            background: rgba(217,137,13,0.05);
         }
         
         .btn-sm {
-            padding: 10px 20px;
+            padding: 8px 16px;
             font-size: 12px;
         }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 2px solid var(--border-light);
-            overflow-x: auto;
-            padding-bottom: 2px;
-        }
         
-        .tab {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-        }
-        
-        .tab:hover {
-            color: var(--gold-primary);
-        }
-        
-        .tab.active {
-            color: var(--gold-primary);
-            border-bottom-color: var(--gold-primary);
-        }
-
-        /* Charts */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin: 20px 0;
-        }
-
-        /* Highlight Box */
-        .highlight-box {
-            background: linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(0,0,0,0.5) 100%);
-            border: 2px dashed rgba(16,185,129,0.4);
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-            margin: 32px 0;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .highlight-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
-        }
-        
-        @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .highlight-label {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--success);
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .highlight-value {
-            font-family: var(--font-mono);
-            font-size: 56px;
-            font-weight: 800;
+        .btn-danger {
+            background: var(--danger);
             color: white;
-            text-shadow: 0 0 30px rgba(16,185,129,0.5);
-            line-height: 1.1;
-            position: relative;
-            z-index: 1;
         }
         
-        .highlight-subtitle {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-top: 12px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Info Box */
-        .info-box {
-            background: rgba(59,130,246,0.1);
-            border-left: 4px solid #3B82F6;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        
-        .info-box-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #3B82F6;
-        }
-        
-        .info-box-content {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.7;
-        }
-
-        /* Responsive */
-        @media(max-width: 768px) {
-            .hero-card { padding: 32px 24px; }
-            .card { padding: 24px; }
-            .comparison-grid { grid-template-columns: 1fr; }
-            .hero-metrics { grid-template-columns: 1fr; }
-            .hero-title { font-size: 28px; }
-            .metric-value { font-size: 28px; }
-            .timeline { padding-left: 40px; }
-            .tabs { flex-wrap: nowrap; }
+        .btn-danger:hover {
+            background: #DC2626;
         }
 
         /* Loading */
@@ -684,946 +363,411 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Print Styles */
-        @media print {
-            .header-actions, .btn { display: none; }
-            .card { page-break-inside: avoid; }
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
         }
     </style>
 </head>
 <body>
-    <div class="bg-blob blob-1"></div>
-    <div class="bg-blob blob-2"></div>
-
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" alt="EcoFin">
-                </div>
-                
-                <div class="header-actions">
-                    <div class="client-badge">
-                        <i class="ph-fill ph-user-circle" style="font-size: 20px; color: var(--gold-primary);"></i>
-                        <span><strong id="clientName">Maria Silva</strong></span>
-                    </div>
-                    
-                    <button class="btn btn-outline btn-sm" onclick="compartilharWhatsApp()">
-                        <i class="ph-bold ph-whatsapp-logo"></i>
-                        Compartilhar
-                    </button>
-                    
-                    <button class="btn btn-sm" onclick="window.print()">
-                        <i class="ph-bold ph-download"></i>
-                        Exportar PDF
-                    </button>
-                </div>
+    
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" 
+                 style="max-width: 150px; margin: 0 auto 32px; display: block;">
+            
+            <h1 class="login-title">Painel Administrativo</h1>
+            <p class="login-subtitle">Insira sua senha para acessar</p>
+            
+            <input type="password" 
+                   id="senhaInput" 
+                   class="input-field" 
+                   placeholder="Senha"
+                   onkeypress="if(event.key === 'Enter') fazerLogin()">
+            
+            <button class="btn" style="width: 100%;" onclick="fazerLogin()">
+                <i class="ph-bold ph-sign-in"></i>
+                Entrar
+            </button>
+            
+            <div id="erroLogin" style="color: var(--danger); text-align: center; margin-top: 16px; font-size: 14px; display: none;">
+                Senha incorreta. Tente novamente.
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            
-            <!-- Hero Card - Estratégia Otimizada -->
-            <div class="hero-card">
-                <div class="hero-title">
-                    <i class="ph-fill ph-target" style="color: var(--gold-primary); font-size: 40px;"></i>
-                    Sua Estratégia Personalizada
+    <!-- Main Panel (Hidden initially) -->
+    <div id="mainPanel" style="display: none;">
+        
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" alt="EcoFin">
+                    </div>
+                    
+                    <div class="header-actions">
+                        <span style="font-size: 14px; color: var(--text-secondary);">
+                            Bem-vindo, <strong style="color: var(--gold-primary);">Admin</strong>
+                        </span>
+                        <button class="btn btn-outline btn-sm" onclick="fazerLogout()">
+                            <i class="ph-bold ph-sign-out"></i>
+                            Sair
+                        </button>
+                    </div>
                 </div>
-                <p class="hero-subtitle">
-                    Baseada em 875 simulações diferentes, esta é a estratégia que maximiza sua economia e te liberta mais rápido.
-                </p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
                 
-                <div class="hero-metrics">
-                    <div class="metric-box">
-                        <div class="metric-label">
-                            <i class="ph-fill ph-coin"></i>
-                            Economia Total
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="ph-fill ph-users"></i> Total de Clientes
                         </div>
-                        <div class="metric-value success" id="economiaTotal">R$ 939.830</div>
+                        <div class="stat-value" id="totalClientes">0</div>
                     </div>
-                    <div class="metric-box">
-                        <div class="metric-label">
-                            <i class="ph-fill ph-calendar-check"></i>
-                            Meses Economizados
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="ph-fill ph-currency-circle-dollar"></i> Economia Total Gerada
                         </div>
-                        <div class="metric-value warning" id="mesesEconomizados">116 meses</div>
+                        <div class="stat-value" id="economiaTotal">R$ 0</div>
                     </div>
-                    <div class="metric-box">
-                        <div class="metric-label">
-                            <i class="ph-fill ph-clock-countdown"></i>
-                            Anos Mais Cedo
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="ph-fill ph-calendar-check"></i> Novos (Últimos 7 dias)
                         </div>
-                        <div class="metric-value warning" id="anosEconomizados">9.7 anos</div>
+                        <div class="stat-value" id="novosClientes">0</div>
                     </div>
-                    <div class="metric-box">
-                        <div class="metric-label">
-                            <i class="ph-fill ph-chart-line-up"></i>
-                            ROI
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="ph-fill ph-clock"></i> Anos Economizados
                         </div>
-                        <div class="metric-value gold" id="roi">2.8x</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabs -->
-            <div class="tabs">
-                <button class="tab active" onclick="mudaTab('visao-geral', this)">
-                    <i class="ph-bold ph-squares-four"></i> Visão Geral
-                </button>
-                <button class="tab" onclick="mudaTab('plano-acao', this)">
-                    <i class="ph-bold ph-list-checks"></i> Plano de Ação
-                </button>
-                <button class="tab" onclick="mudaTab('comparativo', this)">
-                    <i class="ph-bold ph-chart-bar"></i> Comparativo Detalhado
-                </button>
-                <button class="tab" onclick="mudaTab('tabela-meses', this)">
-                    <i class="ph-bold ph-table"></i> Tabela Mês a Mês
-                </button>
-                <button class="tab" onclick="mudaTab('simulador', this)">
-                    <i class="ph-bold ph-calculator"></i> Simulador
-                </button>
-            </div>
-
-            <!-- Tab Content: Visão Geral -->
-            <div id="tab-visao-geral" class="tab-content">
-                
-                <div class="grid-2">
-                    
-                    <!-- Card: Resumo da Estratégia -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-lightbulb"></i>
-                                </div>
-                                Resumo da Estratégia
-                            </div>
-                            <span class="badge success">
-                                <i class="ph-fill ph-check-circle"></i>
-                                Otimizado
-                            </span>
-                        </div>
-                        
-                        <div style="margin-bottom: 24px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">FGTS Inicial</span>
-                                <span style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--gold-primary);" id="fgtsUsar">R$ 30.000</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">Amortização Mensal</span>
-                                <span style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--gold-primary);" id="amortMensal">R$ 1.000</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">Duração</span>
-                                <span style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--gold-primary);" id="duracao">Até quitar</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">Viabilidade</span>
-                                <span class="badge warning" id="viabilidade">MÉDIA</span>
-                            </div>
-                        </div>
-                        
-                        <div style="padding: 20px; background: rgba(217,137,13,0.1); border-radius: 12px; border: 1px solid rgba(217,137,13,0.3);">
-                            <div style="font-size: 12px; color: var(--gold-primary); margin-bottom: 8px; font-weight: 700;">💡 INVESTIMENTO TOTAL</div>
-                            <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 700;" id="investimentoTotal">R$ 336.000</div>
-                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">FGTS + Amortizações mensais</div>
-                        </div>
-                    </div>
-
-                    <!-- Card: Comparativo Visual -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-chart-bar-horizontal"></i>
-                                </div>
-                                Comparativo Visual
-                            </div>
-                        </div>
-                        
-                        <div class="comparison-grid">
-                            <div class="comparison-box danger">
-                                <div class="comparison-label" style="color: var(--danger);">
-                                    <i class="ph-fill ph-warning"></i> Sem Estratégia
-                                </div>
-                                <div class="comparison-value" style="color: var(--danger);" id="totalSemEstrategia">R$ 1,73 Mi</div>
-                                <div class="comparison-subtitle">Total pago em 35 anos</div>
-                            </div>
-                            <div class="comparison-box success">
-                                <div class="comparison-label" style="color: var(--success);">
-                                    <i class="ph-fill ph-check-circle"></i> Com EcoFin
-                                </div>
-                                <div class="comparison-value" style="color: var(--success);" id="totalComEstrategia">R$ 786 Mil</div>
-                                <div class="comparison-subtitle">Total pago em 25 anos</div>
-                            </div>
-                        </div>
-                        
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span style="color: var(--danger);">SEM ESTRATÉGIA</span>
-                                <span id="percentSem">100%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill danger" id="barSem" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span style="color: var(--success);">COM ECOFIN</span>
-                                <span id="percentCom">45%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill success" id="barCom" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="highlight-box" style="margin-top: 24px; padding: 24px;">
-                            <div class="highlight-label">💰 Você Economiza</div>
-                            <div class="highlight-value" style="font-size: 36px;" id="economiaDestaque">R$ 939.830</div>
-                        </div>
+                        <div class="stat-value" id="anosEconomizados">0</div>
                     </div>
                 </div>
 
-                <!-- Card: Dados do Financiamento -->
+                <!-- Clientes Card -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-house"></i>
-                            </div>
-                            Dados do Seu Financiamento
+                            <i class="ph-fill ph-users-three" style="color: var(--gold-primary); font-size: 28px;"></i>
+                            Lista de Clientes
                         </div>
-                        <span class="badge info" id="sistemaTag">PRICE</span>
+                        <button class="btn btn-sm" onclick="carregarClientes()">
+                            <i class="ph-bold ph-arrow-clockwise"></i>
+                            Atualizar
+                        </button>
                     </div>
                     
-                    <div class="grid-2">
-                        <div>
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-currency-circle-dollar" style="color: var(--gold-primary);"></i> Saldo Devedor</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);" id="saldoDevedor">R$ 300.000,00</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-percent" style="color: var(--gold-primary);"></i> Taxa de Juros</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);" id="taxaJuros">12,00% a.a.</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-calendar" style="color: var(--gold-primary);"></i> Prazo Original</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);" id="prazoOriginal">420 meses (35 anos)</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div>
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-file-text" style="color: var(--gold-primary);"></i> Taxa Admin</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);" id="taxaAdmin">R$ 25,00/mês</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-shield-check" style="color: var(--gold-primary);"></i> Seguro</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);" id="seguro">R$ 50,00/mês</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight: 600;"><i class="ph-fill ph-trend-up" style="color: var(--gold-primary);"></i> TR Mensal</td>
-                                        <td style="text-align: right; font-family: var(--font-mono);">0,15%</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráfico de Evolução -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-chart-line"></i>
-                            </div>
-                            Evolução do Saldo Devedor
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="chartEvolucao"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Content: Plano de Ação -->
-            <div id="tab-plano-acao" class="tab-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-list-checks"></i>
-                            </div>
-                            Seu Plano de Ação Passo a Passo
-                        </div>
+                    <!-- Search -->
+                    <div class="search-box">
+                        <i class="ph-bold ph-magnifying-glass search-icon"></i>
+                        <input type="text" 
+                               id="searchInput" 
+                               class="search-input" 
+                               placeholder="Buscar por nome, email, banco..."
+                               onkeyup="filtrarClientes()">
                     </div>
                     
-                    <div class="info-box">
-                        <div class="info-box-title">
-                            <i class="ph-fill ph-info"></i>
-                            Como Funciona
-                        </div>
-                        <div class="info-box-content">
-                            Este plano foi criado especificamente para você, baseado na análise de 875 cenários diferentes. 
-                            Siga os passos abaixo para maximizar sua economia e se libertar da dívida anos mais cedo.
-                        </div>
+                    <!-- Loading -->
+                    <div id="loadingClientes" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Carregando clientes...</p>
                     </div>
                     
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-number">1</div>
-                            <div class="timeline-title">
-                                <i class="ph-fill ph-bank"></i> AGORA: Usar o FGTS
-                            </div>
-                            <div class="timeline-description">
-                                <strong>Use R$ 30.000,00 do seu FGTS</strong> para amortização extraordinária. 
-                                Isso vai reduzir seu saldo devedor imediatamente e "quebrar a coluna vertebral" dos juros compostos.
-                                <br><br>
-                                📱 <strong>Como fazer:</strong> Acesse o app do seu banco → Financiamento Imobiliário → Usar FGTS → Amortizar Prazo
-                                <br>
-                                💡 <strong>Dica:</strong> Escolha "reduzir PRAZO" (não parcela) para economizar mais juros.
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-number">2</div>
-                            <div class="timeline-title">
-                                <i class="ph-fill ph-calendar-plus"></i> MÊS 1-306: Amortização Mensal
-                            </div>
-                            <div class="timeline-description">
-                                <strong>Amortize R$ 1.000,00 extras por mês</strong> até quitar o financiamento.
-                                Isso vai acelerar dramaticamente a quitação e economizar centenas de milhares em juros.
-                                <br><br>
-                                📱 <strong>Como fazer:</strong> Configure um agendamento mensal no app do banco para fazer a amortização automaticamente todo dia 10.
-                                <br>
-                                💡 <strong>Dica:</strong> Crie uma conta separada e transfira os R$ 1.000 todo início de mês para não gastar.
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-number">3</div>
-                            <div class="timeline-title">
-                                <i class="ph-fill ph-chart-line-up"></i> ACOMPANHAMENTO: Monitore Seu Progresso
-                            </div>
-                            <div class="timeline-description">
-                                A cada amortização, você verá:
-                                <br>
-                                ✅ Saldo devedor caindo mais rápido
-                                <br>
-                                ✅ Prazo reduzindo mês a mês
-                                <br>
-                                ✅ Juros economizados acumulando
-                                <br><br>
-                                📊 <strong>Acompanhe:</strong> Entre no app do banco mensalmente e compare o saldo com a projeção deste dashboard.
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-item">
-                            <div class="timeline-number">4</div>
-                            <div class="timeline-title">
-                                <i class="ph-fill ph-confetti"></i> MÊS 306: IMÓVEL QUITADO!
-                            </div>
-                            <div class="timeline-description">
-                                <strong>Você será PROPRIETÁRIO livre de dívidas!</strong>
-                                <br><br>
-                                🎉 <strong>Conquistas:</strong>
-                                <br>
-                                • Economizou R$ 939.830 em juros
-                                <br>
-                                • Quitou 9,7 anos ANTES do previsto
-                                <br>
-                                • Imóvel 100% seu, sem banco no meio
-                                <br>
-                                • ROI de 2,8x sobre o investimento extra
-                                <br><br>
-                                🏠 <strong>Próximo passo:</strong> Solicitar a escritura definitiva e baixa da hipoteca no cartório.
-                            </div>
-                        </div>
+                    <!-- Empty State -->
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <i class="ph-duotone ph-user-circle-plus"></i>
+                        <h3>Nenhum cliente ainda</h3>
+                        <p>Os clientes cadastrados aparecerão aqui.</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Tab Content: Comparativo Detalhado -->
-            <div id="tab-comparativo" class="tab-content" style="display: none;">
-                <div class="grid-2">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-x-circle"></i>
-                                </div>
-                                Sem Estratégia
-                            </div>
-                            <span class="badge danger">Cenário Padrão</span>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">TOTAL PAGO</div>
-                            <div style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--danger);">R$ 1.726.262</div>
-                        </div>
-                        
+                    
+                    <!-- Table -->
+                    <div id="tableContainer" class="table-container" style="display: none;">
                         <table>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Principal</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono);">R$ 300.000</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Juros Totais</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono); color: var(--danger);">R$ 1.204.632</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Taxas (35 anos)</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono);">R$ 221.630</td>
-                                </tr>
-                                <tr style="border-top: 2px solid var(--border-light);">
-                                    <td><strong>Prazo Final</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono); font-weight: 700;">422 meses</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
-                        <div style="margin-top: 24px; padding: 16px; background: rgba(239,68,68,0.1); border-left: 4px solid var(--danger); border-radius: 8px;">
-                            <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--danger);">⚠️ IMPACTO REAL</div>
-                            <div style="font-size: 14px; color: var(--text-secondary);">
-                                Você pagará <strong style="color: white;">4x</strong> o valor do imóvel em juros e taxas.
-                                Isso é dinheiro que você poderia investir, viajar ou usar para sua família.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-check-circle"></i>
-                                </div>
-                                Com EcoFin
-                            </div>
-                            <span class="badge success">Otimizado</span>
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">TOTAL PAGO</div>
-                            <div style="font-family: var(--font-mono); font-size: 32px; font-weight: 700; color: var(--success);">R$ 786.431</div>
-                        </div>
-                        
-                        <table>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Principal</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono);">R$ 300.000</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Juros Totais</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono); color: var(--success);">R$ 425.804</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Taxas (25 anos)</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono);">R$ 60.627</td>
-                                </tr>
-                                <tr style="border-top: 2px solid var(--border-light);">
-                                    <td><strong>Prazo Final</strong></td>
-                                    <td style="text-align: right; font-family: var(--font-mono); font-weight: 700;">306 meses</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
-                        <div style="margin-top: 24px; padding: 16px; background: rgba(16,185,129,0.1); border-left: 4px solid var(--success); border-radius: 8px;">
-                            <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--success);">✅ VANTAGENS</div>
-                            <div style="font-size: 14px; color: var(--text-secondary);">
-                                • Economiza <strong style="color: white;">R$ 778.828</strong> em juros<br>
-                                • Quitação <strong style="color: white;">9,7 anos antes</strong><br>
-                                • ROI de <strong style="color: white;">2,8x</strong> sobre investimento extra
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Gráfico Comparativo de Juros -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-chart-pie-slice"></i>
-                            </div>
-                            Composição do Pagamento Total
-                        </div>
-                    </div>
-                    <div class="grid-2">
-                        <div class="chart-container">
-                            <canvas id="chartComposicaoSem"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chartComposicaoCom"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab Content: Tabela Mês a Mês -->
-            <div id="tab-tabela-meses" class="tab-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-table"></i>
-                            </div>
-                            Projeção Mês a Mês (Primeiros 36 Meses)
-                        </div>
-                        <span class="badge info">Valores Estimados</span>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table id="tabelaMeses">
                             <thead>
                                 <tr>
-                                    <th>Mês</th>
-                                    <th>Saldo Inicial</th>
-                                    <th>Juros</th>
-                                    <th>Amort Base</th>
-                                    <th>Amort Extra</th>
-                                    <th>Parcela</th>
-                                    <th>Saldo Final</th>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Banco</th>
+                                    <th>Saldo Devedor</th>
+                                    <th>Economia</th>
+                                    <th>Sistema</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <!-- Preenchido por JS -->
+                            <tbody id="clientesTableBody">
+                                <!-- Preenchido via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tab Content: Simulador -->
-            <div id="tab-simulador" class="tab-content" style="display: none;">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <div class="card-icon">
-                                <i class="ph-fill ph-calculator"></i>
-                            </div>
-                            Simule Cenários Alternativos
-                        </div>
-                    </div>
-                    
-                    <div class="info-box">
-                        <div class="info-box-title">
-                            <i class="ph-fill ph-lightbulb"></i>
-                            Teste Outras Estratégias
-                        </div>
-                        <div class="info-box-content">
-                            Ajuste os valores abaixo para ver como diferentes estratégias impactam sua economia. 
-                            Os cálculos são feitos em tempo real.
-                        </div>
-                    </div>
-                    
-                    <div class="grid-2">
-                        <div>
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px;">
-                                    <i class="ph-fill ph-piggy-bank"></i> Valor do FGTS (R$)
-                                </label>
-                                <input type="number" id="simFgts" value="30000" 
-                                    style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: white; border-radius: 8px; font-family: var(--font-mono); font-size: 16px;"
-                                    onchange="simularCenario()">
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px;">
-                                    <i class="ph-fill ph-wallet"></i> Amortização Mensal (R$)
-                                </label>
-                                <input type="number" id="simAmort" value="1000" 
-                                    style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: white; border-radius: 8px; font-family: var(--font-mono); font-size: 16px;"
-                                    onchange="simularCenario()">
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px;">
-                                    <i class="ph-fill ph-clock"></i> Duração (meses)
-                                </label>
-                                <select id="simDuracao" 
-                                    style="width: 100%; padding: 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: white; border-radius: 8px; font-family: var(--font-mono); font-size: 16px;"
-                                    onchange="simularCenario()">
-                                    <option value="12">12 meses (1 ano)</option>
-                                    <option value="24">24 meses (2 anos)</option>
-                                    <option value="36">36 meses (3 anos)</option>
-                                    <option value="60">60 meses (5 anos)</option>
-                                    <option value="120">120 meses (10 anos)</option>
-                                    <option value="999" selected>Até quitar</option>
-                                </select>
-                            </div>
-                            
-                            <button class="btn" onclick="simularCenario()" style="width: 100%;">
-                                <i class="ph-bold ph-play"></i>
-                                Simular Cenário
-                            </button>
-                        </div>
-                        
-                        <div id="resultadoSim" style="display: none;">
-                            <div style="padding: 24px; background: rgba(217,137,13,0.1); border: 1px solid rgba(217,137,13,0.3); border-radius: 12px;">
-                                <div style="font-size: 13px; color: var(--gold-primary); font-weight: 700; margin-bottom: 16px;">📊 RESULTADO DA SIMULAÇÃO</div>
-                                
-                                <div style="margin-bottom: 16px;">
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Economia Total</div>
-                                    <div style="font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--success);" id="simEconomia">-</div>
-                                </div>
-                                
-                                <div style="margin-bottom: 16px;">
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Prazo Final</div>
-                                    <div style="font-family: var(--font-mono); font-size: 20px; font-weight: 700;" id="simPrazo">-</div>
-                                </div>
-                                
-                                <div style="margin-bottom: 16px;">
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Redução</div>
-                                    <div style="font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--warning);" id="simReducao">-</div>
-                                </div>
-                                
-                                <div style="margin-bottom: 16px;">
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">ROI</div>
-                                    <div style="font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--gold-primary);" id="simROI">-</div>
-                                </div>
-                                
-                                <div style="padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px;">
-                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Investimento Total</div>
-                                    <div style="font-family: var(--font-mono); font-size: 16px; font-weight: 700;" id="simInvestimento">-</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script>
         // ============================================================================
-        // MOTOR DE CÁLCULO (Simplificado para demo)
+        // CONFIGURAÇÃO
         // ============================================================================
         
-        class MotorCalculo {
-            constructor(dados) {
-                this.dados = dados;
-                this.taxaMensal = Math.pow(1 + dados.taxaAnual, 1/12) - 1;
-            }
+        const SENHA_ADMIN = 'ecofin2025';
+        const API_URL = 'https://ecofin-backend.railway.app'; // Ajustar conforme seu deploy
+        
+        // ============================================================================
+        // LOGIN
+        // ============================================================================
+        
+        function fazerLogin() {
+            const senha = document.getElementById('senhaInput').value;
             
-            calcularPMT(taxa, nper, vp) {
-                if (taxa === 0) return vp / nper;
-                const fator = Math.pow(1 + taxa, nper);
-                return vp * (taxa * fator) / (fator - 1);
-            }
-            
-            simularCompleto(fgts, amortMensal, duracao = 999) {
-                let saldo = this.dados.saldoDevedor - fgts;
-                const detalhes = [];
-                let totalPago = fgts;
-                let totalJuros = 0;
-                let mes = 0;
-                const tr = 0.0015;
-                
-                while (saldo > 1 && mes < 600) {
-                    const saldoInicial = saldo;
-                    const juros = saldo * this.taxaMensal;
-                    
-                    // PRICE
-                    const prazoRestante = Math.max(1, this.dados.prazoRestante - mes);
-                    const pmt = this.calcularPMT(this.taxaMensal, prazoRestante, saldo);
-                    const amortBase = Math.max(0, pmt - juros);
-                    
-                    const amortExtra = (mes < duracao) ? amortMensal : 0;
-                    const taxas = this.dados.taxaAdmin + this.dados.seguro;
-                    const parcela = juros + amortBase + amortExtra + taxas;
-                    
-                    // Atualizar saldo
-                    if (mes === 0) {
-                        saldo = saldo - amortBase - amortExtra;
-                    } else if (amortExtra > 0) {
-                        const correcaoTR = saldo * tr;
-                        const amortExtraLiq = Math.max(0, amortExtra - correcaoTR);
-                        saldo = saldo - amortBase - amortExtraLiq;
-                    } else {
-                        const correcaoTR = saldo * tr;
-                        saldo = saldo - amortBase + correcaoTR;
-                    }
-                    
-                    totalPago += parcela;
-                    totalJuros += juros;
-                    
-                    detalhes.push({
-                        mes: mes + 1,
-                        saldoInicial,
-                        juros,
-                        amortBase,
-                        amortExtra,
-                        parcela,
-                        saldoFinal: saldo
-                    });
-                    
-                    mes++;
-                    if (saldo <= 1) break;
-                }
-                
-                return { detalhes, totalPago, totalJuros, prazoMeses: mes };
+            if (senha === SENHA_ADMIN) {
+                localStorage.setItem('ecofinAdmin', 'true');
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainPanel').style.display = 'block';
+                document.getElementById('erroLogin').style.display = 'none';
+                carregarClientes();
+            } else {
+                document.getElementById('erroLogin').style.display = 'block';
             }
         }
         
-        // ============================================================================
-        // DADOS DO CLIENTE (Exemplo)
-        // ============================================================================
+        function fazerLogout() {
+            localStorage.removeItem('ecofinAdmin');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainPanel').style.display = 'none';
+            document.getElementById('senhaInput').value = '';
+        }
         
-        const dadosCliente = {
-            nome: 'Maria Silva',
-            saldoDevedor: 300000,
-            taxaAnual: 0.12,
-            prazoRestante: 420,
-            sistema: 'PRICE',
-            taxaAdmin: 25,
-            seguro: 50,
-            fgtsDisponivel: 30000,
-            capacidadeExtra: 1000
-        };
-        
-        // ============================================================================
-        // INICIALIZAÇÃO
-        // ============================================================================
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            carregarDados();
-            inicializarGraficos();
-            animarBarras();
+        // Verificar se já está logado
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('ecofinAdmin') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainPanel').style.display = 'block';
+                carregarClientes();
+            }
         });
         
-        function carregarDados() {
-            // Nome do cliente
-            document.getElementById('clientName').textContent = dadosCliente.nome;
-            
-            // Motor
-            const motor = new MotorCalculo(dadosCliente);
-            const original = motor.simularCompleto(0, 0, 0);
-            const otimizado = motor.simularCompleto(
-                dadosCliente.fgtsDisponivel, 
-                dadosCliente.capacidadeExtra, 
-                999
-            );
-            
-            const economia = original.totalPago - otimizado.totalPago;
-            const reducaoPrazo = original.prazoMeses - otimizado.prazoMeses;
-            const investimento = dadosCliente.fgtsDisponivel + (dadosCliente.capacidadeExtra * otimizado.prazoMeses);
-            const roi = investimento > 0 ? economia / investimento : 0;
-            
-            // Hero Metrics
-            document.getElementById('economiaTotal').textContent = formatarMoeda(economia);
-            document.getElementById('mesesEconomizados').textContent = `${reducaoPrazo} meses`;
-            document.getElementById('anosEconomizados').textContent = `${(reducaoPrazo / 12).toFixed(1)} anos`;
-            document.getElementById('roi').textContent = `${roi.toFixed(1)}x`;
-            
-            // Resumo da Estratégia
-            document.getElementById('fgtsUsar').textContent = formatarMoeda(dadosCliente.fgtsDisponivel);
-            document.getElementById('amortMensal').textContent = formatarMoeda(dadosCliente.capacidadeExtra);
-            document.getElementById('duracao').textContent = 'Até quitar';
-            document.getElementById('investimentoTotal').textContent = formatarMoeda(investimento);
-            
-            // Comparativo
-            document.getElementById('totalSemEstrategia').textContent = formatarMoeda(original.totalPago, true);
-            document.getElementById('totalComEstrategia').textContent = formatarMoeda(otimizado.totalPago, true);
-            document.getElementById('economiaDestaque').textContent = formatarMoeda(economia);
-            
-            // Dados do Financiamento
-            document.getElementById('saldoDevedor').textContent = formatarMoeda(dadosCliente.saldoDevedor);
-            document.getElementById('taxaJuros').textContent = `${(dadosCliente.taxaAnual * 100).toFixed(2)}% a.a.`;
-            document.getElementById('prazoOriginal').textContent = `${dadosCliente.prazoRestante} meses (${Math.floor(dadosCliente.prazoRestante / 12)} anos)`;
-            document.getElementById('taxaAdmin').textContent = `${formatarMoeda(dadosCliente.taxaAdmin)}/mês`;
-            document.getElementById('seguro').textContent = `${formatarMoeda(dadosCliente.seguro)}/mês`;
-            
-            // Tabela de meses
-            preencherTabelaMeses(otimizado.detalhes);
-            
-            // Salvar para uso global
-            window.dadosOriginais = { original, otimizado, motor };
-        }
+        // ============================================================================
+        // CARREGAR CLIENTES
+        // ============================================================================
         
-        function formatarMoeda(valor, resumido = false) {
-            if (resumido && valor >= 1000000) {
-                return `R$ ${(valor / 1000000).toFixed(2)} Mi`;
+        let todosClientes = [];
+        
+        async function carregarClientes() {
+            document.getElementById('loadingClientes').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('tableContainer').style.display = 'none';
+            
+            try {
+                // OPÇÃO 1: Se você tiver endpoint de listar todos
+                // const response = await fetch(`${API_URL}/clientes`);
+                
+                // OPÇÃO 2: Para esta demo, vamos usar dados mock
+                // Você deve substituir por chamada real à API
+                
+                // Simulando delay de rede
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // DADOS MOCK (substituir por API real)
+                todosClientes = [
+                    {
+                        id: 1,
+                        nome: 'Maria Silva',
+                        email: 'maria@email.com',
+                        whatsapp: '83999999999',
+                        banco: 'Caixa Econômica',
+                        saldo_devedor: 300000,
+                        taxa_nominal: 0.12,
+                        prazo_restante: 420,
+                        sistema: 'PRICE',
+                        economia: 939830,
+                        data_cadastro: '2025-01-07T10:30:00'
+                    },
+                    {
+                        id: 2,
+                        nome: 'João Santos',
+                        email: 'joao@email.com',
+                        whatsapp: '83988888888',
+                        banco: 'Itaú',
+                        saldo_devedor: 450000,
+                        taxa_nominal: 0.11,
+                        prazo_restante: 360,
+                        sistema: 'SAC',
+                        economia: 1250000,
+                        data_cadastro: '2025-01-06T14:20:00'
+                    },
+                    {
+                        id: 3,
+                        nome: 'Ana Paula',
+                        email: 'ana@email.com',
+                        whatsapp: '83977777777',
+                        banco: 'Bradesco',
+                        saldo_devedor: 200000,
+                        taxa_nominal: 0.105,
+                        prazo_restante: 300,
+                        sistema: 'PRICE',
+                        economia: 580000,
+                        data_cadastro: '2025-01-05T09:15:00'
+                    }
+                ];
+                
+                // Atualizar stats
+                atualizarStats();
+                
+                // Renderizar tabela
+                renderizarClientes(todosClientes);
+                
+                document.getElementById('loadingClientes').style.display = 'none';
+                
+                if (todosClientes.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                } else {
+                    document.getElementById('tableContainer').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar clientes:', error);
+                document.getElementById('loadingClientes').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
             }
-            if (resumido && valor >= 1000) {
-                return `R$ ${(valor / 1000).toFixed(0)} Mil`;
-            }
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
         
-        function animarBarras() {
-            setTimeout(() => {
-                document.getElementById('barSem').style.width = '100%';
-                document.getElementById('barCom').style.width = '46%';
-            }, 500);
-        }
+        // ============================================================================
+        // RENDERIZAR CLIENTES
+        // ============================================================================
         
-        function preencherTabelaMeses(detalhes) {
-            const tbody = document.querySelector('#tabelaMeses tbody');
+        function renderizarClientes(clientes) {
+            const tbody = document.getElementById('clientesTableBody');
             tbody.innerHTML = '';
             
-            // Primeiros 36 meses
-            detalhes.slice(0, 36).forEach(mes => {
+            if (clientes.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('tableContainer').style.display = 'none';
+                return;
+            }
+            
+            clientes.forEach(cliente => {
                 const tr = document.createElement('tr');
+                tr.onclick = () => abrirDashboard(cliente.id);
+                
                 tr.innerHTML = `
-                    <td>${mes.mes}</td>
-                    <td>${formatarMoeda(mes.saldoInicial)}</td>
-                    <td>${formatarMoeda(mes.juros)}</td>
-                    <td>${formatarMoeda(mes.amortBase)}</td>
-                    <td>${formatarMoeda(mes.amortExtra)}</td>
-                    <td>${formatarMoeda(mes.parcela)}</td>
-                    <td><strong>${formatarMoeda(mes.saldoFinal)}</strong></td>
+                    <td><strong>${cliente.nome}</strong></td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">${cliente.email}</td>
+                    <td>${cliente.banco}</td>
+                    <td style="font-family: var(--font-mono);">${formatarMoeda(cliente.saldo_devedor)}</td>
+                    <td style="font-family: var(--font-mono); color: var(--success);"><strong>${formatarMoeda(cliente.economia)}</strong></td>
+                    <td><span class="badge info">${cliente.sistema}</span></td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">${formatarData(cliente.data_cadastro)}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirDashboard(${cliente.id})">
+                            <i class="ph-bold ph-eye"></i>
+                            Ver
+                        </button>
+                    </td>
                 `;
+                
                 tbody.appendChild(tr);
             });
         }
         
         // ============================================================================
-        // TABS
+        // FILTRAR CLIENTES
         // ============================================================================
         
-        function mudaTab(tabId, btn) {
-            // Ocultar todos
-            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        function filtrarClientes() {
+            const busca = document.getElementById('searchInput').value.toLowerCase();
             
-            // Mostrar selecionado
-            document.getElementById(`tab-${tabId}`).style.display = 'block';
-            btn.classList.add('active');
+            const clientesFiltrados = todosClientes.filter(cliente => 
+                cliente.nome.toLowerCase().includes(busca) ||
+                cliente.email.toLowerCase().includes(busca) ||
+                cliente.banco.toLowerCase().includes(busca)
+            );
+            
+            renderizarClientes(clientesFiltrados);
         }
         
         // ============================================================================
-        // SIMULADOR
+        // ATUALIZAR STATS
         // ============================================================================
         
-        function simularCenario() {
-            const fgts = parseFloat(document.getElementById('simFgts').value) || 0;
-            const amort = parseFloat(document.getElementById('simAmort').value) || 0;
-            const duracao = parseInt(document.getElementById('simDuracao').value) || 999;
+        function atualizarStats() {
+            const total = todosClientes.length;
+            const economiaTotal = todosClientes.reduce((sum, c) => sum + c.economia, 0);
             
-            const motor = window.dadosOriginais.motor;
-            const original = window.dadosOriginais.original;
-            const resultado = motor.simularCompleto(fgts, amort, duracao);
+            // Calcular novos (últimos 7 dias)
+            const seteDiasAtras = new Date();
+            seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
+            const novos = todosClientes.filter(c => new Date(c.data_cadastro) >= seteDiasAtras).length;
             
-            const economia = original.totalPago - resultado.totalPago;
-            const reducao = original.prazoMeses - resultado.prazoMeses;
-            const investimento = fgts + (amort * Math.min(duracao, resultado.prazoMeses));
-            const roi = investimento > 0 ? economia / investimento : 0;
+            // Calcular anos economizados (aproximado: economia / 100k = anos)
+            const anosTotal = Math.round(economiaTotal / 100000);
             
-            document.getElementById('simEconomia').textContent = formatarMoeda(economia);
-            document.getElementById('simPrazo').textContent = `${resultado.prazoMeses} meses (${(resultado.prazoMeses / 12).toFixed(1)} anos)`;
-            document.getElementById('simReducao').textContent = `${reducao} meses (${(reducao / 12).toFixed(1)} anos)`;
-            document.getElementById('simROI').textContent = `${roi.toFixed(2)}x`;
-            document.getElementById('simInvestimento').textContent = formatarMoeda(investimento);
-            
-            document.getElementById('resultadoSim').style.display = 'block';
+            document.getElementById('totalClientes').textContent = total;
+            document.getElementById('economiaTotal').textContent = formatarMoeda(economiaTotal, true);
+            document.getElementById('novosClientes').textContent = novos;
+            document.getElementById('anosEconomizados').textContent = anosTotal;
         }
         
         // ============================================================================
-        // GRÁFICOS
+        // ABRIR DASHBOARD DO CLIENTE
         // ============================================================================
         
-        function inicializarGraficos() {
-            // Gráfico de Evolução
-            const ctx1 = document.getElementById('chartEvolucao').getContext('2d');
-            new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: 36}, (_, i) => `Mês ${i + 1}`),
-                    datasets: [{
-                        label: 'Sem Estratégia',
-                        data: Array.from({length: 36}, (_, i) => 300000 - (i * 200)),
-                        borderColor: '#EF4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4
-                    }, {
-                        label: 'Com EcoFin',
-                        data: Array.from({length: 36}, (_, i) => 300000 - (i * 1500)),
-                        borderColor: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#fff' } }
-                    },
-                    scales: {
-                        x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                    }
-                }
-            });
-            
-            // Gráficos de Pizza - Composição Sem Estratégia
-            const ctx2 = document.getElementById('chartComposicaoSem').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Principal', 'Juros', 'Taxas'],
-                    datasets: [{
-                        data: [300000, 1204632, 221630],
-                        backgroundColor: ['#888', '#EF4444', '#F59E0B']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#fff' } },
-                        title: { display: true, text: 'Sem Estratégia', color: '#fff' }
-                    }
-                }
-            });
-            
-            // Gráficos de Pizza - Composição Com Estratégia
-            const ctx3 = document.getElementById('chartComposicaoCom').getContext('2d');
-            new Chart(ctx3, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Principal', 'Juros', 'Taxas'],
-                    datasets: [{
-                        data: [300000, 425804, 60627],
-                        backgroundColor: ['#888', '#10B981', '#F59E0B']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#fff' } },
-                        title: { display: true, text: 'Com EcoFin', color: '#fff' }
-                    }
-                }
-            });
+        function abrirDashboard(clienteId) {
+            // Redireciona para o dashboard com o ID do cliente na URL
+            window.open(`dashboard_cliente.html?id=${clienteId}`, '_blank');
         }
         
         // ============================================================================
-        // COMPARTILHAR
+        // HELPERS
         // ============================================================================
         
-        function compartilharWhatsApp() {
-            const mensagem = `🎯 *Minha Estratégia EcoFin*%0A%0A` +
-                           `💰 Economia: R$ 939.830%0A` +
-                           `📅 Prazo: 9.7 anos ANTES%0A` +
-                           `🎯 ROI: 2.8x%0A%0A` +
-                           `Quero saber mais!`;
-            window.open(`https://wa.me/5583991014456?text=${mensagem}`, '_blank');
+        function formatarMoeda(valor, resumido = false) {
+            if (resumido && valor >= 1000000) {
+                return `R$ ${(valor / 1000000).toFixed(1)}M`;
+            }
+            if (resumido && valor >= 1000) {
+                return `R$ ${(valor / 1000).toFixed(0)}k`;
+            }
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(valor);
+        }
+        
+        function formatarData(dataISO) {
+            const data = new Date(dataISO);
+            const hoje = new Date();
+            const diffDias = Math.floor((hoje - data) / (1000 * 60 * 60 * 24));
+            
+            if (diffDias === 0) return 'Hoje';
+            if (diffDias === 1) return 'Ontem';
+            if (diffDias < 7) return `${diffDias} dias atrás`;
+            
+            return data.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
         }
     </script>
 </body>

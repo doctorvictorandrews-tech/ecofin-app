@@ -529,7 +529,7 @@
         // ============================================================================
         
         const SENHA_ADMIN = 'ecofin2025';
-        const API_URL = 'https://ecofin-backend.railway.app'; // Ajustar conforme seu deploy
+        const API_URL = 'https://ecofin-backend.railway.app/api'; // URL da API com /api/
         
         // ============================================================================
         // LOGIN
@@ -577,57 +577,15 @@
             document.getElementById('tableContainer').style.display = 'none';
             
             try {
-                // OPÇÃO 1: Se você tiver endpoint de listar todos
-                // const response = await fetch(`${API_URL}/clientes`);
+                // Chamar API real
+                const response = await fetch(`${API_URL}/clientes`);
                 
-                // OPÇÃO 2: Para esta demo, vamos usar dados mock
-                // Você deve substituir por chamada real à API
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar clientes');
+                }
                 
-                // Simulando delay de rede
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // DADOS MOCK (substituir por API real)
-                todosClientes = [
-                    {
-                        id: 1,
-                        nome: 'Maria Silva',
-                        email: 'maria@email.com',
-                        whatsapp: '83999999999',
-                        banco: 'Caixa Econômica',
-                        saldo_devedor: 300000,
-                        taxa_nominal: 0.12,
-                        prazo_restante: 420,
-                        sistema: 'PRICE',
-                        economia: 939830,
-                        data_cadastro: '2025-01-07T10:30:00'
-                    },
-                    {
-                        id: 2,
-                        nome: 'João Santos',
-                        email: 'joao@email.com',
-                        whatsapp: '83988888888',
-                        banco: 'Itaú',
-                        saldo_devedor: 450000,
-                        taxa_nominal: 0.11,
-                        prazo_restante: 360,
-                        sistema: 'SAC',
-                        economia: 1250000,
-                        data_cadastro: '2025-01-06T14:20:00'
-                    },
-                    {
-                        id: 3,
-                        nome: 'Ana Paula',
-                        email: 'ana@email.com',
-                        whatsapp: '83977777777',
-                        banco: 'Bradesco',
-                        saldo_devedor: 200000,
-                        taxa_nominal: 0.105,
-                        prazo_restante: 300,
-                        sistema: 'PRICE',
-                        economia: 580000,
-                        data_cadastro: '2025-01-05T09:15:00'
-                    }
-                ];
+                const data = await response.json();
+                todosClientes = data.clientes || [];
                 
                 // Atualizar stats
                 atualizarStats();
@@ -646,7 +604,27 @@
             } catch (error) {
                 console.error('Erro ao carregar clientes:', error);
                 document.getElementById('loadingClientes').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
+                
+                // Mostrar dados mock em caso de erro (para desenvolvimento)
+                todosClientes = [
+                    {
+                        id: 'mock1',
+                        nome: 'Maria Silva (DEMO)',
+                        email: 'maria@email.com',
+                        whatsapp: '83999999999',
+                        banco: 'Caixa Econômica',
+                        saldoDevedor: 300000,
+                        taxaNominal: 0.12,
+                        prazoRestante: 420,
+                        sistema: 'PRICE',
+                        economia: 939830,
+                        data: new Date().toISOString()
+                    }
+                ];
+                
+                atualizarStats();
+                renderizarClientes(todosClientes);
+                document.getElementById('tableContainer').style.display = 'block';
             }
         }
         
@@ -668,16 +646,28 @@
                 const tr = document.createElement('tr');
                 tr.onclick = () => abrirDashboard(cliente.id);
                 
+                // Adaptar para os nomes de campos que vêm da API
+                const saldoDevedor = cliente.saldoDevedor || cliente.saldo_devedor || 0;
+                const taxaNominal = cliente.taxaNominal || cliente.taxa_nominal || 0;
+                const prazoRestante = cliente.prazoRestante || cliente.prazo_restante || 0;
+                const dataCadastro = cliente.data || cliente.data_cadastro || cliente.data_criacao || new Date().toISOString();
+                
+                // Calcular economia estimada se não vier da API
+                let economia = cliente.economia || 0;
+                if (economia === 0 && saldoDevedor > 0) {
+                    economia = saldoDevedor * 2; // Estimativa simplificada
+                }
+                
                 tr.innerHTML = `
                     <td><strong>${cliente.nome}</strong></td>
-                    <td style="font-size: 13px; color: var(--text-secondary);">${cliente.email}</td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">${cliente.email || 'Não informado'}</td>
                     <td>${cliente.banco}</td>
-                    <td style="font-family: var(--font-mono);">${formatarMoeda(cliente.saldo_devedor)}</td>
-                    <td style="font-family: var(--font-mono); color: var(--success);"><strong>${formatarMoeda(cliente.economia)}</strong></td>
+                    <td style="font-family: var(--font-mono);">${formatarMoeda(saldoDevedor)}</td>
+                    <td style="font-family: var(--font-mono); color: var(--success);"><strong>${formatarMoeda(economia)}</strong></td>
                     <td><span class="badge info">${cliente.sistema}</span></td>
-                    <td style="font-size: 13px; color: var(--text-secondary);">${formatarData(cliente.data_cadastro)}</td>
+                    <td style="font-size: 13px; color: var(--text-secondary);">${formatarData(dataCadastro)}</td>
                     <td>
-                        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirDashboard(${cliente.id})">
+                        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); abrirDashboard('${cliente.id}')">
                             <i class="ph-bold ph-eye"></i>
                             Ver
                         </button>
@@ -710,12 +700,21 @@
         
         function atualizarStats() {
             const total = todosClientes.length;
-            const economiaTotal = todosClientes.reduce((sum, c) => sum + c.economia, 0);
+            
+            // Calcular economia total (adaptar nomes de campos)
+            const economiaTotal = todosClientes.reduce((sum, c) => {
+                const economia = c.economia || 0;
+                const saldo = c.saldoDevedor || c.saldo_devedor || 0;
+                return sum + (economia > 0 ? economia : saldo * 2); // Estimativa se não tiver economia
+            }, 0);
             
             // Calcular novos (últimos 7 dias)
             const seteDiasAtras = new Date();
             seteDiasAtras.setDate(seteDiasAtras.getDate() - 7);
-            const novos = todosClientes.filter(c => new Date(c.data_cadastro) >= seteDiasAtras).length;
+            const novos = todosClientes.filter(c => {
+                const data = c.data || c.data_cadastro || c.data_criacao;
+                return new Date(data) >= seteDiasAtras;
+            }).length;
             
             // Calcular anos economizados (aproximado: economia / 100k = anos)
             const anosTotal = Math.round(economiaTotal / 100000);

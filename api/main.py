@@ -47,8 +47,11 @@ app.add_middleware(
     allow_origins=[
         "https://app.meuecofin.com.br",
         "https://meuecofin.com.br",
+        "https://ecofin-app.vercel.app",
+        "https://*.vercel.app",
         "http://localhost:3000",
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "*"  # Temporário para debug
     ],
     allow_credentials=True,
     allow_methods=["*"],

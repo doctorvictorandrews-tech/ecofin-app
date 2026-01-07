@@ -98,6 +98,54 @@ class OtimizacaoRequest(BaseModel):
     objetivo: str = "economia"
 
 # ============================================
+# FUNÇÕES AUXILIARES
+# ============================================
+
+def achar_dados_cliente(cliente: ClienteCreate) -> Dict:
+    """Converte dados nested para flat (compatibilidade com painel)"""
+    return {
+        'nome': cliente.nome,
+        'email': cliente.email or "",
+        'whatsapp': cliente.whatsapp,
+        'banco': cliente.banco,
+        'objetivo': cliente.objetivo,
+        'data': datetime.now().isoformat(),
+        'status': 'pendente',
+        
+        # Dados do financiamento (flat para painel)
+        'saldoDevedor': cliente.financiamento.saldo_devedor,
+        'taxaNominal': cliente.financiamento.taxa_nominal,
+        'prazoRestante': cliente.financiamento.prazo_restante,
+        'sistema': cliente.financiamento.sistema,
+        'tr': cliente.financiamento.tr_mensal * 100,  # converter para %
+        'taxaAdm': cliente.financiamento.taxa_admin_mensal,
+        'seguroMensal': cliente.financiamento.seguro_mensal,
+        
+        # Dados dos recursos (flat para painel)
+        'valorFGTS': cliente.recursos.valor_fgts,
+        'capacidadeExtra': cliente.recursos.capacidade_extra,
+        'temReserva': cliente.recursos.tem_reserva_emergencia,
+        'trabalhaCLT': cliente.recursos.trabalha_clt,
+        
+        # Manter nested para compatibilidade com endpoint /otimizar
+        'financiamento': {
+            'saldo_devedor': cliente.financiamento.saldo_devedor,
+            'taxa_nominal': cliente.financiamento.taxa_nominal,
+            'prazo_restante': cliente.financiamento.prazo_restante,
+            'sistema': cliente.financiamento.sistema,
+            'tr_mensal': cliente.financiamento.tr_mensal,
+            'seguro_mensal': cliente.financiamento.seguro_mensal,
+            'taxa_admin_mensal': cliente.financiamento.taxa_admin_mensal
+        },
+        'recursos': {
+            'valor_fgts': cliente.recursos.valor_fgts,
+            'capacidade_extra': cliente.recursos.capacidade_extra,
+            'tem_reserva_emergencia': cliente.recursos.tem_reserva_emergencia,
+            'trabalha_clt': cliente.recursos.trabalha_clt
+        }
+    }
+
+# ============================================
 # STORAGE & CACHE
 # ============================================
 
@@ -262,11 +310,24 @@ async def health():
 @app.post("/api/cliente", status_code=status.HTTP_201_CREATED)
 async def criar_cliente(cliente: ClienteCreate):
     try:
-        cliente_id = storage.criar_cliente(cliente)
+        # Converter para formato compatível com painel
+        cliente_dict = achar_dados_cliente(cliente)
+        
+        # Gerar ID
+        cliente_id = hashlib.md5(
+            f"{cliente.nome}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:12]
+        
+        cliente_dict['id'] = cliente_id
+        cliente_dict['data_criacao'] = datetime.now().isoformat()
+        
+        # Salvar
+        storage.clientes[cliente_id] = cliente_dict
+        
         return {
             "sucesso": True,
             "cliente_id": cliente_id,
-            "cliente": storage.obter_cliente(cliente_id)
+            "cliente": cliente_dict
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

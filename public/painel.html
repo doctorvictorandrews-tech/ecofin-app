@@ -149,26 +149,58 @@
             encontrarEstrategiaOtima(recursos, objetivo) {
                 const cenarios = [];
                 const original = this.simularCompleto(0, 0);
+                
+                // Percentuais e durações a testar
+                const fgtsPercentuais = [0, 25, 50, 75, 100];
+                const amortPercentuais = [0, 30, 50, 70, 100];
+                const duracoes = [12, 24, 36, 60, 120, 240, 999];
 
-                for (let fgtsPerc = 0; fgtsPerc <= 100; fgtsPerc += 25) {
-                    for (let amortPerc = 30; amortPerc <= 100; amortPerc += 10) {
-                        const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
+                fgtsPercentuais.forEach(fgtsPerc => {
+                    const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
+                    
+                    amortPercentuais.forEach(amortPerc => {
                         const amort = (recursos.capacidadeExtra || 0) * (amortPerc / 100);
-                        const sim = this.simularCompleto(fgts, amort);
-                        sim.fgtsUsado = fgts;
-                        sim.amortMensal = amort;
-                        sim.economia = original.totalPago - sim.totalPago;
-                        sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
                         
-                        if (objetivo === 'quitar_rapido') {
-                            sim.score = sim.reducaoPrazo * 10 + (sim.economia / 1000);
-                        } else {
-                            sim.score = sim.economia + ((sim.economia / ((fgts + (amort * sim.prazoMeses)) || 1)) * 10000);
-                        }
+                        // Pular se ambos zerados
+                        if (fgts === 0 && amort === 0) return;
                         
-                        cenarios.push(sim);
-                    }
-                }
+                        duracoes.forEach(duracao => {
+                            try {
+                                const sim = this.simularCompleto(fgts, amort);
+                                const duracaoReal = Math.min(duracao, sim.prazoMeses);
+                                const investimento = fgts + (amort * duracaoReal);
+                                
+                                sim.fgtsUsado = fgts;
+                                sim.amortMensal = amort;
+                                sim.duracao = duracaoReal;
+                                sim.economia = original.totalPago - sim.totalPago;
+                                sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
+                                sim.investimentoTotal = investimento;
+                                sim.roi = investimento > 0 ? sim.economia / investimento : 0;
+                                
+                                // Viabilidade
+                                if (amort <= (recursos.capacidadeExtra || 0) * 0.3) {
+                                    sim.viabilidade = 'ALTA';
+                                } else if (amort <= (recursos.capacidadeExtra || 0) * 0.7) {
+                                    sim.viabilidade = 'MÉDIA';
+                                } else {
+                                    sim.viabilidade = 'BAIXA';
+                                }
+                                
+                                // Score baseado no objetivo
+                                if (objetivo === 'prazo' || objetivo === 'quitar_rapido') {
+                                    sim.score = sim.reducaoPrazo * 100 + (sim.economia / 1000);
+                                } else {
+                                    sim.score = sim.economia + (sim.roi * 10000);
+                                }
+                                
+                                cenarios.push(sim);
+                            } catch(e) {
+                                // Ignorar cenários com erro
+                            }
+                        });
+                    });
+                });
 
                 return cenarios.sort((a, b) => b.score - a.score)[0];
             }

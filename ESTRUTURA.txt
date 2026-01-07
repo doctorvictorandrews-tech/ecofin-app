@@ -1,0 +1,90 @@
+📁 ESTRUTURA COMPLETA DO PROJETO ECOFIN
+========================================
+
+ecofin-app/
+│
+├── 📄 README.md                  # Documentação completa do projeto
+├── 📄 QUICK_START.md             # Guia rápido de deploy (5 min)
+├── 📄 CHANGELOG.md               # Histórico de versões
+├── 📄 LICENSE                    # Licença proprietária
+├── 📄 RESUMO_ANALISE.md          # Análise da planilha Excel
+│
+├── ⚙️ package.json               # Configuração npm/Vercel
+├── ⚙️ requirements.txt           # Dependências Python/Railway
+├── ⚙️ vercel.json                # Configuração Vercel
+├── ⚙️ .env.example               # Exemplo variáveis ambiente
+├── ⚙️ .gitignore                 # Arquivos ignorados Git
+│
+├── 📂 public/                    # Frontend (HTML estático)
+│   ├── index.html                # Formulário cliente (43KB)
+│   ├── painel.html               # Painel admin (33KB)
+│   ├── logo-branco.png           # Logo branca (24KB)
+│   └── logo-preto.png            # Logo preta (18KB)
+│
+├── 📂 api/                       # Backend (Python FastAPI)
+│   ├── main.py                   # API REST (17KB)
+│   ├── motor_ecofin.py           # Motor de cálculo (21KB)
+│   └── otimizador.py             # Otimizador (17KB)
+│
+└── 📂 docs/                      # Documentação adicional
+    └── (vazio por enquanto)
+
+========================================
+TAMANHO TOTAL: ~180KB
+ARQUIVOS: 18
+LINHAS CÓDIGO: ~3.500
+========================================
+
+🎯 PRINCIPAIS ARQUIVOS:
+
+1. public/index.html (587 linhas)
+   - Formulário cliente
+   - OCR automático
+   - 5 etapas guiadas
+   - Identidade visual
+
+2. public/painel.html (596 linhas)
+   - Painel administrativo
+   - Tabela completa (600 meses)
+   - Exportação Excel
+   - Senha protegido
+
+3. api/motor_ecofin.py (529 linhas)
+   - Motor de cálculo preciso
+   - Baseado 100% na planilha
+   - Decimal precision
+   - Validado matematicamente
+
+4. api/main.py (550 linhas)
+   - API FastAPI
+   - CRUD completo
+   - CORS configurado
+   - Endpoints REST
+
+5. api/otimizador.py (480 linhas)
+   - Otimizador de estratégias
+   - Múltiplas simulações
+   - Comparação de cenários
+   - Recomendações
+
+========================================
+📊 ESTATÍSTICAS:
+
+Código JavaScript: ~1.200 linhas
+Código Python: ~1.560 linhas
+Código HTML: ~700 linhas
+Total: ~3.500 linhas
+
+Frontend: React 18 (CDN)
+Backend: Python 3.12+ / FastAPI
+OCR: Tesseract.js 4
+Export: XLSX.js 0.18.5
+
+========================================
+🚀 DEPLOY:
+
+Frontend → Vercel
+Backend → Railway
+DNS → Cloudflare (ready)
+
+========================================

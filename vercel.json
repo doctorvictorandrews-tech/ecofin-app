@@ -1,23 +1,39 @@
 {
   "version": 2,
-  "builds": [
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
     {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/cliente",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/painel",
+      "destination": "/painel.html"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "/cliente",
-      "dest": "/public/cliente.html"
-    },
-    {
-      "src": "/painel",
-      "dest": "/public/painel.html"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
     }
   ]
 }

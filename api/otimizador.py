@@ -148,34 +148,94 @@ class Otimizador:
     
     def comparar_estrategias(self, limite: int = 5) -> List[Estrategia]:
         """
-        Retorna as N melhores estratégias
+        Retorna as N melhores estratégias ÚNICAS
         
         Args:
             limite: Número de estratégias a retornar
         
         Returns:
-            Lista das melhores estratégias
+            Lista das melhores estratégias únicas ordenadas por score
         """
         
-        # Otimizar para economia
-        melhor_economia = self.otimizar('economia')
+        todas_estrategias = []
         
-        # Otimizar para prazo
-        melhor_prazo = self.otimizar('prazo')
+        # Testar todos os cenários possíveis
+        fgts_disponivel = self.recursos.valor_fgts
+        capacidade = self.recursos.capacidade_extra_mensal
         
-        # Combinar e remover duplicatas
-        estrategias = []
-        
-        if melhor_economia:
-            estrategias.append(melhor_economia)
-        
-        if melhor_prazo and melhor_prazo.score != melhor_economia.score:
-            estrategias.append(melhor_prazo)
+        for fgts_perc in [0, 25, 50, 75, 100]:
+            fgts_usar = (fgts_disponivel * Decimal(str(fgts_perc))) / Decimal('100')
+            
+            for amort_perc in [0, 30, 50, 70, 100]:
+                amort_mensal = (capacidade * Decimal(str(amort_perc))) / Decimal('100')
+                
+                for duracao in [12, 24, 36, 60, 120, 240, 999]:
+                    if fgts_usar == 0 and amort_mensal == 0:
+                        continue
+                    
+                    try:
+                        resultado = self.motor.simular_completo(
+                            fgts_usar,
+                            amort_mensal,
+                            duracao
+                        )
+                        
+                        economia = self.original['total_pago'] - resultado['total_pago']
+                        reducao_prazo = self.original['prazo_meses'] - resultado['prazo_meses']
+                        
+                        meses_com_amort = min(duracao, resultado['prazo_meses'])
+                        investimento_total = fgts_usar + (amort_mensal * Decimal(str(meses_com_amort)))
+                        
+                        roi = (economia / investimento_total) if investimento_total > 0 else Decimal('0')
+                        
+                        # Viabilidade
+                        if amort_mensal <= capacidade * Decimal('0.3'):
+                            viabilidade = 'ALTA'
+                        elif amort_mensal <= capacidade * Decimal('0.7'):
+                            viabilidade = 'MÉDIA'
+                        else:
+                            viabilidade = 'BAIXA'
+                        
+                        # Score ponderado: economia (peso 70%) + ROI (peso 30%)
+                        score = (economia * Decimal('0.7')) + (roi * Decimal('10000') * Decimal('0.3'))
+                        
+                        estrategia = Estrategia(
+                            fgts_usado=fgts_usar,
+                            amortizacao_mensal=amort_mensal,
+                            duracao_amortizacao=duracao,
+                            total_pago=resultado['total_pago'],
+                            total_juros=resultado['total_juros'],
+                            prazo_meses=resultado['prazo_meses'],
+                            economia=economia,
+                            reducao_prazo=reducao_prazo,
+                            viabilidade=viabilidade,
+                            roi=roi,
+                            score=score,
+                            investimento_total=investimento_total,
+                            simulacao_completa=resultado
+                        )
+                        
+                        todas_estrategias.append(estrategia)
+                        
+                    except Exception:
+                        continue
         
         # Ordenar por score
-        estrategias.sort(key=lambda x: float(x.score), reverse=True)
+        todas_estrategias.sort(key=lambda x: float(x.score), reverse=True)
         
-        return estrategias[:limite]
+        # Remover duplicatas (mesma economia e prazo)
+        estrategias_unicas = []
+        seen = set()
+        
+        for est in todas_estrategias:
+            key = (float(est.economia), est.prazo_meses)
+            if key not in seen:
+                seen.add(key)
+                estrategias_unicas.append(est)
+                if len(estrategias_unicas) >= limite:
+                    break
+        
+        return estrategias_unicas
 
 # Teste
 if __name__ == "__main__":

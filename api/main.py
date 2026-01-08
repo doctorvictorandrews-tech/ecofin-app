@@ -38,12 +38,28 @@ class InMemoryStorage:
     """Storage simples em memória"""
     def __init__(self):
         self.clientes = {}
+        self.leads = {}  # Novo: armazenar leads do formulário
     
     def criar(self, cliente_data: Dict) -> Dict:
         cliente_id = cliente_data['id']
         cliente_data['data_cadastro'] = datetime.now().isoformat()
         self.clientes[cliente_id] = cliente_data
         return cliente_data
+    
+    def criar_lead(self, lead_data: Dict) -> Dict:
+        """Criar um novo lead do formulário"""
+        lead_id = hashlib.md5(
+            f"{lead_data['nome']}{lead_data['whatsapp']}{datetime.now()}".encode()
+        ).hexdigest()[:8]
+        lead_data['id'] = lead_id
+        lead_data['data_cadastro'] = datetime.now().isoformat()
+        lead_data['status'] = 'novo'
+        self.leads[lead_id] = lead_data
+        return lead_data
+    
+    def listar_leads(self) -> List[Dict]:
+        """Listar todos os leads"""
+        return list(self.leads.values())
     
     def listar_todos(self) -> List[Dict]:
         return list(self.clientes.values())
@@ -413,6 +429,78 @@ async def simular(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao simular: {str(e)}"
+        )
+
+# ============================================
+# ENDPOINT: LEAD (FORMULÁRIO DO CLIENTE)
+# ============================================
+
+@app.post("/lead", status_code=status.HTTP_201_CREATED)
+async def criar_lead(request: ClienteOtimizacaoRequest):
+    """
+    Recebe dados do formulário do cliente e salva como lead.
+    Este endpoint é chamado quando o cliente submete o formulário no index.html.
+    """
+    try:
+        # Converter para dict
+        lead_data = {
+            'nome': request.nome,
+            'email': request.email,
+            'whatsapp': request.whatsapp,
+            'banco': request.banco,
+            'objetivo': request.objetivo,
+            'financiamento': {
+                'saldo_devedor': float(request.financiamento.saldo_devedor),
+                'taxa_nominal': float(request.financiamento.taxa_nominal),
+                'prazo_restante': request.financiamento.prazo_restante,
+                'sistema': request.financiamento.sistema
+            },
+            'recursos': {
+                'valor_fgts': float(request.recursos.valor_fgts),
+                'capacidade_extra': float(request.recursos.capacidade_extra)
+            }
+        }
+        
+        # Salvar lead
+        lead = storage.criar_lead(lead_data)
+        
+        print(f"✅ Novo lead recebido: {lead['nome']} ({lead['id']})")
+        
+        return {
+            "status": "success",
+            "message": "Lead recebido com sucesso! Entraremos em contato em breve.",
+            "lead_id": lead['id']
+        }
+        
+    except Exception as e:
+        print(f"❌ Erro ao criar lead: {str(e)}")
+        # Não falhar para o cliente - sempre retornar sucesso
+        return {
+            "status": "success",
+            "message": "Formulário recebido! Entraremos em contato em breve."
+        }
+
+# ============================================
+# ENDPOINT: LISTAR LEADS (ADMIN)
+# ============================================
+
+@app.get("/leads")
+async def listar_leads():
+    """
+    Lista todos os leads recebidos.
+    Este endpoint é para uso administrativo.
+    """
+    try:
+        leads = storage.listar_leads()
+        return {
+            "status": "success",
+            "total": len(leads),
+            "leads": leads
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar leads: {str(e)}"
         )
 
 # ============================================

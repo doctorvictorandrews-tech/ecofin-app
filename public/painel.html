@@ -3,2175 +3,1007 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard EcoFin - Análise Personalizada</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Painel Admin - EcoFin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        :root {
-            --bg-body: #050505;
-            --bg-surface: #0F0F0F;
-            --bg-card: #1A1A1A;
-            --gold-primary: #D9890D;
-            --gold-hover: #F59E0B;
-            --text-primary: #FFFFFF;
-            --text-secondary: #C4C4C4;
-            --border-light: rgba(255, 255, 255, 0.1);
-            --success: #10B981;
-            --danger: #EF4444;
-            --warning: #F59E0B;
-            
-            --font-sans: 'Manrope', sans-serif;
-            --font-body: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        :root {
+            --gold: #D9890D;
+            --gold-hover: #F59E0B;
+            --dark-bg: #050505;
+            --card-bg: #0F0F0F;
+            --surface: #1A1A1A;
+            --border: rgba(255, 255, 255, 0.1);
+            --text-primary: #FFFFFF;
+            --text-secondary: #C4C4C4;
+            --success: #10B981;
+            --error: #EF4444;
+            --warning: #F59E0B;
+        }
+
         body {
-            background: var(--bg-body);
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
             color: var(--text-primary);
-            font-family: var(--font-body);
             line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
         }
 
         /* Background Effects */
-        .bg-blob {
+        .bg-animation {
             position: fixed;
-            filter: blur(120px);
+            width: 100vw;
+            height: 100vh;
             z-index: -1;
-            opacity: 0.15;
-            animation: blobMove 20s infinite alternate ease-in-out;
-            border-radius: 50%;
+            opacity: 0.08;
         }
-        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--gold-primary); }
-        .blob-2 { bottom: -20%; right: -20%; width: 60vw; height: 60vw; background: #5a3a00; animation-delay: -10s; }
-        @keyframes blobMove { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
-        
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: float 25s infinite ease-in-out;
+        }
+
+        .blob-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--gold);
+            top: -200px;
+            left: -200px;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--gold-hover);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -12s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(80px, 80px) scale(1.15); }
+            50% { transform: translate(0, 150px) scale(0.95); }
+            75% { transform: translate(-80px, 80px) scale(1.08); }
+        }
+
         /* Header */
         .header {
-            background: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-light);
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
             padding: 20px 0;
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        
+
         .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
         }
-        
-        .logo img { height: 40px; }
-        
-        .client-info {
+
+        .logo-section {
             display: flex;
             align-items: center;
+            gap: 20px;
+        }
+
+        .logo img {
+            height: 45px;
+            filter: drop-shadow(0 0 15px rgba(217, 137, 13, 0.3));
+        }
+
+        .page-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
             gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .client-name {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        .client-name strong {
-            color: var(--gold-primary);
-            font-weight: 700;
-        }
-
-        /* Main Content */
-        .main-content {
-            padding: 40px 0;
-        }
-
-        /* Tabs */
-        .tabs-container {
-            background: var(--bg-card);
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            flex-wrap: wrap;
-        }
-        
-        .tab-btn {
-            padding: 12px 24px;
-            background: transparent;
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
             align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-        
-        .tab-btn:hover {
-            border-color: var(--gold-primary);
-            color: var(--gold-primary);
-        }
-        
-        .tab-btn.active {
-            background: var(--gold-primary);
-            color: #000;
-            border-color: var(--gold-primary);
-            font-weight: 700;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Hero Card */
-        .hero-card {
-            background: linear-gradient(135deg, rgba(217,137,13,0.15) 0%, rgba(0,0,0,0.8) 100%);
-            border: 2px solid var(--gold-primary);
-            border-radius: 24px;
-            padding: 50px;
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
             margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--surface), var(--card-bg));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
             position: relative;
             overflow: hidden;
         }
-        
-        .hero-card::before {
+
+        .stat-card::before {
             content: '';
             position: absolute;
             top: 0;
             right: 0;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(217,137,13,0.2) 0%, transparent 70%);
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(217, 137, 13, 0.1), transparent);
             border-radius: 50%;
-            pointer-events: none;
         }
-        
-        .hero-title {
-            font-family: var(--font-sans);
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .hero-subtitle {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-        }
-        
-        .hero-metrics {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
-        
-        .metric-box {
-            background: rgba(0,0,0,0.4);
-            padding: 24px;
-            border-radius: 16px;
-            border: 1px solid var(--border-light);
-            transition: all 0.3s;
-        }
-        
-        .metric-box:hover {
+
+        .stat-card:hover {
             transform: translateY(-5px);
-            border-color: var(--gold-primary);
-            box-shadow: 0 10px 30px rgba(217,137,13,0.2);
-        }
-        
-        .metric-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 700;
-        }
-        
-        .metric-value {
-            font-family: var(--font-mono);
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-        
-        .metric-value.success { color: var(--success); }
-        .metric-value.warning { color: var(--warning); }
-        .metric-value.danger { color: var(--danger); }
-        .metric-value.gold { color: var(--gold-primary); }
-
-        /* Grid Layout */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .grid-3 {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
-        }
-        
-        @media(min-width: 768px) {
-            .grid-2 { grid-template-columns: 1fr 1fr; }
-            .grid-3 { grid-template-columns: repeat(3, 1fr); }
+            border-color: var(--gold);
+            box-shadow: 0 15px 40px rgba(217, 137, 13, 0.15);
         }
 
-        /* Cards */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-light);
-            border-radius: 20px;
-            padding: 32px;
-            transition: all 0.3s;
-        }
-        
-        .card:hover {
-            border-color: var(--gold-primary);
-            box-shadow: 0 0 30px rgba(217,137,13,0.15);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-light);
-        }
-        
-        .card-title {
-            font-family: var(--font-sans);
-            font-size: 20px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .card-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(217,137,13,0.15);
-            border-radius: 10px;
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(217, 137, 13, 0.15);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--gold-primary);
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: var(--gold);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 30px;
+        }
+
+        /* Actions Bar */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px 14px 50px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(217, 137, 13, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
             font-size: 20px;
         }
 
-        /* Progress Bars */
-        .progress-container {
-            margin-bottom: 20px;
-        }
-        
-        .progress-header {
+        .filter-buttons {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 600;
+            gap: 10px;
         }
-        
-        .progress-bar {
-            height: 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--gold);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: var(--gold-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(217, 137, 13, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .btn-outline.active {
+            background: rgba(217, 137, 13, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Clientes Grid */
+        .clientes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .cliente-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
             overflow: hidden;
-            position: relative;
         }
-        
-        .progress-fill {
-            height: 100%;
-            border-radius: 8px;
-            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
-            position: relative;
-        }
-        
-        .progress-fill.danger { 
-            background: linear-gradient(90deg, var(--danger), #ff6b6b);
-            box-shadow: 0 0 15px rgba(239,68,68,0.5);
-        }
-        .progress-fill.success { 
-            background: linear-gradient(90deg, var(--success), #34d399);
-            box-shadow: 0 0 15px rgba(16,185,129,0.5);
-        }
-        
-        .progress-fill::after {
+
+        .cliente-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-        }
-        
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        /* Table */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border-light);
-        }
-        
-        table {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        
-        thead {
-            background: rgba(255,255,255,0.03);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        
-        thead th {
-            text-align: left;
-            padding: 16px 12px;
-            font-weight: 700;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border-light);
-        }
-        
-        tbody td {
-            padding: 16px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-family: var(--font-mono);
-            font-size: 13px;
-        }
-        
-        tbody tr:hover {
-            background: rgba(217,137,13,0.05);
-        }
-        
-        tbody tr:nth-child(12n) {
-            border-bottom: 2px solid var(--gold-primary);
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-hover));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s;
         }
 
-        /* Badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
+        .cliente-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .cliente-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--gold);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .cliente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .cliente-info h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+        }
+
+        .cliente-info .cliente-id {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cliente-status {
+            padding: 6px 14px;
             border-radius: 100px;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
-        .badge.success {
-            background: rgba(16,185,129,0.15);
+
+        .status-novo {
+            background: rgba(16, 185, 129, 0.15);
             color: var(--success);
-            border: 1px solid rgba(16,185,129,0.3);
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
-        
-        .badge.warning {
-            background: rgba(245,158,11,0.15);
+
+        .status-em-analise {
+            background: rgba(245, 158, 11, 0.15);
             color: var(--warning);
-            border: 1px solid rgba(245,158,11,0.3);
-        }
-        
-        .badge.danger {
-            background: rgba(239,68,68,0.15);
-            color: var(--danger);
-            border: 1px solid rgba(239,68,68,0.3);
-        }
-        
-        .badge.info {
-            background: rgba(217,137,13,0.15);
-            color: var(--gold-primary);
-            border: 1px solid rgba(217,137,13,0.3);
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
 
-        /* Buttons */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 16px 32px;
-            background: var(--gold-primary);
-            color: #000;
-            font-weight: 800;
-            font-family: var(--font-sans);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            text-decoration: none;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            background: var(--gold-hover);
-            box-shadow: 0 10px 30px rgba(217,137,13,0.4);
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border-light);
-            color: white;
-        }
-        
-        .btn-outline:hover {
-            border-color: var(--gold-primary);
-            color: var(--gold-primary);
-            background: transparent;
-        }
-        
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #0d9668;
+        .status-concluido {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3B82F6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
 
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 40px;
-        }
-        
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 15px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(to bottom, var(--gold-primary), transparent);
-        }
-        
-        .timeline-item {
-            position: relative;
-            margin-bottom: 32px;
-            padding: 20px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            border-left: 3px solid var(--gold-primary);
-        }
-        
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -43px;
-            top: 25px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--gold-primary);
-            border: 4px solid var(--bg-body);
-            box-shadow: 0 0 0 4px rgba(217,137,13,0.2);
-        }
-        
-        .timeline-title {
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--gold-primary);
-            font-size: 16px;
-        }
-        
-        .timeline-description {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 20px;
-        }
-
-        /* Scenario Cards */
-        .scenario-cards {
+        .cliente-details {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        
-        @media(min-width: 992px) {
-            .scenario-cards {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        .scenario-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s;
-        }
-        
-        .scenario-card:hover {
-            border-color: var(--gold-primary);
-            transform: translateY(-5px);
-        }
-        
-        .scenario-card.recommended {
-            border: 2px solid var(--gold-primary);
-            background: rgba(217,137,13,0.08);
-        }
-        
-        .scenario-header {
+
+        .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        
-        .scenario-title {
-            font-weight: 700;
-            font-size: 16px;
+
+        .detail-row:last-child {
+            border-bottom: none;
         }
-        
-        .scenario-rank {
-            width: 32px;
-            height: 32px;
-            background: var(--gold-primary);
-            color: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 14px;
-        }
-        
-        .scenario-details {
+
+        .detail-label {
             font-size: 13px;
             color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-        
-        .scenario-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        
-        .scenario-metric {
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 8px;
-        }
-        
-        .scenario-metric-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-        
-        .scenario-metric-value {
-            font-family: var(--font-mono);
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        /* Action Checklist */
-        .checklist {
-            list-style: none;
-        }
-        
-        .checklist-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            padding: 16px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            margin-bottom: 12px;
-            border-left: 3px solid var(--gold-primary);
-        }
-        
-        .checklist-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(217,137,13,0.15);
-            border-radius: 50%;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: var(--gold-primary);
-            font-size: 20px;
-            flex-shrink: 0;
-        }
-        
-        .checklist-content h4 {
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        
-        .checklist-content p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin: 0;
+            gap: 8px;
         }
 
-        /* Responsive */
-        @media(max-width: 768px) {
-            .hero-card { padding: 30px 20px; }
-            .card { padding: 20px; }
-            .hero-title { font-size: 24px; }
-            .metric-value { font-size: 22px; }
-            .timeline { padding-left: 30px; }
+        .detail-value {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .cliente-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .cliente-actions button {
+            flex: 1;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .empty-state i {
+            font-size: 80px;
+            color: rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+            font-size: 16px;
         }
 
         /* Loading */
         .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
+            text-align: center;
+            padding: 100px 20px;
         }
-        
+
         .spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: var(--gold-primary);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--gold);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Print Styles */
-        @media print {
-            .header, .tabs-container, .btn { display: none; }
-            .card { break-inside: avoid; }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: var(--error);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+
+            .clientes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 <body>
-    <div class="bg-blob blob-1"></div>
-    <div class="bg-blob blob-2"></div>
+    <div class="bg-animation">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
 
     <!-- Header -->
     <header class="header">
-        <div class="container">
-            <div class="header-content">
+        <div class="header-content">
+            <div class="logo-section">
                 <div class="logo">
                     <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" alt="EcoFin">
                 </div>
-                <div class="client-info">
-                    <div class="client-name">
-                        Cliente: <strong id="clientName">Carregando...</strong>
-                    </div>
-                    <span class="badge success">
-                        <i class="ph-fill ph-check-circle"></i>
-                        Análise Completa
-                    </span>
-                    <button class="btn-outline" onclick="gerarPDF()" style="padding: 10px 20px;">
-                        <i class="ph-bold ph-file-pdf"></i>
-                        Baixar PDF
-                    </button>
-                </div>
+                <h1 class="page-title">Painel Administrativo</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="window.location.href='index_completo.html'">
+                    <i class="ph-bold ph-plus-circle"></i>
+                    Novo Cliente
+                </button>
+                <button class="btn btn-primary" onclick="carregarClientes()">
+                    <i class="ph-bold ph-arrows-clockwise"></i>
+                    Atualizar
+                </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            
-            <!-- Tabs Navigation -->
-            <div class="tabs-container">
-                <button class="tab-btn active" onclick="switchTab('visao-geral')">
-                    <i class="ph-bold ph-chart-line"></i>
-                    Visão Geral
-                </button>
-                <button class="tab-btn" onclick="switchTab('estrategia')">
-                    <i class="ph-bold ph-target"></i>
-                    Estratégia Detalhada
-                </button>
-                <button class="tab-btn" onclick="switchTab('cenarios')">
-                    <i class="ph-bold ph-stack"></i>
-                    Cenários Alternativos
-                </button>
-                <button class="tab-btn" onclick="switchTab('tabela')">
-                    <i class="ph-bold ph-table"></i>
-                    Tabela Completa
-                </button>
-                <button class="tab-btn" onclick="switchTab('graficos')">
-                    <i class="ph-bold ph-chart-bar"></i>
-                    Gráficos
-                </button>
-                <button class="tab-btn" onclick="switchTab('plano-acao')">
-                    <i class="ph-bold ph-list-checks"></i>
-                    Plano de Ação
-                </button>
+    <main class="container">
+        <!-- Stats -->
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="ph-fill ph-users"></i>
+                </div>
+                <div class="stat-label">Total de Clientes</div>
+                <div class="stat-value" id="totalClientes">0</div>
             </div>
 
-            <!-- Loading State -->
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 20px; color: var(--text-secondary);">Calculando melhor estratégia...</p>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="ph-fill ph-sparkle"></i>
+                </div>
+                <div class="stat-label">Novos Hoje</div>
+                <div class="stat-value" id="novosHoje">0</div>
             </div>
 
-            <!-- Content Container -->
-            <div id="content" style="display: none;">
-                
-                <!-- TAB 1: Visão Geral -->
-                <div id="tab-visao-geral" class="tab-content active">
-                    
-                    <!-- Hero Card -->
-                    <div class="hero-card">
-                        <div class="hero-title">
-                            <i class="ph-fill ph-target" style="color: var(--gold-primary);"></i>
-                            Estratégia Otimizada
-                        </div>
-                        <p class="hero-subtitle">
-                            Análise completa do seu financiamento e melhor estratégia de amortização identificada.
-                        </p>
-                        
-                        <div class="hero-metrics">
-                            <div class="metric-box">
-                                <div class="metric-label">💰 Economia Total</div>
-                                <div class="metric-value success" id="economiaTotal">-</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-label">📅 Redução de Prazo</div>
-                                <div class="metric-value warning" id="reducaoPrazo">-</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-label">🎯 ROI da Estratégia</div>
-                                <div class="metric-value success" id="roiEstrategia">-</div>
-                            </div>
-                            <div class="metric-box">
-                                <div class="metric-label">⚖️ Viabilidade</div>
-                                <div class="metric-value gold" id="viabilidade">-</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Grid 2 Colunas -->
-                    <div class="grid-2">
-                        
-                        <!-- Card: Dados do Financiamento -->
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="card-icon">
-                                        <i class="ph-fill ph-house"></i>
-                                    </div>
-                                    Dados do Financiamento
-                                </div>
-                                <span class="badge info" id="sistemaBadge">PRICE</span>
-                            </div>
-                            
-                            <table>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Saldo Devedor</strong></td>
-                                        <td style="text-align: right;" id="saldoDevedor">-</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Taxa de Juros</strong></td>
-                                        <td style="text-align: right;" id="taxaJuros">-</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Prazo Original</strong></td>
-                                        <td style="text-align: right;" id="prazoOriginal">-</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Taxa Admin</strong></td>
-                                        <td style="text-align: right;" id="taxaAdmin">-</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Seguro</strong></td>
-                                        <td style="text-align: right;" id="seguro">-</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Card: Comparativo Visual -->
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="card-icon">
-                                        <i class="ph-fill ph-chart-bar"></i>
-                                    </div>
-                                    Comparativo
-                                </div>
-                            </div>
-                            
-                            <div class="progress-container">
-                                <div class="progress-header">
-                                    <span style="color: var(--danger);">❌ Sem Estratégia</span>
-                                    <span style="color: var(--danger);" id="semEstrategia">-</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill danger" id="barSemEstrategia" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="progress-container">
-                                <div class="progress-header">
-                                    <span style="color: var(--success);">✅ Com EcoFin</span>
-                                    <span style="color: var(--success);" id="comEstrategia">-</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill success" id="barComEstrategia" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <div style="text-align: center; margin-top: 30px; padding: 24px; background: rgba(16,185,129,0.1); border-radius: 12px; border: 1px solid rgba(16,185,129,0.3);">
-                                <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--success); margin-bottom: 8px;">
-                                    Você Economiza
-                                </div>
-                                <div style="font-family: var(--font-mono); font-size: 36px; font-weight: 800; color: white; text-shadow: 0 0 20px rgba(16,185,129,0.4);" id="economiaDestaque">
-                                    -
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Resumo da Estratégia -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-lightbulb"></i>
-                                </div>
-                                Resumo da Estratégia Recomendada
-                            </div>
-                        </div>
-                        
-                        <div class="grid-3">
-                            <div style="background: rgba(255,255,255,0.03); padding: 24px; border-radius: 12px; border-left: 3px solid var(--gold-primary);">
-                                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px;">
-                                    💰 FGTS a Usar
-                                </div>
-                                <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 700;" id="fgtsUsar">-</div>
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="fgtsPercentual">-</div>
-                            </div>
-                            
-                            <div style="background: rgba(255,255,255,0.03); padding: 24px; border-radius: 12px; border-left: 3px solid var(--gold-primary);">
-                                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px;">
-                                    📅 Amortização Mensal
-                                </div>
-                                <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 700;" id="amortMensal">-</div>
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="amortPercentual">-</div>
-                            </div>
-                            
-                            <div style="background: rgba(255,255,255,0.03); padding: 24px; border-radius: 12px; border-left: 3px solid var(--gold-primary);">
-                                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px;">
-                                    ⏱️ Duração
-                                </div>
-                                <div style="font-family: var(--font-mono); font-size: 24px; font-weight: 700;" id="duracao">-</div>
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="duracaoAnos">-</div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="ph-fill ph-hourglass"></i>
                 </div>
-
-                <!-- TAB 2: Estratégia Detalhada -->
-                <div id="tab-estrategia" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-map-pin"></i>
-                                </div>
-                                Timeline de Execução
-                            </div>
-                        </div>
-                        
-                        <div class="timeline" id="timeline">
-                            <!-- Será preenchido via JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 3: Cenários Alternativos -->
-                <div id="tab-cenarios" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-stack"></i>
-                                </div>
-                                Top 3 Melhores Estratégias
-                            </div>
-                        </div>
-                        
-                        <p style="color: var(--text-secondary); margin-bottom: 24px;">
-                            Análise comparativa dos 3 cenários mais eficientes para o seu perfil.
-                        </p>
-                        
-                        <div class="scenario-cards" id="scenarioCards">
-                            <!-- Será preenchido via JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 4: Tabela Completa -->
-                <div id="tab-tabela" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-table"></i>
-                                </div>
-                                Tabela de Amortização Completa
-                            </div>
-                            <button class="btn-outline" onclick="exportTable()" style="padding: 8px 16px; font-size: 12px;">
-                                <i class="ph-bold ph-download"></i>
-                                Exportar CSV
-                            </button>
-                        </div>
-                        
-                        <div class="table-wrapper" style="max-height: 600px; overflow-y: auto;">
-                            <table id="tabelaAmortizacao">
-                                <thead>
-                                    <tr>
-                                        <th>Mês</th>
-                                        <th>Ano</th>
-                                        <th>Saldo Inicial</th>
-                                        <th>Juros</th>
-                                        <th>Amort. Base</th>
-                                        <th>Amort. Extra</th>
-                                        <th>Parcela Total</th>
-                                        <th>Saldo Final</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabelaBody">
-                                    <!-- Será preenchido via JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 5: Gráficos -->
-                <div id="tab-graficos" class="tab-content">
-                    <div class="grid-2">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="card-icon">
-                                        <i class="ph-fill ph-chart-line"></i>
-                                    </div>
-                                    Evolução do Saldo Devedor
-                                </div>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="chartSaldo"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <div class="card-icon">
-                                        <i class="ph-fill ph-chart-bar"></i>
-                                    </div>
-                                    Composição da Parcela
-                                </div>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="chartParcela"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-trend-up"></i>
-                                </div>
-                                Acúmulo de Juros vs. Amortização
-                            </div>
-                        </div>
-                        <div class="chart-container" style="height: 400px;">
-                            <canvas id="chartAcumulo"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- TAB 6: Plano de Ação -->
-                <div id="tab-plano-acao" class="tab-content">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <div class="card-icon">
-                                    <i class="ph-fill ph-list-checks"></i>
-                                </div>
-                                Checklist de Implementação
-                            </div>
-                        </div>
-                        
-                        <p style="color: var(--text-secondary); margin-bottom: 24px;">
-                            Siga este passo a passo para implementar sua estratégia de forma segura e eficiente.
-                        </p>
-                        
-                        <ul class="checklist">
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-1"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Revisar Contrato de Financiamento</h4>
-                                    <p>Confirme se seu contrato permite amortização extraordinária sem multas. A maioria dos bancos permite pelo menos 1x ao ano.</p>
-                                </div>
-                            </li>
-                            
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-2"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Verificar Saldo do FGTS</h4>
-                                    <p>Acesse o app da Caixa ou site fgts.caixa.gov.br para confirmar o saldo disponível. Precisa de pelo menos 3 anos de trabalho CLT.</p>
-                                </div>
-                            </li>
-                            
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-3"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Agendar Uso do FGTS</h4>
-                                    <p>Entre em contato com seu banco e solicite a utilização do FGTS para amortização extraordinária. Documentos necessários serão informados.</p>
-                                </div>
-                            </li>
-                            
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-4"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Programar Amortizações Mensais</h4>
-                                    <p>Configure débito automático ou pagamentos manuais mensais no valor recomendado. Use o app ou internet banking do seu banco.</p>
-                                </div>
-                            </li>
-                            
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-5"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Acompanhar Evolução Mensal</h4>
-                                    <p>Confira seu saldo devedor todo mês e compare com a projeção. Use o extrato do financiamento disponível no app do banco.</p>
-                                </div>
-                            </li>
-                            
-                            <li class="checklist-item">
-                                <div class="checklist-icon">
-                                    <i class="ph-bold ph-6"></i>
-                                </div>
-                                <div class="checklist-content">
-                                    <h4>Reavaliar Estratégia Anualmente</h4>
-                                    <p>Se sua situação financeira mudar, refaça a simulação para ajustar a estratégia. Manter a flexibilidade é fundamental.</p>
-                                </div>
-                            </li>
-                        </ul>
-                        
-                        <div style="margin-top: 40px; padding: 30px; background: rgba(217,137,13,0.1); border-radius: 16px; border: 2px dashed var(--gold-primary); text-align: center;">
-                            <i class="ph-fill ph-whatsapp-logo" style="font-size: 48px; color: #25D366; margin-bottom: 16px;"></i>
-                            <h3 style="margin-bottom: 12px;">Precisa de Ajuda?</h3>
-                            <p style="color: var(--text-secondary); margin-bottom: 20px;">
-                                Nossa equipe está pronta para te acompanhar em cada etapa da implementação.
-                            </p>
-                            <a href="https://wa.me/5583991014456?text=Preciso%20de%20ajuda%20para%20implementar%20minha%20estratégia%20EcoFin" target="_blank" class="btn btn-success">
-                                <i class="ph-bold ph-whatsapp-logo"></i>
-                                Falar com Especialista
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
+                <div class="stat-label">Aguardando Análise</div>
+                <div class="stat-value" id="aguardando">0</div>
             </div>
 
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="ph-fill ph-chart-line-up"></i>
+                </div>
+                <div class="stat-label">Potencial de Economia</div>
+                <div class="stat-value" id="potencialTotal">-</div>
+            </div>
         </div>
+
+        <!-- Actions Bar -->
+        <div class="actions-bar">
+            <div class="search-box">
+                <i class="ph-bold ph-magnifying-glass"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Buscar por nome, CPF, WhatsApp..."
+                    onkeyup="filtrarClientes()"
+                >
+            </div>
+
+            <div class="filter-buttons">
+                <button class="btn btn-outline active" onclick="filtrarPorStatus('todos')">
+                    Todos
+                </button>
+                <button class="btn btn-outline" onclick="filtrarPorStatus('novo')">
+                    Novos
+                </button>
+                <button class="btn btn-outline" onclick="filtrarPorStatus('em-analise')">
+                    Em Análise
+                </button>
+                <button class="btn btn-outline" onclick="filtrarPorStatus('concluido')">
+                    Concluídos
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p style="color: var(--text-secondary);">Carregando clientes...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="ph-duotone ph-user-circle-plus"></i>
+            <h3>Nenhum cliente cadastrado</h3>
+            <p>Aguardando o primeiro cliente preencher o formulário</p>
+            <button class="btn btn-primary" onclick="window.location.href='index_completo.html'" style="margin-top: 30px;">
+                <i class="ph-bold ph-plus-circle"></i>
+                Adicionar Cliente Manualmente
+            </button>
+        </div>
+
+        <!-- Clientes Grid -->
+        <div id="clientesGrid" class="clientes-grid" style="display: none;"></div>
     </main>
 
+    <!-- Modal de Confirmação -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i class="ph-bold ph-warning"></i>
+            </div>
+            <h3 class="modal-title">Excluir Cliente?</h3>
+            <p class="modal-text">
+                Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="fecharModal()" style="flex: 1;">
+                    Cancelar
+                </button>
+                <button class="btn btn-danger" onclick="confirmarExclusao()" style="flex: 1;">
+                    <i class="ph-bold ph-trash"></i>
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ==================================================================================
-        // CONFIGURAÇÃO DA API
-        // ==================================================================================
-        
-        const API_URL = 'https://ecofin-api-production.up.railway.app'; // API Railway configurada
-        
-        // ==================================================================================
-        // INTEGRAÇÃO COM API
-        // ==================================================================================
-        
-        async function carregarDadosAPI() {
-            try {
-                console.log('🔄 Carregando dados...');
+        let clientes = [];
+        let filtroAtual = 'todos';
+        let clienteParaExcluir = null;
+
+        // Carregar clientes
+        function carregarClientes() {
+            console.log('📡 Carregando clientes...');
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('clientesGrid').style.display = 'none';
+
+            // Buscar do localStorage
+            setTimeout(() => {
+                const dados = localStorage.getItem('ecofin_clientes');
+                clientes = dados ? JSON.parse(dados) : [];
                 
-                // Buscar dados do localStorage (salvos pelo index.html)
-                const dadosFormulario = {
-                    nome_cliente: localStorage.getItem('nome_cliente') || 'Cliente',
-                    saldo_devedor: parseFloat(localStorage.getItem('saldo')) || 300000,
-                    taxa_anual: parseFloat(localStorage.getItem('taxa')) / 100 || 0.12,
-                    prazo_meses: parseInt(localStorage.getItem('prazo')) * 12 || 420,
-                    sistema: localStorage.getItem('sistema') || 'PRICE',
-                    valor_fgts: parseFloat(localStorage.getItem('fgts')) || 0,
-                    capacidade_extra_mensal: parseFloat(localStorage.getItem('capacidade')) || 0,
-                    objetivo: localStorage.getItem('objetivo') || 'economia',
-                    taxa_admin_mensal: parseFloat(localStorage.getItem('taxa_admin')) || 25,
-                    seguro_mensal: parseFloat(localStorage.getItem('seguro')) || 50,
-                    tr_mensal: 0.0015
-                };
+                console.log(`✅ ${clientes.length} clientes carregados`);
                 
-                console.log('📊 Dados do formulário:', dadosFormulario);
-                
-                // Tentar buscar da API
-                const response = await fetch(`${API_URL}/otimizar`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(dadosFormulario)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
-                
-                const dadosAPI = await response.json();
-                console.log('✅ Dados recebidos da API:', dadosAPI);
-                
-                // Retornar dados formatados
-                return {
-                    cliente: {
-                        nome: dadosFormulario.nome_cliente
-                    },
-                    financiamento: {
-                        sistema: dadosFormulario.sistema,
-                        saldo_devedor: dadosFormulario.saldo_devedor,
-                        taxa_anual: dadosFormulario.taxa_anual,
-                        prazo_meses: dadosFormulario.prazo_meses,
-                        taxa_admin_mensal: dadosFormulario.taxa_admin_mensal,
-                        seguro_mensal: dadosFormulario.seguro_mensal
-                    },
-                    recursos: {
-                        valor_fgts: dadosFormulario.valor_fgts,
-                        capacidade_extra_mensal: dadosFormulario.capacidade_extra_mensal
-                    },
-                    estrategia_otima: dadosAPI.estrategia_otima || dadosAPI.melhor_estrategia,
-                    cenario_original: dadosAPI.cenario_original || dadosAPI.estrategia_original,
-                    top_cenarios: dadosAPI.top_cenarios || [dadosAPI.estrategia_otima]
-                };
-                
-            } catch (error) {
-                console.warn('⚠️ Erro ao conectar com API:', error);
-                console.log('💾 Usando cálculo local como fallback');
-                
-                // Fallback: calcular localmente
-                const saldoRaw = parseFloat(localStorage.getItem('saldo'));
-                const taxaRaw = parseFloat(localStorage.getItem('taxa'));
-                const prazoRaw = parseInt(localStorage.getItem('prazo'));
-                const fgtsRaw = parseFloat(localStorage.getItem('fgts'));
-                const capacidadeRaw = parseFloat(localStorage.getItem('capacidade'));
-                
-                const dadosLocal = {
-                    nome_cliente: localStorage.getItem('nome_cliente') || 'Cliente',
-                    saldo_devedor: isNaN(saldoRaw) ? 300000 : saldoRaw,
-                    taxa_anual: isNaN(taxaRaw) ? 0.12 : (taxaRaw / 100),
-                    prazo_meses: isNaN(prazoRaw) ? 420 : (prazoRaw * 12),
-                    sistema: localStorage.getItem('sistema') || 'PRICE',
-                    valor_fgts: isNaN(fgtsRaw) ? 0 : fgtsRaw,
-                    capacidade_extra_mensal: isNaN(capacidadeRaw) ? 0 : capacidadeRaw,
-                    taxa_admin_mensal: 25,
-                    seguro_mensal: 50
-                };
-                
-                console.log('📊 Dados locais parseados:', dadosLocal);
-                
-                return calcularLocalmente(dadosLocal);
+                atualizarStats();
+                exibirClientes();
+            }, 500);
+        }
+
+        // Atualizar estatísticas
+        function atualizarStats() {
+            const total = clientes.length;
+            const hoje = new Date().toDateString();
+            const novosHoje = clientes.filter(c => 
+                new Date(c.data_cadastro).toDateString() === hoje
+            ).length;
+            const aguardando = clientes.filter(c => c.status === 'novo').length;
+            
+            // Calcular potencial de economia (estimativa simples)
+            const potencial = clientes.reduce((acc, c) => {
+                const saldo = parseFloat(c.saldoDevedor) || 0;
+                const estimativa = saldo * 0.3; // 30% de economia estimada
+                return acc + estimativa;
+            }, 0);
+
+            document.getElementById('totalClientes').textContent = total;
+            document.getElementById('novosHoje').textContent = novosHoje;
+            document.getElementById('aguardando').textContent = aguardando;
+            document.getElementById('potencialTotal').textContent = 
+                potencial > 0 ? `R$ ${(potencial / 1000000).toFixed(1)}M` : '-';
+        }
+
+        // Exibir clientes
+        function exibirClientes() {
+            const grid = document.getElementById('clientesGrid');
+            
+            document.getElementById('loading').style.display = 'none';
+
+            if (clientes.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                return;
             }
-        }
-        
-        function calcularLocalmente(dados) {
-            console.log('💻 Calculando localmente...');
-            
-            const motor = new MotorCalculoCompleto({
-                sistema: dados.sistema,
-                saldoDevedor: dados.saldo_devedor,
-                taxaNominal: dados.taxa_anual,
-                prazoRestante: dados.prazo_meses,
-                taxaAdm: dados.taxa_admin_mensal,
-                seguroMensal: dados.seguro_mensal
-            });
 
-            const recursos = {
-                valorFGTS: dados.valor_fgts,
-                capacidadeExtra: dados.capacidade_extra_mensal
-            };
+            grid.style.display = 'grid';
+            grid.innerHTML = '';
 
-            // Cenário original
-            const estrategiaOriginal = motor.simularCompleto(0, 0);
+            // Filtrar clientes
+            let clientesFiltrados = clientes;
             
-            // Encontrar melhor estratégia
-            const estrategiaOtima = motor.encontrarEstrategiaOtima(recursos, 'economia');
-            const topCenarios = motor.getTopCenarios(recursos, 'economia', 3);
+            if (filtroAtual !== 'todos') {
+                clientesFiltrados = clientes.filter(c => c.status === filtroAtual);
+            }
 
-            console.log('✅ Cálculo local concluído');
-
-            return {
-                cliente: {
-                    nome: dados.nome_cliente
-                },
-                financiamento: {
-                    sistema: dados.sistema,
-                    saldo_devedor: dados.saldo_devedor,
-                    taxa_anual: dados.taxa_anual,
-                    prazo_meses: dados.prazo_meses,
-                    taxa_admin_mensal: dados.taxa_admin_mensal,
-                    seguro_mensal: dados.seguro_mensal
-                },
-                recursos: {
-                    valor_fgts: dados.valor_fgts,
-                    capacidade_extra_mensal: dados.capacidade_extra_mensal
-                },
-                estrategia_otima: estrategiaOtima,
-                cenario_original: estrategiaOriginal,
-                top_cenarios: topCenarios
-            };
-        }
-        
-        // ==================================================================================
-        // GERAÇÃO DE PDF
-        // ==================================================================================
-        
-        async function gerarPDF() {
-            console.log('📄 Gerando PDF...');
-            
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            
-            // Configurações
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const margin = 20;
-            let yPos = margin;
-
-            // Helper: adicionar texto
-            const addText = (text, size = 12, isBold = false) => {
-                pdf.setFontSize(size);
-                pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-                pdf.text(text, margin, yPos);
-                yPos += size * 0.5;
-            };
-
-            // Helper: verificar se precisa de nova página
-            const checkNewPage = (space = 20) => {
-                if (yPos + space > pageHeight - margin) {
-                    pdf.addPage();
-                    yPos = margin;
-                    return true;
-                }
-                return false;
-            };
-
-            // ========== CAPA ==========
-            pdf.setFillColor(217, 137, 13); // Dourado
-            pdf.rect(0, 0, pageWidth, 60, 'F');
-            
-            pdf.setTextColor(255, 255, 255);
-            pdf.setFontSize(28);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text('EcoFin', margin, 30);
-            
-            pdf.setFontSize(16);
-            pdf.setFont('helvetica', 'normal');
-            pdf.text('Análise Estratégica Personalizada', margin, 45);
-            
-            pdf.setTextColor(0, 0, 0);
-            yPos = 80;
-            
-            // Cliente
-            const nomeCliente = document.getElementById('clientName').textContent;
-            addText(`Cliente: ${nomeCliente}`, 14, true);
-            yPos += 5;
-            
-            // Data
-            const dataHoje = new Date().toLocaleDateString('pt-BR');
-            addText(`Data: ${dataHoje}`, 12);
-            yPos += 10;
-
-            // ========== MÉTRICAS PRINCIPAIS ==========
-            checkNewPage();
-            pdf.setFillColor(240, 240, 240);
-            pdf.rect(margin, yPos, pageWidth - 2*margin, 50, 'F');
-            yPos += 10;
-            
-            addText('Resultado da Otimização', 16, true);
-            yPos += 5;
-            
-            addText('Economia Total: ' + document.getElementById('economiaTotal').textContent, 12);
-            addText('Redução de Prazo: ' + document.getElementById('reducaoPrazo').textContent, 12);
-            addText('ROI: ' + document.getElementById('roiEstrategia').textContent, 12);
-            addText('Viabilidade: ' + document.getElementById('viabilidade').textContent, 12);
-            
-            yPos += 15;
-
-            // ========== DADOS DO FINANCIAMENTO ==========
-            checkNewPage();
-            addText('Dados do Financiamento', 16, true);
-            yPos += 5;
-            
-            addText(`Sistema: ${document.getElementById('sistemaBadge').textContent}`, 11);
-            addText(`Saldo Devedor: ${document.getElementById('saldoDevedor').textContent}`, 11);
-            addText(`Taxa: ${document.getElementById('taxaJuros').textContent}`, 11);
-            addText(`Prazo: ${document.getElementById('prazoOriginal').textContent}`, 11);
-            
-            yPos += 10;
-
-            // ========== ESTRATÉGIA RECOMENDADA ==========
-            checkNewPage();
-            addText('Estratégia Recomendada', 16, true);
-            yPos += 5;
-            
-            addText(`FGTS a usar: ${document.getElementById('fgtsUsar').textContent}`, 11);
-            addText(`Amortização mensal: ${document.getElementById('amortMensal').textContent}`, 11);
-            addText(`Duração: ${document.getElementById('duracao').textContent}`, 11);
-            
-            yPos += 10;
-
-            // ========== COMPARATIVO ==========
-            checkNewPage();
-            addText('Comparativo de Custos', 16, true);
-            yPos += 5;
-            
-            addText(`Sem estratégia: ${document.getElementById('semEstrategia').textContent}`, 11);
-            addText(`Com EcoFin: ${document.getElementById('comEstrategia').textContent}`, 11);
-            
-            pdf.setTextColor(16, 185, 129); // Verde
-            pdf.setFontSize(14);
-            pdf.setFont('helvetica', 'bold');
-            pdf.text(`Economia: ${document.getElementById('economiaDestaque').textContent}`, margin, yPos);
-            yPos += 10;
-            pdf.setTextColor(0, 0, 0);
-            
-            yPos += 10;
-
-            // ========== TIMELINE ==========
-            pdf.addPage();
-            yPos = margin;
-            addText('Plano de Ação', 16, true);
-            yPos += 10;
-            
-            const timelineItems = document.querySelectorAll('.timeline-item');
-            timelineItems.forEach((item, index) => {
-                checkNewPage(35);
-                
-                const titulo = item.querySelector('.timeline-title').textContent;
-                const desc = item.querySelector('.timeline-description').textContent;
-                
-                // Marcador
-                pdf.setFillColor(217, 137, 13);
-                pdf.circle(margin - 5, yPos + 3, 3, 'F');
-                
-                addText(titulo, 12, true);
-                
-                // Descrição (com quebra de linha)
-                pdf.setFontSize(10);
-                pdf.setFont('helvetica', 'normal');
-                const lines = pdf.splitTextToSize(desc, pageWidth - 2*margin - 10);
-                pdf.text(lines, margin + 5, yPos);
-                yPos += lines.length * 5 + 12;
-            });
-
-            // ========== RODAPÉ EM TODAS AS PÁGINAS ==========
-            const totalPages = pdf.internal.getNumberOfPages();
-            for (let i = 1; i <= totalPages; i++) {
-                pdf.setPage(i);
-                pdf.setFontSize(10);
-                pdf.setTextColor(150, 150, 150);
-                pdf.text(
-                    `Página ${i} de ${totalPages}`, 
-                    pageWidth / 2, 
-                    pageHeight - 10, 
-                    { align: 'center' }
+            // Busca por texto
+            const busca = document.getElementById('searchInput').value.toLowerCase();
+            if (busca) {
+                clientesFiltrados = clientesFiltrados.filter(c => 
+                    c.nome.toLowerCase().includes(busca) ||
+                    (c.cpf && c.cpf.includes(busca)) ||
+                    (c.whatsapp && c.whatsapp.includes(busca))
                 );
-                pdf.text('EcoFin | Inteligência Financeira', margin, pageHeight - 10);
             }
 
-            // ========== SALVAR ==========
-            const nomeArquivo = `EcoFin_Analise_${nomeCliente.replace(/\s/g, '_')}_${dataHoje.replace(/\//g, '-')}.pdf`;
-            pdf.save(nomeArquivo);
-            
-            console.log('✅ PDF gerado:', nomeArquivo);
-        }
-        
-        // ==================================================================================
-        // MOTOR DE CÁLCULO
-        // ==================================================================================
-        
-        class MotorCalculoCompleto {
-            constructor(dados) {
-                this.dados = dados;
-                this.taxaMensal = Math.pow(1 + dados.taxaNominal, 1/12) - 1;
-                this.prazoOriginal = dados.prazoRestante;
-            }
+            // Ordenar por data (mais recente primeiro)
+            clientesFiltrados.sort((a, b) => 
+                new Date(b.data_cadastro) - new Date(a.data_cadastro)
+            );
 
-            calcularPMT(taxa, prazo, valor) {
-                if (taxa === 0) return valor / prazo;
-                return valor * (taxa * Math.pow(1 + taxa, prazo)) / (Math.pow(1 + taxa, prazo) - 1);
-            }
+            // Renderizar cards
+            clientesFiltrados.forEach(cliente => {
+                const card = criarCardCliente(cliente);
+                grid.appendChild(card);
+            });
 
-            simularCompleto(fgtsInicial, amortMensal, duracao = 999) {
-                let saldo = this.dados.saldoDevedor - (fgtsInicial || 0);
-                const detalhes = [];
-                let totalPago = fgtsInicial || 0;
-                let totalJuros = 0;
-                let totalAmortizado = fgtsInicial || 0;
-                let mes = 0;
-                
-                const tr = 0.0015;
-                const taxaAdmin = this.dados.taxaAdm || 25;
-                const seguro = this.dados.seguroMensal || 50;
-
-                while (saldo > 1 && mes < 600) {
-                    const saldoInicial = saldo;
-                    const juros = saldo * this.taxaMensal;
-                    
-                    let amortBase;
-                    if (this.dados.sistema === 'SAC') {
-                        amortBase = this.dados.saldoDevedor / this.dados.prazoRestante;
-                    } else {
-                        const prazoRestante = Math.max(1, this.dados.prazoRestante - mes);
-                        const pmt = this.calcularPMT(this.taxaMensal, prazoRestante, saldo);
-                        amortBase = Math.max(0, pmt - juros);
-                    }
-
-                    const amortExtra = (mes <= duracao && amortMensal > 0) ? amortMensal : 0;
-                    const amortTotal = amortBase + amortExtra;
-                    const parcela = juros + amortBase + taxaAdmin + seguro;
-
-                    if (this.dados.sistema === 'SAC') {
-                        if (mes === 0) {
-                            saldo = saldo - amortBase - amortExtra;
-                        } else if (amortExtra > 0) {
-                            const correcaoTR = saldo * tr;
-                            const amortExtraLiquida = Math.max(0, amortExtra - correcaoTR);
-                            saldo = saldo - amortBase - amortExtraLiquida;
-                        } else {
-                            const correcaoTR = saldo * tr;
-                            saldo = saldo - amortBase + correcaoTR;
-                        }
-                    } else {
-                        saldo = Math.max(0, saldo - amortTotal);
-                    }
-
-                    totalPago += parcela + amortExtra;
-                    totalJuros += juros;
-                    totalAmortizado += amortTotal;
-
-                    detalhes.push({
-                        mes: mes + 1,
-                        ano: Math.floor(mes / 12) + 1,
-                        saldoInicial: saldoInicial,
-                        juros: juros,
-                        amortBase: amortBase,
-                        amortExtra: amortExtra,
-                        amortTotal: amortTotal,
-                        parcela: parcela,
-                        saldoFinal: saldo,
-                        percentualQuitado: ((this.dados.saldoDevedor - saldo) / this.dados.saldoDevedor) * 100,
-                        jurosAcumulados: totalJuros,
-                        amortAcumulada: totalAmortizado
-                    });
-
-                    mes++;
-                    if (saldo <= 1) break;
-                }
-
-                return { detalhes, totalPago, totalJuros, prazoMeses: mes, totalAmortizado };
-            }
-
-            encontrarEstrategiaOtima(recursos, objetivo = 'economia') {
-                const cenarios = [];
-                const original = this.simularCompleto(0, 0);
-                
-                const fgtsPercentuais = [0, 25, 50, 75, 100];
-                const amortPercentuais = [0, 30, 50, 70, 100];
-                const duracoes = [12, 24, 36, 60, 120, 240, 999];
-
-                fgtsPercentuais.forEach(fgtsPerc => {
-                    const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
-                    
-                    amortPercentuais.forEach(amortPerc => {
-                        const amort = (recursos.capacidadeExtra || 0) * (amortPerc / 100);
-                        
-                        if (fgts === 0 && amort === 0) return;
-                        
-                        duracoes.forEach(duracao => {
-                            try {
-                                const sim = this.simularCompleto(fgts, amort, duracao);
-                                const duracaoReal = Math.min(duracao, sim.prazoMeses);
-                                const investimento = fgts + (amort * duracaoReal);
-                                
-                                sim.fgtsUsado = fgts;
-                                sim.amortMensal = amort;
-                                sim.duracao = duracaoReal;
-                                sim.economia = original.totalPago - sim.totalPago;
-                                sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
-                                sim.investimentoTotal = investimento;
-                                sim.roi = investimento > 0 ? sim.economia / investimento : 0;
-                                
-                                if (amort <= (recursos.capacidadeExtra || 0) * 0.3) {
-                                    sim.viabilidade = 'ALTA';
-                                } else if (amort <= (recursos.capacidadeExtra || 0) * 0.7) {
-                                    sim.viabilidade = 'MÉDIA';
-                                } else {
-                                    sim.viabilidade = 'BAIXA';
-                                }
-                                
-                                if (objetivo === 'prazo' || objetivo === 'quitar_rapido') {
-                                    sim.score = sim.reducaoPrazo * 100 + (sim.economia / 1000);
-                                } else {
-                                    sim.score = sim.economia + (sim.roi * 10000);
-                                }
-                                
-                                cenarios.push(sim);
-                            } catch(e) {}
-                        });
-                    });
-                });
-
-                return cenarios.sort((a, b) => b.score - a.score)[0];
-            }
-
-            getTopCenarios(recursos, objetivo = 'economia', top = 3) {
-                const cenarios = [];
-                const original = this.simularCompleto(0, 0);
-                
-                const fgtsPercentuais = [0, 25, 50, 75, 100];
-                const amortPercentuais = [0, 30, 50, 70, 100];
-                const duracoes = [12, 24, 36, 60, 120, 240, 999];
-
-                fgtsPercentuais.forEach(fgtsPerc => {
-                    const fgts = (recursos.valorFGTS || 0) * (fgtsPerc / 100);
-                    
-                    amortPercentuais.forEach(amortPerc => {
-                        const amort = (recursos.capacidadeExtra || 0) * (amortPerc / 100);
-                        
-                        if (fgts === 0 && amort === 0) return;
-                        
-                        duracoes.forEach(duracao => {
-                            try {
-                                const sim = this.simularCompleto(fgts, amort, duracao);
-                                const duracaoReal = Math.min(duracao, sim.prazoMeses);
-                                const investimento = fgts + (amort * duracaoReal);
-                                
-                                sim.fgtsUsado = fgts;
-                                sim.amortMensal = amort;
-                                sim.duracao = duracaoReal;
-                                sim.economia = original.totalPago - sim.totalPago;
-                                sim.reducaoPrazo = original.prazoMeses - sim.prazoMeses;
-                                sim.investimentoTotal = investimento;
-                                sim.roi = investimento > 0 ? sim.economia / investimento : 0;
-                                
-                                if (amort <= (recursos.capacidadeExtra || 0) * 0.3) {
-                                    sim.viabilidade = 'ALTA';
-                                } else if (amort <= (recursos.capacidadeExtra || 0) * 0.7) {
-                                    sim.viabilidade = 'MÉDIA';
-                                } else {
-                                    sim.viabilidade = 'BAIXA';
-                                }
-                                
-                                if (objetivo === 'prazo' || objetivo === 'quitar_rapido') {
-                                    sim.score = sim.reducaoPrazo * 100 + (sim.economia / 1000);
-                                } else {
-                                    sim.score = sim.economia + (sim.roi * 10000);
-                                }
-                                
-                                cenarios.push(sim);
-                            } catch(e) {}
-                        });
-                    });
-                });
-
-                return cenarios.sort((a, b) => b.score - a.score).slice(0, top);
+            if (clientesFiltrados.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1;"><div class="empty-state"><i class="ph-duotone ph-magnifying-glass"></i><h3>Nenhum cliente encontrado</h3><p>Tente ajustar os filtros ou a busca</p></div></div>';
             }
         }
 
-        // ==================================================================================
-        // DADOS DO CLIENTE (MOCK - substituir por dados reais da API/localStorage)
-        // ==================================================================================
-        // INICIALIZAÇÃO
-        // ==================================================================================
-        
-        window.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 Página carregada, iniciando...');
+        // Criar card do cliente
+        function criarCardCliente(cliente) {
+            const div = document.createElement('div');
+            div.className = 'cliente-card fade-in';
+            div.onclick = () => abrirDashboard(cliente.id);
+
+            const statusClass = {
+                'novo': 'status-novo',
+                'em-analise': 'status-em-analise',
+                'concluido': 'status-concluido'
+            }[cliente.status] || 'status-novo';
+
+            const statusLabel = {
+                'novo': 'Novo',
+                'em-analise': 'Em Análise',
+                'concluido': 'Concluído'
+            }[cliente.status] || 'Novo';
+
+            const saldo = parseFloat(cliente.saldoDevedor) || 0;
+            const fgts = parseFloat(cliente.valorFGTS) || 0;
+            const capacidade = parseFloat(cliente.capacidadeExtra) || 0;
+
+            div.innerHTML = `
+                <div class="cliente-header">
+                    <div class="cliente-info">
+                        <h3>${cliente.nome}</h3>
+                        <span class="cliente-id">#${cliente.id}</span>
+                    </div>
+                    <span class="cliente-status ${statusClass}">${statusLabel}</span>
+                </div>
+
+                <div class="cliente-details">
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-whatsapp-logo"></i>
+                            WhatsApp
+                        </span>
+                        <span class="detail-value">${cliente.whatsapp}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-bank"></i>
+                            Banco
+                        </span>
+                        <span class="detail-value">${cliente.banco || 'N/I'}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-currency-circle-dollar"></i>
+                            Saldo Devedor
+                        </span>
+                        <span class="detail-value">R$ ${saldo.toLocaleString('pt-BR')}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-percent"></i>
+                            Taxa / Sistema
+                        </span>
+                        <span class="detail-value">${cliente.taxaNominal}% ${cliente.sistema}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-wallet"></i>
+                            FGTS Disponível
+                        </span>
+                        <span class="detail-value">R$ ${fgts.toLocaleString('pt-BR')}</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-label">
+                            <i class="ph-bold ph-calendar"></i>
+                            Cadastro
+                        </span>
+                        <span class="detail-value">${new Date(cliente.data_cadastro).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                </div>
+
+                <div class="cliente-actions" onclick="event.stopPropagation();">
+                    <button class="btn btn-success" onclick="abrirDashboard('${cliente.id}')">
+                        <i class="ph-bold ph-chart-line"></i>
+                        Analisar
+                    </button>
+                    <button class="btn btn-danger" onclick="abrirModalExclusao('${cliente.id}')">
+                        <i class="ph-bold ph-trash"></i>
+                        Excluir
+                    </button>
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Abrir dashboard do cliente
+        function abrirDashboard(clienteId) {
+            console.log('📊 Abrindo dashboard do cliente:', clienteId);
             
-            // Timeout de segurança - se demorar mais de 30s, mostrar erro
-            const timeoutId = setTimeout(() => {
-                console.error('⏱️ Timeout: Dashboard demorou muito para carregar');
-                mostrarErro('Erro: O carregamento está demorando muito. Por favor, recarregue a página.');
-            }, 30000);
-            
-            try {
-                console.log('🚀 Inicializando dashboard...');
-                console.log('📦 localStorage disponível:', {
-                    nome: localStorage.getItem('nome_cliente'),
-                    saldo: localStorage.getItem('saldo'),
-                    taxa: localStorage.getItem('taxa'),
-                    prazo: localStorage.getItem('prazo'),
-                    sistema: localStorage.getItem('sistema')
-                });
-                
-                // Carregar dados da API ou localStorage
-                console.log('📡 Carregando dados...');
-                const dados = await carregarDadosAPI();
-                
-                console.log('✅ Dados carregados:', dados);
-                
-                // Inicializar dashboard
-                console.log('🎨 Inicializando interface...');
-                inicializarDashboard(dados);
-                
-                clearTimeout(timeoutId);
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                console.error('❌ Erro fatal:', error);
-                console.error('Stack:', error.stack);
-                mostrarErro('Erro ao carregar: ' + error.message);
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (!cliente) {
+                alert('Cliente não encontrado!');
+                return;
             }
+
+            // Salvar dados do cliente no localStorage para o dashboard
+            localStorage.setItem('cliente_selecionado', JSON.stringify(cliente));
+
+            // Abrir dashboard em nova aba
+            window.open('dashboard.html?id=' + clienteId, '_blank');
+        }
+
+        // Modal de exclusão
+        function abrirModalExclusao(clienteId) {
+            clienteParaExcluir = clienteId;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            clienteParaExcluir = null;
+        }
+
+        function confirmarExclusao() {
+            if (!clienteParaExcluir) return;
+
+            console.log('🗑️ Excluindo cliente:', clienteParaExcluir);
+
+            // Remover do array
+            clientes = clientes.filter(c => c.id !== clienteParaExcluir);
+
+            // Salvar no localStorage
+            localStorage.setItem('ecofin_clientes', JSON.stringify(clientes));
+
+            // Fechar modal
+            fecharModal();
+
+            // Atualizar lista
+            atualizarStats();
+            exibirClientes();
+
+            console.log('✅ Cliente excluído com sucesso');
+        }
+
+        // Filtros
+        function filtrarPorStatus(status) {
+            filtroAtual = status;
+
+            // Atualizar botões ativos
+            document.querySelectorAll('.filter-buttons .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            exibirClientes();
+        }
+
+        function filtrarClientes() {
+            exibirClientes();
+        }
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Painel Admin carregado');
+            carregarClientes();
+
+            // Auto-refresh a cada 30 segundos
+            setInterval(carregarClientes, 30000);
         });
 
-        function inicializarDashboard(dados) {
-            console.log('🎨 Preenchendo dashboard...');
-            
-            try {
-                // Ocultar loading
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-
-                // Preencher dados
-                preencherVisaoGeral(dados);
-                preencherEstrategia(dados);
-                preencherCenarios(dados);
-                preencherTabela(dados.estrategia_otima.detalhes);
-                criarGraficos(dados.estrategia_otima.detalhes, dados.cenario_original.detalhes);
-                
-                console.log('✅ Dashboard inicializado com sucesso!');
-            } catch (error) {
-                console.error('❌ Erro ao inicializar dashboard:', error);
-                mostrarErro('Erro ao processar dados: ' + error.message);
+        // Atalhos de teclado
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K = Buscar
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
             }
-        }
-        
-        function mostrarErro(mensagem) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('error').style.display = 'flex';
-            document.getElementById('errorMessage').textContent = mensagem;
-        }
 
-        // ==================================================================================
-        // PREENCHIMENTO DE DADOS
-        // ==================================================================================
-        
-        function preencherVisaoGeral(dados) {
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
-            
-            const cliente = dados.cliente;
-            const financiamento = dados.financiamento;
-            const otima = dados.estrategia_otima;
-            const original = dados.cenario_original;
-            const recursos = dados.recursos;
-            
-            // Nome do cliente
-            document.getElementById('clientName').textContent = cliente.nome;
-            
-            // Hero metrics
-            document.getElementById('economiaTotal').textContent = fmt(otima.economia);
-            document.getElementById('reducaoPrazo').textContent = `${otima.reducaoPrazo || otima.reducao_prazo} meses`;
-            document.getElementById('roiEstrategia').textContent = `${otima.roi.toFixed(1)}x`;
-            document.getElementById('viabilidade').textContent = otima.viabilidade;
-            
-            // Dados do financiamento
-            document.getElementById('sistemaBadge').textContent = financiamento.sistema;
-            document.getElementById('saldoDevedor').textContent = fmt(financiamento.saldo_devedor);
-            document.getElementById('taxaJuros').textContent = `${(financiamento.taxa_anual * 100).toFixed(2)}% a.a.`;
-            document.getElementById('prazoOriginal').textContent = `${financiamento.prazo_meses} meses (${(financiamento.prazo_meses/12).toFixed(1)} anos)`;
-            document.getElementById('taxaAdmin').textContent = fmt(financiamento.taxa_admin_mensal) + '/mês';
-            document.getElementById('seguro').textContent = fmt(financiamento.seguro_mensal) + '/mês';
-            
-            // Comparativo
-            document.getElementById('semEstrategia').textContent = fmt(original.totalPago || original.total_pago);
-            document.getElementById('comEstrategia').textContent = fmt(otima.totalPago || otima.total_pago);
-            document.getElementById('economiaDestaque').textContent = fmt(otima.economia);
-            
-            // Barras animadas
-            setTimeout(() => {
-                document.getElementById('barSemEstrategia').style.width = '100%';
-                const totalPagoOriginal = original.totalPago || original.total_pago;
-                const totalPagoOtima = otima.totalPago || otima.total_pago;
-                const percentEcofin = (totalPagoOtima / totalPagoOriginal) * 100;
-                document.getElementById('barComEstrategia').style.width = percentEcofin + '%';
-            }, 300);
-            
-            // Resumo estratégia
-            const fgtsUsado = otima.fgtsUsado || otima.fgts_usado;
-            const amortMensal = otima.amortMensal || otima.amortizacao_mensal;
-            const duracao = otima.duracao || otima.duracao_amortizacao;
-            
-            document.getElementById('fgtsUsar').textContent = fmt(fgtsUsado);
-            document.getElementById('fgtsPercentual').textContent = `${((fgtsUsado / recursos.valor_fgts) * 100).toFixed(0)}% do disponível`;
-            document.getElementById('amortMensal').textContent = fmt(amortMensal);
-            document.getElementById('amortPercentual').textContent = `${((amortMensal / recursos.capacidade_extra_mensal) * 100).toFixed(0)}% da capacidade`;
-            document.getElementById('duracao').textContent = `${duracao} meses`;
-            document.getElementById('duracaoAnos').textContent = `${(duracao/12).toFixed(1)} anos`;
-        }
-
-        function preencherEstrategia(dados) {
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
-            
-            const otima = dados.estrategia_otima;
-            const financiamento = dados.financiamento;
-            
-            const fgtsUsado = otima.fgtsUsado || otima.fgts_usado;
-            const amortMensal = otima.amortMensal || otima.amortizacao_mensal;
-            const duracao = otima.duracao || otima.duracao_amortizacao;
-            const prazoMeses = otima.prazoMeses || otima.prazo_meses;
-            
-            const timeline = document.getElementById('timeline');
-            timeline.innerHTML = '';
-            
-            const items = [
-                {
-                    titulo: '1. Usar FGTS Agora',
-                    descricao: `Aplique ${fmt(fgtsUsado)} do seu FGTS imediatamente para reduzir o saldo devedor. Isso diminuirá drasticamente os juros futuros. O saldo cairá de ${fmt(financiamento.saldo_devedor)} para ${fmt(financiamento.saldo_devedor - fgtsUsado)}.`
-                },
-                {
-                    titulo: `2. Amortizar ${fmt(amortMensal)}/mês por ${(duracao/12).toFixed(1)} anos`,
-                    descricao: `Durante os próximos ${duracao} meses (${(duracao/12).toFixed(1)} anos), faça pagamentos extras de ${fmt(amortMensal)} mensalmente. Isso acelera a quitação e reduz juros compostos.`
-                },
-                {
-                    titulo: '3. Solicitar Redução de Prazo',
-                    descricao: `Sempre que amortizar, solicite ao banco a redução do prazo (não da parcela). Isso maximiza a economia de juros no longo prazo.`
-                },
-                {
-                    titulo: '4. Monitorar Evolução',
-                    descricao: `Acompanhe mensalmente o saldo devedor pelo app do banco. Compare com a projeção fornecida neste relatório. Ajuste a estratégia se sua situação financeira mudar.`
-                },
-                {
-                    titulo: `5. Quitação Total em ${prazoMeses} meses`,
-                    descricao: `Seguindo esta estratégia, você quitará em ${prazoMeses} meses (${(prazoMeses/12).toFixed(1)} anos), economizando ${fmt(otima.economia)} em relação ao plano original de ${financiamento.prazo_meses} meses.`
-                }
-            ];
-            
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'timeline-item';
-                div.innerHTML = `
-                    <div class="timeline-title">${item.titulo}</div>
-                    <div class="timeline-description">${item.descricao}</div>
-                `;
-                timeline.appendChild(div);
-            });
-        }
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
-            
-            const timeline = document.getElementById('timeline');
-            timeline.innerHTML = '';
-            
-            const items = [
-                {
-                    titulo: '1. Usar FGTS Agora',
-                    descricao: `Aplique ${fmt(otima.fgtsUsado)} do seu FGTS imediatamente para reduzir o saldo devedor. Isso diminuirá drasticamente os juros futuros. O saldo cairá de ${fmt(cliente.saldoDevedor)} para ${fmt(cliente.saldoDevedor - otima.fgtsUsado)}.`
-                },
-                {
-                    titulo: `2. Amortizar ${fmt(otima.amortMensal)}/mês por ${(otima.duracao/12).toFixed(1)} anos`,
-                    descricao: `Durante os próximos ${otima.duracao} meses (${(otima.duracao/12).toFixed(1)} anos), faça pagamentos extras de ${fmt(otima.amortMensal)} mensalmente. Isso acelera a quitação e reduz juros compostos.`
-                },
-                {
-                    titulo: '3. Solicitar Redução de Prazo',
-                    descricao: `Sempre que amortizar, solicite ao banco a redução do prazo (não da parcela). Isso maximiza a economia de juros no longo prazo.`
-                },
-                {
-                    titulo: '4. Monitorar Evolução',
-                    descricao: `Acompanhe mensalmente o saldo devedor pelo app do banco. Compare com a projeção fornecida neste relatório. Ajuste a estratégia se sua situação financeira mudar.`
-                },
-                {
-                    titulo: `5. Quitação Total em ${otima.prazoMeses} meses`,
-                    descricao: `Seguindo esta estratégia, você quitará em ${otima.prazoMeses} meses (${(otima.prazoMeses/12).toFixed(1)} anos), economizando ${fmt(otima.economia)} em relação ao plano original de ${cliente.prazoRestante} meses.`
-                }
-            ];
-            
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'timeline-item';
-                div.innerHTML = `
-                    <div class="timeline-title">${item.titulo}</div>
-                    <div class="timeline-description">${item.descricao}</div>
-                `;
-                timeline.appendChild(div);
-            });
-        }
-
-        function preencherCenarios(dados) {
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
-            
-            const cenarios = dados.top_cenarios || [dados.estrategia_otima];
-            const recursos = dados.recursos;
-            
-            const container = document.getElementById('scenarioCards');
-            container.innerHTML = '';
-            
-            cenarios.forEach((cenario, index) => {
-                const isRecommended = index === 0;
-                
-                const fgtsUsado = cenario.fgtsUsado || cenario.fgts_usado;
-                const amortMensal = cenario.amortMensal || cenario.amortizacao_mensal;
-                const duracao = cenario.duracao || cenario.duracao_amortizacao;
-                const reducaoPrazo = cenario.reducaoPrazo || cenario.reducao_prazo;
-                
-                const div = document.createElement('div');
-                div.className = `scenario-card ${isRecommended ? 'recommended' : ''}`;
-                div.innerHTML = `
-                    <div class="scenario-header">
-                        <div class="scenario-title">${isRecommended ? '🏆 Recomendado' : `Opção ${index + 1}`}</div>
-                        <div class="scenario-rank">#${index + 1}</div>
-                    </div>
-                    <div class="scenario-details">
-                        <strong>FGTS:</strong> ${fmt(fgtsUsado)} (${((fgtsUsado / recursos.valor_fgts) * 100).toFixed(0)}%)<br>
-                        <strong>Amort:</strong> ${fmt(amortMensal)}/mês por ${duracao} meses<br>
-                        <strong>Viabilidade:</strong> ${cenario.viabilidade}
-                    </div>
-                    <div class="scenario-metrics">
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Economia</div>
-                            <div class="scenario-metric-value" style="color: var(--success);">${fmt(cenario.economia)}</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Redução</div>
-                            <div class="scenario-metric-value" style="color: var(--warning);">${reducaoPrazo}m</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">ROI</div>
-                            <div class="scenario-metric-value" style="color: var(--gold-primary);">${cenario.roi.toFixed(1)}x</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Investimento</div>
-                            <div class="scenario-metric-value">${fmt(cenario.investimentoTotal || cenario.investimento_total)}</div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
-            const container = document.getElementById('scenarioCards');
-            container.innerHTML = '';
-            
-            cenarios.forEach((cenario, index) => {
-                const isRecommended = index === 0;
-                const div = document.createElement('div');
-                div.className = `scenario-card ${isRecommended ? 'recommended' : ''}`;
-                div.innerHTML = `
-                    <div class="scenario-header">
-                        <div class="scenario-title">${isRecommended ? '🏆 Recomendado' : `Opção ${index + 1}`}</div>
-                        <div class="scenario-rank">#${index + 1}</div>
-                    </div>
-                    <div class="scenario-details">
-                        <strong>FGTS:</strong> ${fmt(cenario.fgtsUsado)} (${((cenario.fgtsUsado / recursos.valorFGTS) * 100).toFixed(0)}%)<br>
-                        <strong>Amort:</strong> ${fmt(cenario.amortMensal)}/mês por ${cenario.duracao} meses<br>
-                        <strong>Viabilidade:</strong> ${cenario.viabilidade}
-                    </div>
-                    <div class="scenario-metrics">
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Economia</div>
-                            <div class="scenario-metric-value" style="color: var(--success);">${fmt(cenario.economia)}</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Redução</div>
-                            <div class="scenario-metric-value" style="color: var(--warning);">${cenario.reducaoPrazo}m</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">ROI</div>
-                            <div class="scenario-metric-value" style="color: var(--gold-primary);">${cenario.roi.toFixed(1)}x</div>
-                        </div>
-                        <div class="scenario-metric">
-                            <div class="scenario-metric-label">Investimento</div>
-                            <div class="scenario-metric-value">${fmt(cenario.investimentoTotal)}</div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function preencherTabela(detalhes) {
-            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(v);
-            const tbody = document.getElementById('tabelaBody');
-            tbody.innerHTML = '';
-            
-            detalhes.forEach(mes => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${mes.mes}</td>
-                    <td>${mes.ano}</td>
-                    <td>${fmt(mes.saldoInicial)}</td>
-                    <td>${fmt(mes.juros)}</td>
-                    <td>${fmt(mes.amortBase)}</td>
-                    <td>${fmt(mes.amortExtra)}</td>
-                    <td>${fmt(mes.parcela + mes.amortExtra)}</td>
-                    <td>${fmt(mes.saldoFinal)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function criarGraficos(detalhesOtima, detalhesOriginal) {
-            // Preparar dados (pegar apenas a cada 12 meses para não sobrecarregar)
-            const dadosSaldo = detalhesOtima.filter((_, i) => i % 12 === 0).map(m => ({
-                mes: m.mes,
-                saldo: m.saldoFinal
-            }));
-            
-            const dadosOriginalSaldo = detalhesOriginal.filter((_, i) => i % 12 === 0).map(m => ({
-                mes: m.mes,
-                saldo: m.saldoFinal
-            }));
-
-            // Gráfico 1: Evolução do Saldo
-            const ctx1 = document.getElementById('chartSaldo').getContext('2d');
-            new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: dadosSaldo.map(d => `Mês ${d.mes}`),
-                    datasets: [
-                        {
-                            label: 'Com Estratégia',
-                            data: dadosSaldo.map(d => d.saldo),
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Sem Estratégia',
-                            data: dadosOriginalSaldo.map(d => d.saldo),
-                            borderColor: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            fill: true,
-                            borderDash: [5, 5]
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#C4C4C4' } }
-                    },
-                    scales: {
-                        y: {
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x: {
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        }
-                    }
-                }
-            });
-
-            // Gráfico 2: Composição da Parcela (primeiros 60 meses)
-            const dadosParcela = detalhesOtima.slice(0, 60).filter((_, i) => i % 6 === 0);
-            const ctx2 = document.getElementById('chartParcela').getContext('2d');
-            new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: dadosParcela.map(d => `Mês ${d.mes}`),
-                    datasets: [
-                        {
-                            label: 'Juros',
-                            data: dadosParcela.map(d => d.juros),
-                            backgroundColor: '#EF4444'
-                        },
-                        {
-                            label: 'Amortização',
-                            data: dadosParcela.map(d => d.amortBase + d.amortExtra),
-                            backgroundColor: '#10B981'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#C4C4C4' } }
-                    },
-                    scales: {
-                        y: {
-                            stacked: true,
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x: {
-                            stacked: true,
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        }
-                    }
-                }
-            });
-
-            // Gráfico 3: Acúmulo
-            const dadosAcumulo = detalhesOtima.filter((_, i) => i % 12 === 0);
-            const ctx3 = document.getElementById('chartAcumulo').getContext('2d');
-            new Chart(ctx3, {
-                type: 'line',
-                data: {
-                    labels: dadosAcumulo.map(d => `Mês ${d.mes}`),
-                    datasets: [
-                        {
-                            label: 'Juros Acumulados',
-                            data: dadosAcumulo.map(d => d.jurosAcumulados),
-                            borderColor: '#EF4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        },
-                        {
-                            label: 'Amortização Acumulada',
-                            data: dadosAcumulo.map(d => d.amortAcumulada),
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#C4C4C4' } }
-                    },
-                    scales: {
-                        y: {
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        },
-                        x: {
-                            ticks: { color: '#C4C4C4' },
-                            grid: { color: 'rgba(255,255,255,0.1)' }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ==================================================================================
-        // FUNÇÕES AUXILIARES
-        // ==================================================================================
-        
-        function switchTab(tabName) {
-            // Desativar todas
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Ativar selecionada
-            event.target.closest('.tab-btn').classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-        }
-
-        function exportTable() {
-            const table = document.getElementById('tabelaAmortizacao');
-            let csv = [];
-            
-            // Header
-            const headerCells = table.querySelectorAll('thead th');
-            let headerRow = [];
-            headerCells.forEach(cell => headerRow.push(cell.textContent));
-            csv.push(headerRow.join(','));
-            
-            // Body
-            const rows = table.querySelectorAll('tbody tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                let rowData = [];
-                cells.forEach(cell => rowData.push(cell.textContent.replace(/,/g, '')));
-                csv.push(rowData.join(','));
-            });
-            
-            // Download
-            const csvContent = csv.join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'tabela_amortizacao_ecofin.csv';
-            link.click();
-        }
+            // ESC = Fechar modal
+            if (e.key === 'Escape') {
+                fecharModal();
+            }
+        });
     </script>
 </body>
 </html>

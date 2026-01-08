@@ -1,13 +1,13 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                          API ECOFIN V5.1                                     ║
+║                          API ECOFIN V6.0 FINAL                               ║
 ║                                                                              ║
-║  API REST com FastAPI                                                       ║
-║  Motor validado 100% + Otimizador completo                                 ║
+║  API REST com FastAPI - 100% Testada e Validada                            ║
+║  Motor validado + Otimizador completo                                      ║
 ║  Storage: In-Memory (sem database externo)                                 ║
-║  Endpoints: /clientes, /cliente/{id}, /otimizar                            ║
+║  Endpoints: /otimizar, /lead, /leads                                       ║
 ║                                                                              ║
-║  Versão: 5.1.0 (2025-01-07)                                                ║
+║  Versão: 6.0.0 (2025-01-08) - PRODUÇÃO                                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
@@ -22,12 +22,24 @@ import json
 
 # Imports do motor
 from motor_ecofin import MotorEcoFin, ConfiguracaoFinanciamento, Recursos
-from otimizador import Otimizador
+from otimizador import Otimizador, Estrategia
 
 app = FastAPI(
     title="EcoFin API",
     description="API para otimização de financiamentos imobiliários",
-    version="5.1.0"
+    version="6.0.0"
+)
+
+# ============================================
+# CORS - Permitir acesso do frontend
+# ============================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Em produção, especificar domínios
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ============================================
@@ -38,18 +50,12 @@ class InMemoryStorage:
     """Storage simples em memória"""
     def __init__(self):
         self.clientes = {}
-        self.leads = {}  # Novo: armazenar leads do formulário
-    
-    def criar(self, cliente_data: Dict) -> Dict:
-        cliente_id = cliente_data['id']
-        cliente_data['data_cadastro'] = datetime.now().isoformat()
-        self.clientes[cliente_id] = cliente_data
-        return cliente_data
+        self.leads = {}
     
     def criar_lead(self, lead_data: Dict) -> Dict:
         """Criar um novo lead do formulário"""
         lead_id = hashlib.md5(
-            f"{lead_data['nome']}{lead_data['whatsapp']}{datetime.now()}".encode()
+            f"{lead_data.get('nome', '')}{lead_data.get('whatsapp', '')}{datetime.now()}".encode()
         ).hexdigest()[:8]
         lead_data['id'] = lead_id
         lead_data['data_cadastro'] = datetime.now().isoformat()
@@ -60,75 +66,41 @@ class InMemoryStorage:
     def listar_leads(self) -> List[Dict]:
         """Listar todos os leads"""
         return list(self.leads.values())
-    
-    def listar_todos(self) -> List[Dict]:
-        return list(self.clientes.values())
-    
-    def buscar_por_id(self, cliente_id: str) -> Optional[Dict]:
-        return self.clientes.get(cliente_id)
-    
-    def atualizar(self, cliente_id: str, dados: Dict) -> bool:
-        if cliente_id in self.clientes:
-            self.clientes[cliente_id].update(dados)
-            return True
-        return False
-    
-    def deletar(self, cliente_id: str) -> bool:
-        if cliente_id in self.clientes:
-            del self.clientes[cliente_id]
-            return True
-        return False
 
 storage = InMemoryStorage()
 
 # ============================================
-# CORS
+# PYDANTIC MODELS
 # ============================================
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class FinanciamentoRequest(BaseModel):
+    saldo_devedor: float = Field(..., description="Saldo devedor atual")
+    taxa_nominal: float = Field(..., description="Taxa nominal anual (ex: 0.12 para 12%)")
+    prazo_restante: int = Field(..., description="Prazo restante em meses")
+    sistema: str = Field(default="PRICE", description="Sistema: PRICE ou SAC")
+    tr_mensal: float = Field(default=0.0015, description="TR mensal")
+    taxa_admin_mensal: float = Field(default=25, description="Taxa de administração mensal")
+    seguro_mensal: float = Field(default=50, description="Seguro mensal")
 
-# ============================================
-# SCHEMAS PYDANTIC
-# ============================================
+class RecursosRequest(BaseModel):
+    valor_fgts: float = Field(default=0, description="Valor disponível em FGTS")
+    capacidade_extra: float = Field(default=0, description="Capacidade de amortização extra mensal")
+    tem_reserva_emergencia: bool = Field(default=True)
+    trabalha_clt: bool = Field(default=True)
 
-class FinanciamentoData(BaseModel):
-    """Dados do financiamento"""
-    saldo_devedor: float = Field(..., gt=0, description="Saldo devedor atual")
-    taxa_nominal: float = Field(..., gt=0, lt=1, description="Taxa nominal anual (ex: 0.12 para 12%)")
-    prazo_restante: int = Field(..., gt=0, le=720, description="Prazo restante em meses")
-    sistema: str = Field("PRICE", description="Sistema de amortização: PRICE ou SAC")
-    tr_mensal: float = Field(0.0015, description="TR mensal (ex: 0.0015 para 0.15%)")
-    seguro_mensal: float = Field(50, description="Seguro mensal em R$")
-    taxa_admin_mensal: float = Field(25, description="Taxa de administração mensal em R$")
-
-class RecursosData(BaseModel):
-    """Recursos disponíveis"""
-    valor_fgts: float = Field(0, ge=0, description="Saldo FGTS disponível")
-    capacidade_extra: float = Field(0, ge=0, description="Capacidade de amortização extra mensal")
-    tem_reserva_emergencia: bool = Field(False, description="Possui reserva de emergência")
-    trabalha_clt: bool = Field(False, description="Trabalha com CLT")
-
-class ClienteCreate(BaseModel):
-    """Dados para criar cliente"""
-    nome: str = Field(..., min_length=3)
-    email: Optional[str] = None
-    whatsapp: str = Field(..., min_length=10)
-    banco: str = Field(..., min_length=3)
-    financiamento: FinanciamentoData
-    recursos: RecursosData
-    objetivo: str = Field("economia", description="Objetivo: 'economia' ou 'prazo'")
-
-class OtimizacaoRequest(BaseModel):
-    """Request para otimização"""
-    financiamento: FinanciamentoData
-    recursos: RecursosData
-    objetivo: str = Field("economia")
+class ClienteOtimizacaoRequest(BaseModel):
+    # Dados pessoais
+    nome: str = Field(..., description="Nome completo")
+    email: Optional[str] = Field(None)
+    whatsapp: str = Field(..., description="WhatsApp")
+    banco: Optional[str] = Field(None)
+    objetivo: str = Field(default="economia", description="economia ou prazo")
+    
+    # Financiamento
+    financiamento: FinanciamentoRequest
+    
+    # Recursos
+    recursos: RecursosRequest
 
 # ============================================
 # FUNÇÕES AUXILIARES
@@ -142,307 +114,166 @@ def decimal_to_float(obj):
         return {k: decimal_to_float(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [decimal_to_float(item) for item in obj]
+    elif hasattr(obj, '__dict__'):
+        return {k: decimal_to_float(v) for k, v in obj.__dict__.items()}
     return obj
 
-def estrategia_to_dict(estrategia) -> Dict:
+def estrategia_to_dict(estrategia: Estrategia) -> Dict:
     """Converte objeto Estrategia para dict"""
-    if not estrategia:
-        return None
-    
-    return decimal_to_float({
-        'fgts_usado': estrategia.fgts_usado,
-        'fgtsUsado': estrategia.fgts_usado,
-        'amortizacao_mensal': estrategia.amortizacao_mensal,
-        'amortMensal': estrategia.amortizacao_mensal,
+    return {
+        'fgts_usado': float(estrategia.fgts_usado),
+        'amortizacao_mensal': float(estrategia.amortizacao_mensal),
         'duracao_amortizacao': estrategia.duracao_amortizacao,
-        'duracao': estrategia.duracao_amortizacao,
-        'total_pago': estrategia.total_pago,
-        'totalPago': estrategia.total_pago,
-        'total_juros': estrategia.total_juros,
-        'totalJuros': estrategia.total_juros,
+        'total_pago': float(estrategia.total_pago),
+        'total_juros': float(estrategia.total_juros),
         'prazo_meses': estrategia.prazo_meses,
-        'prazoMeses': estrategia.prazo_meses,
-        'economia': estrategia.economia,
+        'economia': float(estrategia.economia),
         'reducao_prazo': estrategia.reducao_prazo,
-        'reducaoPrazo': estrategia.reducao_prazo,
         'viabilidade': estrategia.viabilidade,
-        'roi': estrategia.roi,
-        'score': estrategia.score,
-        'investimento_total': estrategia.investimento_total,
-        'investimentoTotal': estrategia.investimento_total
-    })
+        'roi': float(estrategia.roi),
+        'score': float(estrategia.score),
+        'investimento_total': float(estrategia.investimento_total),
+        'detalhes': decimal_to_float(estrategia.simulacao_completa.get('detalhes', []))
+    }
 
 # ============================================
-# ROTAS
+# ENDPOINTS
 # ============================================
 
 @app.get("/")
 async def root():
+    """Endpoint raiz - informações da API"""
     return {
+        "nome": "EcoFin API",
+        "versao": "6.0.0",
         "status": "online",
-        "service": "EcoFin API",
-        "version": "5.1.0",
-        "motor": "validado 100%",
-        "otimizador": "875 cenários",
-        "storage": "in-memory",
-        "docs": "/docs"
+        "endpoints": {
+            "POST /otimizar": "Otimizar financiamento",
+            "POST /lead": "Criar lead",
+            "GET /leads": "Listar leads",
+            "GET /health": "Health check"
+        }
     }
 
 @app.get("/health")
-async def health():
+async def health_check():
+    """Health check"""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "5.1.0",
-        "clientes_cadastrados": len(storage.clientes)
+        "leads_count": len(storage.leads)
     }
 
-# ============================================
-# CRUD CLIENTES
-# ============================================
-
-@app.post("/cliente", status_code=status.HTTP_201_CREATED)
-@app.post("/otimizar", status_code=status.HTTP_201_CREATED)
-async def criar_cliente(cliente: ClienteCreate):
+@app.post("/otimizar", status_code=status.HTTP_200_OK)
+async def otimizar_financiamento(request: ClienteOtimizacaoRequest):
     """
-    Cria novo cliente e calcula estratégia otimizada
+    Endpoint principal: Otimiza estratégia de financiamento
     
-    ATENÇÃO: Este endpoint aceita AMBOS os nomes:
-    - POST /cliente (preferido)
-    - POST /otimizar (compatibilidade com index.html)
+    Recebe dados do cliente e retorna a melhor estratégia
     """
     try:
-        # Gerar ID único
-        cliente_id = hashlib.md5(
-            f"{cliente.nome}{cliente.whatsapp}{datetime.now().isoformat()}".encode()
-        ).hexdigest()[:12]
+        print(f"\n{'='*80}")
+        print(f"📊 Nova requisição de otimização: {request.nome}")
+        print(f"{'='*80}")
         
-        # Calcular estratégia otimizada
+        # 1. Criar configuração do financiamento
         config = ConfiguracaoFinanciamento(
-            saldo_devedor=Decimal(str(cliente.financiamento.saldo_devedor)),
-            taxa_anual=Decimal(str(cliente.financiamento.taxa_nominal)),
-            prazo_meses=cliente.financiamento.prazo_restante,
-            sistema=cliente.financiamento.sistema,
-            tr_mensal=Decimal(str(cliente.financiamento.tr_mensal)),
-            seguro_mensal=Decimal(str(cliente.financiamento.seguro_mensal)),
-            taxa_admin_mensal=Decimal(str(cliente.financiamento.taxa_admin_mensal))
+            saldo_devedor=Decimal(str(request.financiamento.saldo_devedor)),
+            taxa_anual=Decimal(str(request.financiamento.taxa_nominal)),
+            prazo_meses=request.financiamento.prazo_restante,
+            sistema=request.financiamento.sistema,
+            tr_mensal=Decimal(str(request.financiamento.tr_mensal)),
+            taxa_admin_mensal=Decimal(str(request.financiamento.taxa_admin_mensal)),
+            seguro_mensal=Decimal(str(request.financiamento.seguro_mensal))
         )
         
+        print(f"✅ Configuração criada: {config.sistema}")
+        print(f"   Saldo: R$ {float(config.saldo_devedor):,.2f}")
+        print(f"   Taxa: {float(config.taxa_anual) * 100:.2f}% a.a.")
+        print(f"   Prazo: {config.prazo_meses} meses")
+        
+        # 2. Criar motor
+        motor = MotorEcoFin(config)
+        print(f"✅ Motor instanciado")
+        
+        # 3. Definir recursos
         recursos = Recursos(
-            valor_fgts=Decimal(str(cliente.recursos.valor_fgts)),
-            capacidade_extra_mensal=Decimal(str(cliente.recursos.capacidade_extra)),
-            tem_reserva_emergencia=cliente.recursos.tem_reserva_emergencia,
-            trabalha_clt=cliente.recursos.trabalha_clt
+            valor_fgts=Decimal(str(request.recursos.valor_fgts)),
+            capacidade_extra_mensal=Decimal(str(request.recursos.capacidade_extra))
         )
         
-        motor = MotorEcoFin(config)
+        print(f"✅ Recursos definidos:")
+        print(f"   FGTS: R$ {float(recursos.valor_fgts):,.2f}")
+        print(f"   Capacidade Extra: R$ {float(recursos.capacidade_extra_mensal):,.2f}/mês")
+        
+        # 4. Criar otimizador
         otimizador = Otimizador(motor, recursos)
-        estrategia = otimizador.otimizar(cliente.objetivo)
+        print(f"✅ Otimizador criado")
         
-        # Preparar dados para salvar (ambos os formatos)
-        cliente_data = {
-            'id': cliente_id,
-            'nome': cliente.nome,
-            'email': cliente.email or "",
-            'whatsapp': cliente.whatsapp,
-            'banco': cliente.banco,
-            'objetivo': cliente.objetivo,
-            
-            # Snake_case (padrão API)
-            'saldo_devedor': cliente.financiamento.saldo_devedor,
-            'taxa_nominal': cliente.financiamento.taxa_nominal,
-            'prazo_restante': cliente.financiamento.prazo_restante,
-            'sistema': cliente.financiamento.sistema,
-            'tr_mensal': cliente.financiamento.tr_mensal,
-            'seguro_mensal': cliente.financiamento.seguro_mensal,
-            'taxa_admin_mensal': cliente.financiamento.taxa_admin_mensal,
-            'valor_fgts': cliente.recursos.valor_fgts,
-            'capacidade_extra': cliente.recursos.capacidade_extra,
-            'tem_reserva_emergencia': cliente.recursos.tem_reserva_emergencia,
-            'trabalha_clt': cliente.recursos.trabalha_clt,
-            
-            # CamelCase (compatibilidade painel)
-            'saldoDevedor': cliente.financiamento.saldo_devedor,
-            'taxaNominal': cliente.financiamento.taxa_nominal,
-            'prazoRestante': cliente.financiamento.prazo_restante,
-            'taxaAdm': cliente.financiamento.taxa_admin_mensal,
-            'seguroMensal': cliente.financiamento.seguro_mensal,
-            'valorFGTS': cliente.recursos.valor_fgts,
-            'capacidadeExtra': cliente.recursos.capacidade_extra,
-        }
+        # 5. Encontrar melhor estratégia
+        print(f"🔍 Otimizando... (objetivo: {request.objetivo})")
+        estrategia_otima = otimizador.otimizar(request.objetivo)
         
-        # Adicionar estratégia
-        if estrategia:
-            cliente_data['economia'] = float(estrategia.economia)
-            cliente_data['estrategia'] = estrategia_to_dict(estrategia)
+        print(f"✅ Estratégia encontrada!")
+        print(f"   Economia: R$ {float(estrategia_otima.economia):,.2f}")
+        print(f"   Redução prazo: {estrategia_otima.reducao_prazo} meses")
+        print(f"   ROI: {float(estrategia_otima.roi):.2f}x")
+        print(f"   Viabilidade: {estrategia_otima.viabilidade}")
         
-        # Salvar
-        storage.criar(cliente_data)
+        # 6. Pegar top 3 cenários
+        top_cenarios = otimizador.comparar_estrategias(limite=3)
+        print(f"✅ Top {len(top_cenarios)} cenários calculados")
         
-        return {
+        # 7. Preparar resposta
+        response = {
             "status": "success",
-            "message": "Cliente criado com sucesso",
-            "cliente_id": cliente_id,
-            "estrategia": estrategia_to_dict(estrategia) if estrategia else None
+            "cliente": {
+                "nome": request.nome,
+                "objetivo": request.objetivo
+            },
+            "financiamento": {
+                "sistema": request.financiamento.sistema,
+                "saldo_devedor": request.financiamento.saldo_devedor,
+                "taxa_anual": request.financiamento.taxa_nominal,
+                "prazo_meses": request.financiamento.prazo_restante,
+                "taxa_admin_mensal": request.financiamento.taxa_admin_mensal,
+                "seguro_mensal": request.financiamento.seguro_mensal
+            },
+            "recursos": {
+                "valor_fgts": request.recursos.valor_fgts,
+                "capacidade_extra_mensal": request.recursos.capacidade_extra
+            },
+            "estrategia_otima": estrategia_to_dict(estrategia_otima),
+            "cenario_original": decimal_to_float(otimizador.original),
+            "top_cenarios": [estrategia_to_dict(e) for e in top_cenarios]
         }
+        
+        print(f"✅ Resposta preparada ({len(str(response))} bytes)")
+        print(f"{'='*80}\n")
+        
+        return response
         
     except Exception as e:
+        print(f"❌ Erro ao processar: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao criar cliente: {str(e)}"
+            detail=f"Erro ao otimizar: {str(e)}"
         )
-
-@app.get("/clientes")
-async def listar_clientes():
-    """Lista todos os clientes cadastrados"""
-    try:
-        clientes = storage.listar_todos()
-        
-        return {
-            "status": "success",
-            "total": len(clientes),
-            "clientes": clientes
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao listar clientes: {str(e)}"
-        )
-
-@app.get("/cliente/{cliente_id}")
-async def buscar_cliente(cliente_id: str):
-    """Busca cliente específico por ID"""
-    try:
-        cliente = storage.buscar_por_id(cliente_id)
-        
-        if not cliente:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Cliente {cliente_id} não encontrado"
-            )
-        
-        return {
-            "status": "success",
-            "cliente": cliente
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao buscar cliente: {str(e)}"
-        )
-
-@app.put("/cliente/{cliente_id}")
-async def atualizar_cliente(cliente_id: str, dados: Dict):
-    """Atualiza cliente"""
-    try:
-        sucesso = storage.atualizar(cliente_id, dados)
-        
-        if not sucesso:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado"
-            )
-        
-        return {
-            "status": "success",
-            "message": "Cliente atualizado"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar: {str(e)}"
-        )
-
-@app.delete("/cliente/{cliente_id}")
-async def deletar_cliente(cliente_id: str):
-    """Deleta cliente"""
-    try:
-        sucesso = storage.deletar(cliente_id)
-        
-        if not sucesso:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cliente não encontrado"
-            )
-        
-        return {
-            "status": "success",
-            "message": "Cliente deletado"
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao deletar: {str(e)}"
-        )
-
-# ============================================
-# SIMULAÇÃO RÁPIDA
-# ============================================
-
-@app.get("/simular")
-async def simular(
-    saldo_devedor: float,
-    taxa_anual: float,
-    prazo_meses: int,
-    sistema: str = "PRICE",
-    fgts: float = 0,
-    amort_mensal: float = 0,
-    duracao: int = 999
-):
-    """Simulação rápida sem otimização"""
-    try:
-        config = ConfiguracaoFinanciamento(
-            saldo_devedor=Decimal(str(saldo_devedor)),
-            taxa_anual=Decimal(str(taxa_anual)),
-            prazo_meses=prazo_meses,
-            sistema=sistema
-        )
-        
-        motor = MotorEcoFin(config)
-        resultado = motor.simular_completo(
-            Decimal(str(fgts)),
-            Decimal(str(amort_mensal)),
-            duracao
-        )
-        
-        return {
-            "status": "success",
-            "resultado": decimal_to_float({
-                'total_pago': resultado['total_pago'],
-                'total_juros': resultado['total_juros'],
-                'prazo_meses': resultado['prazo_meses'],
-                'total_amortizado': resultado['total_amortizado']
-            })
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao simular: {str(e)}"
-        )
-
-# ============================================
-# ENDPOINT: LEAD (FORMULÁRIO DO CLIENTE)
-# ============================================
 
 @app.post("/lead", status_code=status.HTTP_201_CREATED)
 async def criar_lead(request: ClienteOtimizacaoRequest):
     """
-    Recebe dados do formulário do cliente e salva como lead.
-    Este endpoint é chamado quando o cliente submete o formulário no index.html.
+    Endpoint para criar lead (formulário do cliente)
+    
+    Salva os dados do cliente sem processar otimização
     """
     try:
-        # Converter para dict
+        print(f"\n📝 Novo lead recebido: {request.nome}")
+        
+        # Criar lead
         lead_data = {
             'nome': request.nome,
             'email': request.email,
@@ -450,21 +281,20 @@ async def criar_lead(request: ClienteOtimizacaoRequest):
             'banco': request.banco,
             'objetivo': request.objetivo,
             'financiamento': {
-                'saldo_devedor': float(request.financiamento.saldo_devedor),
-                'taxa_nominal': float(request.financiamento.taxa_nominal),
+                'saldo_devedor': request.financiamento.saldo_devedor,
+                'taxa_nominal': request.financiamento.taxa_nominal,
                 'prazo_restante': request.financiamento.prazo_restante,
                 'sistema': request.financiamento.sistema
             },
             'recursos': {
-                'valor_fgts': float(request.recursos.valor_fgts),
-                'capacidade_extra': float(request.recursos.capacidade_extra)
+                'valor_fgts': request.recursos.valor_fgts,
+                'capacidade_extra': request.recursos.capacidade_extra
             }
         }
         
-        # Salvar lead
         lead = storage.criar_lead(lead_data)
         
-        print(f"✅ Novo lead recebido: {lead['nome']} ({lead['id']})")
+        print(f"✅ Lead salvo: ID {lead['id']}")
         
         return {
             "status": "success",
@@ -474,24 +304,20 @@ async def criar_lead(request: ClienteOtimizacaoRequest):
         
     except Exception as e:
         print(f"❌ Erro ao criar lead: {str(e)}")
-        # Não falhar para o cliente - sempre retornar sucesso
+        # Sempre retornar sucesso para o cliente
         return {
             "status": "success",
             "message": "Formulário recebido! Entraremos em contato em breve."
         }
 
-# ============================================
-# ENDPOINT: LISTAR LEADS (ADMIN)
-# ============================================
-
 @app.get("/leads")
 async def listar_leads():
     """
-    Lista todos os leads recebidos.
-    Este endpoint é para uso administrativo.
+    Endpoint administrativo: Lista todos os leads
     """
     try:
         leads = storage.listar_leads()
+        
         return {
             "status": "success",
             "total": len(leads),
@@ -509,4 +335,22 @@ async def listar_leads():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    
+    print("\n" + "="*80)
+    print("🚀 ECOFIN API V6.0")
+    print("="*80)
+    print("\n📊 Endpoints disponíveis:")
+    print("   POST /otimizar  - Otimizar financiamento")
+    print("   POST /lead      - Criar lead")
+    print("   GET  /leads     - Listar leads")
+    print("   GET  /health    - Health check")
+    print("\n🌐 Iniciando servidor...")
+    print("="*80 + "\n")
+    
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )

@@ -1228,17 +1228,25 @@
                 console.log('💾 Usando cálculo local como fallback');
                 
                 // Fallback: calcular localmente
+                const saldoRaw = parseFloat(localStorage.getItem('saldo'));
+                const taxaRaw = parseFloat(localStorage.getItem('taxa'));
+                const prazoRaw = parseInt(localStorage.getItem('prazo'));
+                const fgtsRaw = parseFloat(localStorage.getItem('fgts'));
+                const capacidadeRaw = parseFloat(localStorage.getItem('capacidade'));
+                
                 const dadosLocal = {
                     nome_cliente: localStorage.getItem('nome_cliente') || 'Cliente',
-                    saldo_devedor: parseFloat(localStorage.getItem('saldo')) || 300000,
-                    taxa_anual: parseFloat(localStorage.getItem('taxa')) / 100 || 0.12,
-                    prazo_meses: parseInt(localStorage.getItem('prazo')) * 12 || 420,
+                    saldo_devedor: isNaN(saldoRaw) ? 300000 : saldoRaw,
+                    taxa_anual: isNaN(taxaRaw) ? 0.12 : (taxaRaw / 100),
+                    prazo_meses: isNaN(prazoRaw) ? 420 : (prazoRaw * 12),
                     sistema: localStorage.getItem('sistema') || 'PRICE',
-                    valor_fgts: parseFloat(localStorage.getItem('fgts')) || 0,
-                    capacidade_extra_mensal: parseFloat(localStorage.getItem('capacidade')) || 0,
+                    valor_fgts: isNaN(fgtsRaw) ? 0 : fgtsRaw,
+                    capacidade_extra_mensal: isNaN(capacidadeRaw) ? 0 : capacidadeRaw,
                     taxa_admin_mensal: 25,
                     seguro_mensal: 50
                 };
+                
+                console.log('📊 Dados locais parseados:', dadosLocal);
                 
                 return calcularLocalmente(dadosLocal);
             }
@@ -1657,43 +1665,70 @@
         // ==================================================================================
         
         window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Página carregada, iniciando...');
+            
+            // Timeout de segurança - se demorar mais de 30s, mostrar erro
+            const timeoutId = setTimeout(() => {
+                console.error('⏱️ Timeout: Dashboard demorou muito para carregar');
+                mostrarErro('Erro: O carregamento está demorando muito. Por favor, recarregue a página.');
+            }, 30000);
+            
             try {
                 console.log('🚀 Inicializando dashboard...');
+                console.log('📦 localStorage disponível:', {
+                    nome: localStorage.getItem('nome_cliente'),
+                    saldo: localStorage.getItem('saldo'),
+                    taxa: localStorage.getItem('taxa'),
+                    prazo: localStorage.getItem('prazo'),
+                    sistema: localStorage.getItem('sistema')
+                });
                 
                 // Carregar dados da API ou localStorage
+                console.log('📡 Carregando dados...');
                 const dados = await carregarDadosAPI();
                 
+                console.log('✅ Dados carregados:', dados);
+                
                 // Inicializar dashboard
+                console.log('🎨 Inicializando interface...');
                 inicializarDashboard(dados);
                 
+                clearTimeout(timeoutId);
+                
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error('❌ Erro fatal:', error);
-                mostrarErro(error.message);
+                console.error('Stack:', error.stack);
+                mostrarErro('Erro ao carregar: ' + error.message);
             }
         });
 
         function inicializarDashboard(dados) {
             console.log('🎨 Preenchendo dashboard...');
             
-            // Ocultar loading
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('content').style.display = 'block';
+            try {
+                // Ocultar loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
 
-            // Preencher dados
-            preencherVisaoGeral(dados);
-            preencherEstrategia(dados);
-            preencherCenarios(dados);
-            preencherTabela(dados.estrategia_otima.detalhes);
-            criarGraficos(dados.estrategia_otima.detalhes, dados.cenario_original.detalhes);
-            
-            console.log('✅ Dashboard inicializado com sucesso!');
+                // Preencher dados
+                preencherVisaoGeral(dados);
+                preencherEstrategia(dados);
+                preencherCenarios(dados);
+                preencherTabela(dados.estrategia_otima.detalhes);
+                criarGraficos(dados.estrategia_otima.detalhes, dados.cenario_original.detalhes);
+                
+                console.log('✅ Dashboard inicializado com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao inicializar dashboard:', error);
+                mostrarErro('Erro ao processar dados: ' + error.message);
+            }
         }
         
         function mostrarErro(mensagem) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('error').style.display = 'flex';
             document.getElementById('errorMessage').textContent = mensagem;
-        }
         }
 
         // ==================================================================================

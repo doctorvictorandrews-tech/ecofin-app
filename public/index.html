@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <style>
@@ -20,9 +19,6 @@
             --text-secondary: #C4C4C4; 
             --border-light: rgba(255, 255, 255, 0.1);
             --success: #10B981;
-            --danger: #EF4444;
-
-            --font-sans: 'Inter', sans-serif;
             --font-body: 'Inter', sans-serif;
         }
 
@@ -37,7 +33,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* BACKGROUND FX */
         .bg-blob {
             position: fixed; filter: blur(120px); z-index: -1; opacity: 0.15;
             animation: blobMove 20s infinite alternate ease-in-out; border-radius: 50%;
@@ -57,309 +52,100 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
         
-        .logo { 
-            max-width: 180px; 
-            height: auto; 
-            margin: 0 auto 3rem; 
-            display: block; 
-        }
+        .logo { max-width: 180px; height: auto; margin: 0 auto 3rem; display: block; }
         
-        .step-indicator { 
-            display: flex; 
-            justify-content: center; 
-            gap: 1rem; 
-            margin-bottom: 3rem; 
-        }
+        .step-indicator { display: flex; justify-content: center; gap: 1rem; margin-bottom: 3rem; }
         
         .step { 
-            width: 50px; 
-            height: 50px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 700; 
-            border: 3px solid var(--border-light); 
-            background: var(--bg-surface); 
-            transition: all 0.3s; 
-            font-size: 18px;
+            width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; font-weight: 700; border: 3px solid var(--border-light); 
+            background: var(--bg-surface); transition: all 0.3s; font-size: 18px;
         }
         
         .step.active { 
-            background: var(--gold-primary); 
-            color: #000; 
-            border-color: var(--gold-primary); 
-            transform: scale(1.15); 
-            box-shadow: 0 0 20px rgba(217,137,13,0.5);
+            background: var(--gold-primary); color: #000; border-color: var(--gold-primary); 
+            transform: scale(1.15); box-shadow: 0 0 20px rgba(217,137,13,0.5);
         }
         
-        .step.completed { 
-            background: var(--success); 
-            border-color: var(--success); 
-            color: white; 
-        }
+        .step.completed { background: var(--success); border-color: var(--success); color: white; }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 1rem;
-            color: white;
-            letter-spacing: -1px;
-        }
-        
-        .subtitle {
-            text-align: center;
-            color: var(--text-secondary);
-            margin-bottom: 3rem;
-            font-size: 1.1rem;
-        }
+        h1 { font-size: 2.5rem; font-weight: 800; text-align: center; margin-bottom: 1rem; color: white; letter-spacing: -1px; }
+        .subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem; }
         
         .input-field { 
-            background: rgba(255, 255, 255, 0.05); 
-            border: 1px solid var(--border-light); 
-            color: white; 
-            padding: 1rem; 
-            border-radius: 12px; 
-            width: 100%; 
-            transition: all 0.3s; 
-            font-size: 16px;
-            font-family: var(--font-body);
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-light); 
+            color: white; padding: 1rem; border-radius: 12px; width: 100%; 
+            transition: all 0.3s; font-size: 16px; font-family: var(--font-body);
         }
         
         .input-field:focus { 
-            background: rgba(255, 255, 255, 0.08); 
-            border-color: var(--gold-primary); 
-            outline: none; 
-            box-shadow: 0 0 0 4px rgba(217, 168, 60, 0.1); 
+            background: rgba(255, 255, 255, 0.08); border-color: var(--gold-primary); 
+            outline: none; box-shadow: 0 0 0 4px rgba(217, 168, 60, 0.1); 
         }
         
         .input-label {
-            display: block;
-            color: var(--gold-primary);
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: block; color: var(--gold-primary); margin-bottom: 0.75rem; 
+            font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
         }
         
-        .input-group {
-            margin-bottom: 1.5rem;
-        }
+        .input-group { margin-bottom: 1.5rem; }
         
         .btn-primary { 
-            background: var(--gold-primary); 
-            color: #000; 
-            padding: 1.25rem 3rem; 
-            border-radius: 12px; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: 800; 
-            transition: all 0.3s; 
-            font-size: 16px; 
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            background: var(--gold-primary); color: #000; padding: 1.25rem 3rem; 
+            border-radius: 12px; border: none; cursor: pointer; font-weight: 800; 
+            transition: all 0.3s; font-size: 16px; width: 100%; text-transform: uppercase;
+            letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
         
         .btn-primary:hover { 
-            transform: translateY(-3px); 
-            background: var(--gold-hover); 
+            transform: translateY(-3px); background: var(--gold-hover); 
             box-shadow: 0 10px 40px rgba(217, 168, 60, 0.4); 
         }
         
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        
         .btn-secondary { 
-            background: transparent; 
-            color: var(--text-secondary); 
-            padding: 1rem 2rem; 
-            border-radius: 12px; 
-            border: 1px solid var(--border-light); 
-            cursor: pointer; 
-            font-weight: 600; 
-            transition: all 0.3s;
+            background: transparent; color: var(--text-secondary); padding: 1rem 2rem; 
+            border-radius: 12px; border: 1px solid var(--border-light); cursor: pointer; 
+            font-weight: 600; transition: all 0.3s;
         }
         
-        .btn-secondary:hover {
-            border-color: var(--gold-primary);
-            color: var(--gold-primary);
-        }
+        .btn-secondary:hover { border-color: var(--gold-primary); color: var(--gold-primary); }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+        @media(min-width: 768px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
         
         .option-card { 
-            padding: 2rem; 
-            border-radius: 16px; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 2px solid var(--border-light); 
+            padding: 2rem; border-radius: 16px; cursor: pointer; transition: all 0.3s; 
+            background: rgba(255, 255, 255, 0.03); border: 2px solid var(--border-light); 
             margin-bottom: 1.5rem;
         }
         
         .option-card:hover { 
-            background: rgba(217, 137, 13, 0.1); 
-            transform: translateY(-5px); 
-            border-color: var(--gold-primary);
-            box-shadow: 0 10px 30px rgba(217,137,13,0.2);
+            background: rgba(217, 137, 13, 0.1); transform: translateY(-5px); 
+            border-color: var(--gold-primary); box-shadow: 0 10px 30px rgba(217,137,13,0.2);
         }
         
-        .option-card.selected { 
-            background: rgba(217, 137, 13, 0.2); 
-            border-color: var(--gold-primary); 
-            box-shadow: 0 0 30px rgba(217,137,13,0.3);
-        }
-        
-        .option-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .option-description {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
-        
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-        
-        @media(min-width: 768px) {
-            .grid-2 {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-        
-        .upload-zone { 
-            border: 2px dashed rgba(217, 137, 13, 0.5); 
-            border-radius: 16px; 
-            padding: 3rem; 
-            text-align: center; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            background: rgba(255, 255, 255, 0.02); 
-        }
-        
-        .upload-zone:hover { 
-            border-color: var(--gold-primary); 
-            background: rgba(217, 137, 13, 0.1); 
-        }
-        
-        .upload-zone i {
-            font-size: 4rem;
-            color: var(--gold-primary);
-            margin-bottom: 1rem;
-        }
-        
-        .file-preview { 
-            background: rgba(217, 137, 13, 0.15); 
-            border: 1px solid var(--gold-primary); 
-            padding: 1rem; 
-            border-radius: 12px; 
-            margin-top: 1rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-        
-        .progress-bar { 
-            width: 100%; 
-            height: 8px; 
-            background: rgba(255, 255, 255, 0.1); 
-            border-radius: 999px; 
-            overflow: hidden; 
-            margin-top: 1rem; 
-        }
-        
-        .progress-fill { 
-            height: 100%; 
-            background: linear-gradient(90deg, var(--gold-primary) 0%, var(--gold-hover) 100%); 
-            transition: width 0.3s; 
-        }
+        .option-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 12px; }
+        .option-description { color: var(--text-secondary); font-size: 0.95rem; }
         
         .success-message {
-            background: rgba(16, 185, 129, 0.1);
-            border: 2px solid var(--success);
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
+            background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success);
+            border-radius: 16px; padding: 2rem; text-align: center;
         }
         
-        .success-message i {
-            font-size: 4rem;
-            color: var(--success);
-            margin-bottom: 1rem;
-        }
-        
-        .success-message h2 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
-        .animate-in { 
-            animation: fadeIn 0.5s ease-out; 
-        }
-        
-        @keyframes spin { 
-            0% { transform: rotate(0deg); } 
-            100% { transform: rotate(360deg); } 
-        }
+        .success-message i { font-size: 4rem; color: var(--success); margin-bottom: 1rem; }
+        .success-message h2 { color: white; margin-bottom: 1rem; }
         
         .spinner { 
-            border: 4px solid rgba(217, 137, 13, 0.1); 
-            border-top: 4px solid var(--gold-primary); 
-            border-radius: 50%; 
-            width: 50px; 
-            height: 50px; 
-            animation: spin 1s linear infinite; 
-            margin: 2rem auto; 
+            border: 4px solid rgba(217, 137, 13, 0.1); border-top: 4px solid var(--gold-primary); 
+            border-radius: 50%; width: 50px; height: 50px; 
+            animation: spin 1s linear infinite; margin: 2rem auto; 
         }
         
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: rgba(217, 137, 13, 0.1);
-            border: 1px solid rgba(217, 137, 13, 0.3);
-            border-radius: 100px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--gold-primary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 1.5rem;
-        }
-        
-        .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border-left: 4px solid #3B82F6;
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 1.5rem 0;
-        }
-        
-        .info-box-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: #3B82F6;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
     </style>
 </head>
 <body>
@@ -371,46 +157,17 @@
     <script type="text/babel">
         const { useState } = React;
 
-        // ==================== GUIAS POR BANCO (mantido do original) ====================
-        const GUIAS_BANCOS = {
-            "Caixa": [
-                { passo: 1, texto: "Abra o app Habitação Caixa", imagem: null },
-                { passo: 2, texto: "Acesse \"Extrato de Financiamento\"", imagem: null },
-                { passo: 3, texto: "Role até encontrar \"Saldo Devedor\", \"Taxa de Juros\" e \"Prazo Restante\"", imagem: null },
-                { passo: 4, texto: "Tire um print da tela com essas informações visíveis", imagem: null }
-            ],
-            "Santander": [
-                { passo: 1, texto: "Abra o app Santander", imagem: null },
-                { passo: 2, texto: "Vá em \"Imóveis\" > \"Meu financiamento\"", imagem: null },
-                { passo: 3, texto: "Tire print da tela de resumo", imagem: null }
-            ],
-            // ... outros bancos
-        };
-
         function App() {
             const [step, setStep] = useState(1);
             const [formData, setFormData] = useState({
-                nome: '',
-                email: '',
-                whatsapp: '',
-                banco: '',
-                sistema: 'PRICE',
-                objetivo: 'economia',
-                saldoDevedor: 0,
-                taxaNominal: 0,
-                prazoRestante: 0,
-                valorParcelaAtual: 0,
-                valorFGTS: 0,
-                capacidadeExtra: 0,
-                taxaAdmin: 25,
-                seguroMensal: 50
+                nome: '', email: '', whatsapp: '', banco: '', sistema: 'PRICE',
+                objetivo: 'economia', saldoDevedor: 0, taxaNominal: 0, prazoRestante: 0,
+                valorParcelaAtual: 0, valorFGTS: 0, capacidadeExtra: 0, taxaAdmin: 25, seguroMensal: 50
             });
             const [uploading, setUploading] = useState(false);
             const [success, setSuccess] = useState(false);
 
-            const updateField = (field, value) => {
-                setFormData(prev => ({ ...prev, [field]: value }));
-            };
+            const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
             const handleSubmit = async () => {
                 setUploading(true);
@@ -439,7 +196,7 @@
                 };
 
                 try {
-                    const response = await fetch('https://ecofin-backend.railway.app/api/cliente', {
+                    const response = await fetch('https://ecofin-backend.railway.app/otimizar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -464,7 +221,6 @@
                     <div className="glass animate-in">
                         <img src="https://meuecofin.com.br/wp-content/uploads/2025/02/Branco-PNG-e1740599425113.png" alt="EcoFin" className="logo" />
                         
-                        {/* Step Indicator */}
                         <div className="step-indicator">
                             <div className={`step ${step >= 1 ? 'completed' : ''} ${step === 1 ? 'active' : ''}`}>1</div>
                             <div className={`step ${step >= 2 ? 'completed' : ''} ${step === 2 ? 'active' : ''}`}>2</div>
@@ -472,7 +228,6 @@
                             <div className={`step ${step >= 4 ? 'completed' : ''} ${step === 4 ? 'active' : ''}`}>4</div>
                         </div>
 
-                        {/* STEP 1: Informações Pessoais */}
                         {step === 1 && (
                             <div>
                                 <h1>Análise Gratuita</h1>
@@ -480,76 +235,44 @@
                                 
                                 <div className="input-group">
                                     <label className="input-label">Nome Completo *</label>
-                                    <input 
-                                        type="text" 
-                                        className="input-field" 
-                                        placeholder="Maria Silva"
-                                        value={formData.nome}
-                                        onChange={(e) => updateField('nome', e.target.value)}
-                                    />
+                                    <input type="text" className="input-field" placeholder="Maria Silva"
+                                        value={formData.nome} onChange={(e) => updateField('nome', e.target.value)} />
                                 </div>
 
                                 <div className="grid-2">
                                     <div className="input-group">
                                         <label className="input-label">Email</label>
-                                        <input 
-                                            type="email" 
-                                            className="input-field" 
-                                            placeholder="maria@email.com"
-                                            value={formData.email}
-                                            onChange={(e) => updateField('email', e.target.value)}
-                                        />
+                                        <input type="email" className="input-field" placeholder="maria@email.com"
+                                            value={formData.email} onChange={(e) => updateField('email', e.target.value)} />
                                     </div>
-
                                     <div className="input-group">
                                         <label className="input-label">WhatsApp *</label>
-                                        <input 
-                                            type="tel" 
-                                            className="input-field" 
-                                            placeholder="(83) 99999-9999"
-                                            value={formData.whatsapp}
-                                            onChange={(e) => updateField('whatsapp', e.target.value)}
-                                        />
+                                        <input type="tel" className="input-field" placeholder="(83) 99999-9999"
+                                            value={formData.whatsapp} onChange={(e) => updateField('whatsapp', e.target.value)} />
                                     </div>
                                 </div>
 
                                 <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem'}}>
                                     <button className="btn-secondary" disabled>← Voltar</button>
-                                    <button 
-                                        className="btn-primary" 
-                                        onClick={() => setStep(2)}
-                                        disabled={!formData.nome || !formData.whatsapp}
-                                    >
+                                    <button className="btn-primary" onClick={() => setStep(2)} 
+                                        disabled={!formData.nome || !formData.whatsapp}>
                                         Próximo <i className="ph-bold ph-arrow-right"></i>
                                     </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* STEP 2: Método de Entrada */}
                         {step === 2 && (
                             <div>
-                                <h1>Como você prefere enviar os dados?</h1>
-                                <p className="subtitle">Escolha a forma mais fácil para você</p>
-
-                                <div className="option-card" onClick={() => setStep(2.5)}>
-                                    <div className="option-title">
-                                        <i className="ph-duotone ph-camera" style={{fontSize: '2rem', color: 'var(--gold-primary)'}}></i>
-                                        Tirar Foto do App do Banco
-                                    </div>
-                                    <p className="option-description">
-                                        Recomendado • Mais rápido • Automático
-                                    </p>
-                                </div>
+                                <h1>Como você prefere enviar?</h1>
+                                <p className="subtitle">Escolha a forma mais fácil</p>
 
                                 <div className="option-card" onClick={() => setStep(3)}>
                                     <div className="option-title">
                                         <i className="ph-duotone ph-keyboard" style={{fontSize: '2rem', color: 'var(--gold-primary)'}}></i>
                                         Digitar Manualmente
                                     </div>
-                                    <p className="option-description">
-                                        Digite saldo devedor, taxa e prazo
-                                    </p>
+                                    <p className="option-description">Digite saldo devedor, taxa e prazo</p>
                                 </div>
 
                                 <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem'}}>
@@ -558,66 +281,6 @@
                             </div>
                         )}
 
-                        {/* STEP 2.5: Upload com Guia */}
-                        {step === 2.5 && (
-                            <div>
-                                <h1>Tire uma Foto do App</h1>
-                                <p className="subtitle">Vamos extrair os dados automaticamente</p>
-
-                                <div className="info-box">
-                                    <div className="info-box-title">
-                                        <i className="ph-fill ph-info"></i>
-                                        O que precisa aparecer na foto
-                                    </div>
-                                    <ul style={{marginLeft: '1.5rem', color: 'var(--text-secondary)'}}>
-                                        <li>Saldo Devedor</li>
-                                        <li>Taxa de Juros (% ao ano)</li>
-                                        <li>Prazo Restante (em meses ou anos)</li>
-                                    </ul>
-                                </div>
-
-                                <div className="upload-zone">
-                                    <i className="ph-duotone ph-upload-simple"></i>
-                                    <h3>Clique para enviar ou arraste aqui</h3>
-                                    <p style={{color: 'var(--text-secondary)', marginTop: '0.5rem'}}>PNG, JPG ou PDF</p>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*,.pdf" 
-                                        style={{display: 'none'}}
-                                        onChange={(e) => {
-                                            // Simular upload
-                                            setUploading(true);
-                                            setTimeout(() => {
-                                                setUploading(false);
-                                                // Preencher dados mock
-                                                updateField('saldoDevedor', 300000);
-                                                updateField('taxaNominal', 0.12);
-                                                updateField('prazoRestante', 420);
-                                                setStep(4);
-                                            }, 2000);
-                                        }}
-                                    />
-                                </div>
-
-                                {uploading && (
-                                    <div>
-                                        <div className="spinner"></div>
-                                        <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>
-                                            Extraindo dados da imagem...
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem'}}>
-                                    <button className="btn-secondary" onClick={() => setStep(2)}>← Voltar</button>
-                                    <button className="btn-primary" onClick={() => setStep(3)}>
-                                        Prefiro Digitar <i className="ph-bold ph-arrow-right"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* STEP 3: Entrada Manual */}
                         {step === 3 && (
                             <div>
                                 <h1>Dados do Financiamento</h1>
@@ -626,22 +289,13 @@
                                 <div className="grid-2">
                                     <div className="input-group">
                                         <label className="input-label">Banco</label>
-                                        <input 
-                                            type="text" 
-                                            className="input-field" 
-                                            placeholder="Caixa, Itaú, Santander..."
-                                            value={formData.banco}
-                                            onChange={(e) => updateField('banco', e.target.value)}
-                                        />
+                                        <input type="text" className="input-field" placeholder="Caixa, Itaú..."
+                                            value={formData.banco} onChange={(e) => updateField('banco', e.target.value)} />
                                     </div>
-
                                     <div className="input-group">
                                         <label className="input-label">Sistema *</label>
-                                        <select 
-                                            className="input-field"
-                                            value={formData.sistema}
-                                            onChange={(e) => updateField('sistema', e.target.value)}
-                                        >
+                                        <select className="input-field" value={formData.sistema}
+                                            onChange={(e) => updateField('sistema', e.target.value)}>
                                             <option value="PRICE">PRICE</option>
                                             <option value="SAC">SAC</option>
                                         </select>
@@ -651,120 +305,73 @@
                                 <div className="grid-2">
                                     <div className="input-group">
                                         <label className="input-label">Saldo Devedor (R$) *</label>
-                                        <input 
-                                            type="number" 
-                                            className="input-field" 
-                                            placeholder="300000"
-                                            value={formData.saldoDevedor || ''}
-                                            onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <input type="number" className="input-field" placeholder="300000"
+                                            value={formData.saldoDevedor || ''} 
+                                            onChange={(e) => updateField('saldoDevedor', parseFloat(e.target.value) || 0)} />
                                     </div>
-
                                     <div className="input-group">
                                         <label className="input-label">Taxa (% ao ano) *</label>
-                                        <input 
-                                            type="number" 
-                                            step="0.01" 
-                                            className="input-field" 
-                                            placeholder="12.00"
-                                            value={(formData.taxaNominal * 100) || ''}
-                                            onChange={(e) => updateField('taxaNominal', (parseFloat(e.target.value) || 0) / 100)}
-                                        />
+                                        <input type="number" step="0.01" className="input-field" placeholder="12.00"
+                                            value={(formData.taxaNominal * 100) || ''} 
+                                            onChange={(e) => updateField('taxaNominal', (parseFloat(e.target.value) || 0) / 100)} />
                                     </div>
                                 </div>
 
                                 <div className="grid-2">
                                     <div className="input-group">
                                         <label className="input-label">Prazo Restante (meses) *</label>
-                                        <input 
-                                            type="number" 
-                                            className="input-field" 
-                                            placeholder="420"
-                                            value={formData.prazoRestante || ''}
-                                            onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)}
-                                        />
+                                        <input type="number" className="input-field" placeholder="420"
+                                            value={formData.prazoRestante || ''} 
+                                            onChange={(e) => updateField('prazoRestante', parseInt(e.target.value) || 0)} />
                                     </div>
-
                                     <div className="input-group">
                                         <label className="input-label">Valor da Parcela (R$)</label>
-                                        <input 
-                                            type="number" 
-                                            className="input-field" 
-                                            placeholder="3500"
-                                            value={formData.valorParcelaAtual || ''}
-                                            onChange={(e) => updateField('valorParcelaAtual', parseFloat(e.target.value) || 0)}
-                                        />
+                                        <input type="number" className="input-field" placeholder="3500"
+                                            value={formData.valorParcelaAtual || ''} 
+                                            onChange={(e) => updateField('valorParcelaAtual', parseFloat(e.target.value) || 0)} />
                                     </div>
                                 </div>
 
                                 <div className="grid-2">
                                     <div className="input-group">
                                         <label className="input-label">Taxa Admin (R$/mês)</label>
-                                        <input 
-                                            type="number" 
-                                            step="0.01" 
-                                            className="input-field" 
-                                            placeholder="25"
-                                            value={formData.taxaAdmin || 25}
-                                            onChange={(e) => updateField('taxaAdmin', parseFloat(e.target.value) || 25)}
-                                        />
-                                        <small style={{color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block'}}>Padrão: R$ 25/mês</small>
+                                        <input type="number" step="0.01" className="input-field" placeholder="25"
+                                            value={formData.taxaAdmin || 25} 
+                                            onChange={(e) => updateField('taxaAdmin', parseFloat(e.target.value) || 25)} />
                                     </div>
-
                                     <div className="input-group">
                                         <label className="input-label">Seguro (R$/mês)</label>
-                                        <input 
-                                            type="number" 
-                                            step="0.01" 
-                                            className="input-field" 
-                                            placeholder="50"
-                                            value={formData.seguroMensal || 50}
-                                            onChange={(e) => updateField('seguroMensal', parseFloat(e.target.value) || 50)}
-                                        />
-                                        <small style={{color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block'}}>Padrão: R$ 50/mês</small>
+                                        <input type="number" step="0.01" className="input-field" placeholder="50"
+                                            value={formData.seguroMensal || 50} 
+                                            onChange={(e) => updateField('seguroMensal', parseFloat(e.target.value) || 50)} />
                                     </div>
                                 </div>
 
-                                <div style={{marginTop: '2rem'}}>
-                                    <label className="input-label">Informações Adicionais</label>
-                                    <div className="grid-2">
-                                        <div className="input-group">
-                                            <label style={{display: 'block', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Valor FGTS (R$)</label>
-                                            <input 
-                                                type="number" 
-                                                className="input-field" 
-                                                placeholder="30000"
-                                                value={formData.valorFGTS || ''}
-                                                onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)}
-                                            />
-                                        </div>
-                                        <div className="input-group">
-                                            <label style={{display: 'block', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '0.875rem'}}>Capacidade Extra (R$/mês)</label>
-                                            <input 
-                                                type="number" 
-                                                className="input-field" 
-                                                placeholder="1000"
-                                                value={formData.capacidadeExtra || ''}
-                                                onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)}
-                                            />
-                                        </div>
+                                <div className="grid-2" style={{marginTop: '1rem'}}>
+                                    <div className="input-group">
+                                        <label className="input-label">Valor FGTS (R$)</label>
+                                        <input type="number" className="input-field" placeholder="30000"
+                                            value={formData.valorFGTS || ''} 
+                                            onChange={(e) => updateField('valorFGTS', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Capacidade Extra (R$/mês)</label>
+                                        <input type="number" className="input-field" placeholder="1000"
+                                            value={formData.capacidadeExtra || ''} 
+                                            onChange={(e) => updateField('capacidadeExtra', parseFloat(e.target.value) || 0)} />
                                     </div>
                                 </div>
 
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-light)'}}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '2rem'}}>
                                     <button className="btn-secondary" onClick={() => setStep(2)}>← Voltar</button>
-                                    <button 
-                                        className="btn-primary" 
-                                        onClick={() => setStep(4)}
-                                        disabled={!formData.saldoDevedor || !formData.taxaNominal || !formData.prazoRestante}
-                                    >
+                                    <button className="btn-primary" onClick={() => setStep(4)}
+                                        disabled={!formData.saldoDevedor || !formData.taxaNominal || !formData.prazoRestante}>
                                         Continuar <i className="ph-bold ph-arrow-right"></i>
                                     </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* STEP 4: Confirmação e Envio */}
                         {step === 4 && !success && (
                             <div>
                                 <h1>Confirme seus dados</h1>
@@ -793,10 +400,6 @@
                                             <span style={{color: 'var(--text-secondary)'}}>Prazo:</span>
                                             <strong>{formData.prazoRestante} meses</strong>
                                         </div>
-                                        <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                            <span style={{color: 'var(--text-secondary)'}}>Sistema:</span>
-                                            <strong>{formData.sistema}</strong>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -811,15 +414,13 @@
                                     <div style={{display: 'flex', justifyContent: 'space-between'}}>
                                         <button className="btn-secondary" onClick={() => setStep(3)}>← Voltar</button>
                                         <button className="btn-primary" onClick={handleSubmit}>
-                                            <i className="ph-bold ph-check-circle"></i>
-                                            Enviar Análise
+                                            <i className="ph-bold ph-check-circle"></i> Enviar Análise
                                         </button>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* STEP 5: Sucesso */}
                         {step === 5 && success && (
                             <div className="success-message">
                                 <i className="ph-fill ph-check-circle"></i>
@@ -827,12 +428,9 @@
                                 <p style={{color: 'var(--text-secondary)', marginBottom: '2rem'}}>
                                     Em breve entraremos em contato com sua estratégia personalizada.
                                 </p>
-                                <button 
-                                    className="btn-primary" 
-                                    onClick={() => window.open('https://wa.me/5583991014456', '_blank')}
-                                >
-                                    <i className="ph-bold ph-whatsapp-logo"></i>
-                                    Falar no WhatsApp
+                                <button className="btn-primary" 
+                                    onClick={() => window.open('https://wa.me/5583991014456', '_blank')}>
+                                    <i className="ph-bold ph-whatsapp-logo"></i> Falar no WhatsApp
                                 </button>
                             </div>
                         )}

@@ -11,23 +11,42 @@
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 from datetime import datetime
 from decimal import Decimal
 import hashlib
+from sqlalchemy.orm import Session
 
 # Imports do motor
 from motor_ecofin import MotorEcoFin, ConfiguracaoFinanciamento, Recursos
 from otimizador import Otimizador
+
+# Imports do database
+from database import get_db, Cliente, ClienteRepository, init_db, testar_conexao
 
 app = FastAPI(
     title="EcoFin API",
     description="API para otimização de financiamentos imobiliários",
     version="4.1.0"
 )
+
+# ============================================
+# STARTUP EVENT
+# ============================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Inicializa banco de dados ao iniciar"""
+    print("🚀 Iniciando EcoFin API...")
+    
+    if testar_conexao():
+        init_db()
+        print("✅ Banco de dados pronto!")
+    else:
+        print("⚠️  Aviso: Banco de dados não conectado. Verifique DATABASE_URL.")
 
 # ============================================
 # CORS
@@ -85,52 +104,6 @@ class OtimizacaoRequest(BaseModel):
     financiamento: FinanciamentoData
     recursos: RecursosData
     objetivo: str = Field("economia")
-
-# ============================================
-# STORAGE SIMPLES
-# ============================================
-
-class Storage:
-    """Armazenamento em memória"""
-    
-    def __init__(self):
-        self.clientes = {}
-    
-    def criar_cliente(self, cliente_dict: Dict) -> str:
-        """Cria cliente e retorna ID"""
-        cliente_id = hashlib.md5(
-            f"{cliente_dict['nome']}{datetime.now().isoformat()}".encode()
-        ).hexdigest()[:12]
-        
-        cliente_dict['id'] = cliente_id
-        cliente_dict['data_criacao'] = datetime.now().isoformat()
-        
-        self.clientes[cliente_id] = cliente_dict
-        return cliente_id
-    
-    def obter_cliente(self, cliente_id: str) -> Optional[Dict]:
-        """Obtém cliente por ID"""
-        return self.clientes.get(cliente_id)
-    
-    def listar_clientes(self) -> List[Dict]:
-        """Lista todos os clientes"""
-        return list(self.clientes.values())
-    
-    def atualizar_cliente(self, cliente_id: str, dados: Dict) -> bool:
-        """Atualiza cliente"""
-        if cliente_id in self.clientes:
-            self.clientes[cliente_id].update(dados)
-            return True
-        return False
-    
-    def deletar_cliente(self, cliente_id: str) -> bool:
-        """Deleta cliente"""
-        if cliente_id in self.clientes:
-            del self.clientes[cliente_id]
-            return True
-        return False
-
-storage = Storage()
 
 # ============================================
 # FUNÇÕES AUXILIARES
@@ -217,22 +190,95 @@ async def health():
     }
 
 @app.post("/api/cliente", status_code=status.HTTP_201_CREATED)
-async def criar_cliente(cliente: ClienteCreate):
-    """Cria novo cliente e retorna análise"""
+async def criar_cliente(cliente: ClienteCreate, db: Session = Depends(get_db)):
+    """Cria novo cliente e calcula estratégia otimizada"""
     try:
-        # Converter para formato compatível
-        cliente_dict = achar_dados_cliente(cliente)
+        repo = ClienteRepository(db)
         
-        # Salvar
-        cliente_id = storage.criar_cliente(cliente_dict)
+        # Gerar ID único
+        cliente_id = hashlib.md5(
+            f"{cliente.nome}{datetime.now().isoformat()}".encode()
+        ).hexdigest()[:12]
+        
+        # Calcular estratégia otimizada
+        config = ConfiguracaoFinanciamento(
+            saldo_devedor=Decimal(str(cliente.financiamento.saldo_devedor)),
+            taxa_anual=Decimal(str(cliente.financiamento.taxa_nominal)),
+            prazo_meses=cliente.financiamento.prazo_restante,
+            sistema=cliente.financiamento.sistema,
+            tr_mensal=Decimal(str(cliente.financiamento.tr_mensal)),
+            seguro_mensal=Decimal(str(cliente.financiamento.seguro_mensal)),
+            taxa_admin_mensal=Decimal(str(cliente.financiamento.taxa_admin_mensal))
+        )
+        
+        recursos = Recursos(
+            valor_fgts=Decimal(str(cliente.recursos.valor_fgts)),
+            capacidade_extra_mensal=Decimal(str(cliente.recursos.capacidade_extra)),
+            tem_reserva_emergencia=cliente.recursos.tem_reserva_emergencia,
+            trabalha_clt=cliente.recursos.trabalha_clt
+        )
+        
+        motor = MotorEcoFin(config)
+        otimizador = Otimizador(motor, recursos)
+        estrategia = otimizador.otimizar(cliente.objetivo)
+        
+        # Preparar dados para salvar
+        cliente_data = {
+            'id': cliente_id,
+            'nome': cliente.nome,
+            'email': cliente.email,
+            'whatsapp': cliente.whatsapp,
+            'banco': cliente.banco,
+            'objetivo': cliente.objetivo,
+            
+            # Financiamento
+            'saldo_devedor': cliente.financiamento.saldo_devedor,
+            'taxa_nominal': cliente.financiamento.taxa_nominal,
+            'prazo_restante': cliente.financiamento.prazo_restante,
+            'sistema': cliente.financiamento.sistema,
+            'tr_mensal': cliente.financiamento.tr_mensal,
+            'seguro_mensal': cliente.financiamento.seguro_mensal,
+            'taxa_admin_mensal': cliente.financiamento.taxa_admin_mensal,
+            
+            # Recursos
+            'valor_fgts': cliente.recursos.valor_fgts,
+            'capacidade_extra': cliente.recursos.capacidade_extra,
+            'tem_reserva_emergencia': cliente.recursos.tem_reserva_emergencia,
+            'trabalha_clt': cliente.recursos.trabalha_clt,
+        }
+        
+        # Adicionar estratégia se encontrada
+        if estrategia:
+            cliente_data.update({
+                'fgts_usado': float(estrategia.fgts_usado),
+                'amortizacao_mensal': float(estrategia.amortizacao_mensal),
+                'duracao_amortizacao': estrategia.duracao_amortizacao,
+                'economia': float(estrategia.economia),
+                'reducao_prazo': estrategia.reducao_prazo,
+                'roi': float(estrategia.roi),
+                'viabilidade': estrategia.viabilidade,
+            })
+        
+        # Salvar no banco
+        cliente_salvo = repo.criar(cliente_data)
         
         return {
             "sucesso": True,
             "cliente_id": cliente_id,
-            "cliente": cliente_dict
+            "cliente": cliente_salvo.to_dict(),
+            "estrategia": {
+                'fgts_usado': float(estrategia.fgts_usado) if estrategia else 0,
+                'amortizacao_mensal': float(estrategia.amortizacao_mensal) if estrategia else 0,
+                'duracao_amortizacao': estrategia.duracao_amortizacao if estrategia else 0,
+                'economia': float(estrategia.economia) if estrategia else 0,
+                'reducao_prazo': estrategia.reducao_prazo if estrategia else 0,
+                'roi': float(estrategia.roi) if estrategia else 0,
+                'viabilidade': estrategia.viabilidade if estrategia else 'BAIXA',
+            } if estrategia else None
         }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao criar cliente: {str(e)}")
 
 @app.get("/api/clientes")
 async def listar_clientes():

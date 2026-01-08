@@ -172,6 +172,24 @@
             const handleSubmit = async () => {
                 setUploading(true);
                 
+                // Salvar dados no localStorage para o painel
+                localStorage.setItem('nome_cliente', formData.nome);
+                localStorage.setItem('saldo', formData.saldoDevedor);
+                localStorage.setItem('taxa', formData.taxaNominal);
+                localStorage.setItem('prazo', formData.prazoRestante / 12); // Converter meses para anos
+                localStorage.setItem('sistema', formData.sistema);
+                localStorage.setItem('fgts', formData.valorFGTS || 0);
+                localStorage.setItem('capacidade', formData.capacidadeExtra || 0);
+                localStorage.setItem('objetivo', formData.objetivo || 'economia');
+                localStorage.setItem('taxa_admin', formData.taxaAdmin || 25);
+                localStorage.setItem('seguro', formData.seguroMensal || 50);
+                
+                // Simular envio e redirecionar direto para painel
+                setTimeout(() => {
+                    window.location.href = 'painel.html';
+                }, 1000);
+                
+                /* CÓDIGO ORIGINAL COMENTADO - Descomentar se quiser enviar para API antes
                 const payload = {
                     nome: formData.nome,
                     email: formData.email || "",
@@ -214,6 +232,7 @@
                 }
                 
                 setUploading(false);
+                */
             };
 
             return (

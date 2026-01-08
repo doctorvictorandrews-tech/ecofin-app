@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
         :root {
@@ -725,9 +726,9 @@
                         <i class="ph-fill ph-check-circle"></i>
                         Análise Completa
                     </span>
-                    <button class="btn-outline" onclick="window.print()" style="padding: 10px 20px;">
-                        <i class="ph-bold ph-printer"></i>
-                        Imprimir
+                    <button class="btn-outline" onclick="gerarPDF()" style="padding: 10px 20px;">
+                        <i class="ph-bold ph-file-pdf"></i>
+                        Baixar PDF
                     </button>
                 </div>
             </div>
@@ -1154,6 +1155,309 @@
 
     <script>
         // ==================================================================================
+        // CONFIGURAÇÃO DA API
+        // ==================================================================================
+        
+        const API_URL = 'https://sua-api.railway.app'; // ← CONFIGURAR URL DO RAILWAY AQUI
+        
+        // ==================================================================================
+        // INTEGRAÇÃO COM API
+        // ==================================================================================
+        
+        async function carregarDadosAPI() {
+            try {
+                console.log('🔄 Carregando dados...');
+                
+                // Buscar dados do localStorage (salvos pelo index.html)
+                const dadosFormulario = {
+                    nome_cliente: localStorage.getItem('nome_cliente') || 'Cliente',
+                    saldo_devedor: parseFloat(localStorage.getItem('saldo')) || 300000,
+                    taxa_anual: parseFloat(localStorage.getItem('taxa')) / 100 || 0.12,
+                    prazo_meses: parseInt(localStorage.getItem('prazo')) * 12 || 420,
+                    sistema: localStorage.getItem('sistema') || 'PRICE',
+                    valor_fgts: parseFloat(localStorage.getItem('fgts')) || 0,
+                    capacidade_extra_mensal: parseFloat(localStorage.getItem('capacidade')) || 0,
+                    objetivo: localStorage.getItem('objetivo') || 'economia',
+                    taxa_admin_mensal: parseFloat(localStorage.getItem('taxa_admin')) || 25,
+                    seguro_mensal: parseFloat(localStorage.getItem('seguro')) || 50,
+                    tr_mensal: 0.0015
+                };
+                
+                console.log('📊 Dados do formulário:', dadosFormulario);
+                
+                // Tentar buscar da API
+                const response = await fetch(`${API_URL}/otimizar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dadosFormulario)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+                
+                const dadosAPI = await response.json();
+                console.log('✅ Dados recebidos da API:', dadosAPI);
+                
+                // Retornar dados formatados
+                return {
+                    cliente: {
+                        nome: dadosFormulario.nome_cliente
+                    },
+                    financiamento: {
+                        sistema: dadosFormulario.sistema,
+                        saldo_devedor: dadosFormulario.saldo_devedor,
+                        taxa_anual: dadosFormulario.taxa_anual,
+                        prazo_meses: dadosFormulario.prazo_meses,
+                        taxa_admin_mensal: dadosFormulario.taxa_admin_mensal,
+                        seguro_mensal: dadosFormulario.seguro_mensal
+                    },
+                    recursos: {
+                        valor_fgts: dadosFormulario.valor_fgts,
+                        capacidade_extra_mensal: dadosFormulario.capacidade_extra_mensal
+                    },
+                    estrategia_otima: dadosAPI.estrategia_otima || dadosAPI.melhor_estrategia,
+                    cenario_original: dadosAPI.cenario_original || dadosAPI.estrategia_original,
+                    top_cenarios: dadosAPI.top_cenarios || [dadosAPI.estrategia_otima]
+                };
+                
+            } catch (error) {
+                console.warn('⚠️ Erro ao conectar com API:', error);
+                console.log('💾 Usando cálculo local como fallback');
+                
+                // Fallback: calcular localmente
+                const dadosLocal = {
+                    nome_cliente: localStorage.getItem('nome_cliente') || 'Cliente',
+                    saldo_devedor: parseFloat(localStorage.getItem('saldo')) || 300000,
+                    taxa_anual: parseFloat(localStorage.getItem('taxa')) / 100 || 0.12,
+                    prazo_meses: parseInt(localStorage.getItem('prazo')) * 12 || 420,
+                    sistema: localStorage.getItem('sistema') || 'PRICE',
+                    valor_fgts: parseFloat(localStorage.getItem('fgts')) || 0,
+                    capacidade_extra_mensal: parseFloat(localStorage.getItem('capacidade')) || 0,
+                    taxa_admin_mensal: 25,
+                    seguro_mensal: 50
+                };
+                
+                return calcularLocalmente(dadosLocal);
+            }
+        }
+        
+        function calcularLocalmente(dados) {
+            console.log('💻 Calculando localmente...');
+            
+            const motor = new MotorCalculoCompleto({
+                sistema: dados.sistema,
+                saldoDevedor: dados.saldo_devedor,
+                taxaNominal: dados.taxa_anual,
+                prazoRestante: dados.prazo_meses,
+                taxaAdm: dados.taxa_admin_mensal,
+                seguroMensal: dados.seguro_mensal
+            });
+
+            const recursos = {
+                valorFGTS: dados.valor_fgts,
+                capacidadeExtra: dados.capacidade_extra_mensal
+            };
+
+            // Cenário original
+            const estrategiaOriginal = motor.simularCompleto(0, 0);
+            
+            // Encontrar melhor estratégia
+            const estrategiaOtima = motor.encontrarEstrategiaOtima(recursos, 'economia');
+            const topCenarios = motor.getTopCenarios(recursos, 'economia', 3);
+
+            console.log('✅ Cálculo local concluído');
+
+            return {
+                cliente: {
+                    nome: dados.nome_cliente
+                },
+                financiamento: {
+                    sistema: dados.sistema,
+                    saldo_devedor: dados.saldo_devedor,
+                    taxa_anual: dados.taxa_anual,
+                    prazo_meses: dados.prazo_meses,
+                    taxa_admin_mensal: dados.taxa_admin_mensal,
+                    seguro_mensal: dados.seguro_mensal
+                },
+                recursos: {
+                    valor_fgts: dados.valor_fgts,
+                    capacidade_extra_mensal: dados.capacidade_extra_mensal
+                },
+                estrategia_otima: estrategiaOtima,
+                cenario_original: estrategiaOriginal,
+                top_cenarios: topCenarios
+            };
+        }
+        
+        // ==================================================================================
+        // GERAÇÃO DE PDF
+        // ==================================================================================
+        
+        async function gerarPDF() {
+            console.log('📄 Gerando PDF...');
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Configurações
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 20;
+            let yPos = margin;
+
+            // Helper: adicionar texto
+            const addText = (text, size = 12, isBold = false) => {
+                pdf.setFontSize(size);
+                pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+                pdf.text(text, margin, yPos);
+                yPos += size * 0.5;
+            };
+
+            // Helper: verificar se precisa de nova página
+            const checkNewPage = (space = 20) => {
+                if (yPos + space > pageHeight - margin) {
+                    pdf.addPage();
+                    yPos = margin;
+                    return true;
+                }
+                return false;
+            };
+
+            // ========== CAPA ==========
+            pdf.setFillColor(217, 137, 13); // Dourado
+            pdf.rect(0, 0, pageWidth, 60, 'F');
+            
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(28);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('EcoFin', margin, 30);
+            
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Análise Estratégica Personalizada', margin, 45);
+            
+            pdf.setTextColor(0, 0, 0);
+            yPos = 80;
+            
+            // Cliente
+            const nomeCliente = document.getElementById('clientName').textContent;
+            addText(`Cliente: ${nomeCliente}`, 14, true);
+            yPos += 5;
+            
+            // Data
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            addText(`Data: ${dataHoje}`, 12);
+            yPos += 10;
+
+            // ========== MÉTRICAS PRINCIPAIS ==========
+            checkNewPage();
+            pdf.setFillColor(240, 240, 240);
+            pdf.rect(margin, yPos, pageWidth - 2*margin, 50, 'F');
+            yPos += 10;
+            
+            addText('Resultado da Otimização', 16, true);
+            yPos += 5;
+            
+            addText('Economia Total: ' + document.getElementById('economiaTotal').textContent, 12);
+            addText('Redução de Prazo: ' + document.getElementById('reducaoPrazo').textContent, 12);
+            addText('ROI: ' + document.getElementById('roiEstrategia').textContent, 12);
+            addText('Viabilidade: ' + document.getElementById('viabilidade').textContent, 12);
+            
+            yPos += 15;
+
+            // ========== DADOS DO FINANCIAMENTO ==========
+            checkNewPage();
+            addText('Dados do Financiamento', 16, true);
+            yPos += 5;
+            
+            addText(`Sistema: ${document.getElementById('sistemaBadge').textContent}`, 11);
+            addText(`Saldo Devedor: ${document.getElementById('saldoDevedor').textContent}`, 11);
+            addText(`Taxa: ${document.getElementById('taxaJuros').textContent}`, 11);
+            addText(`Prazo: ${document.getElementById('prazoOriginal').textContent}`, 11);
+            
+            yPos += 10;
+
+            // ========== ESTRATÉGIA RECOMENDADA ==========
+            checkNewPage();
+            addText('Estratégia Recomendada', 16, true);
+            yPos += 5;
+            
+            addText(`FGTS a usar: ${document.getElementById('fgtsUsar').textContent}`, 11);
+            addText(`Amortização mensal: ${document.getElementById('amortMensal').textContent}`, 11);
+            addText(`Duração: ${document.getElementById('duracao').textContent}`, 11);
+            
+            yPos += 10;
+
+            // ========== COMPARATIVO ==========
+            checkNewPage();
+            addText('Comparativo de Custos', 16, true);
+            yPos += 5;
+            
+            addText(`Sem estratégia: ${document.getElementById('semEstrategia').textContent}`, 11);
+            addText(`Com EcoFin: ${document.getElementById('comEstrategia').textContent}`, 11);
+            
+            pdf.setTextColor(16, 185, 129); // Verde
+            pdf.setFontSize(14);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(`Economia: ${document.getElementById('economiaDestaque').textContent}`, margin, yPos);
+            yPos += 10;
+            pdf.setTextColor(0, 0, 0);
+            
+            yPos += 10;
+
+            // ========== TIMELINE ==========
+            pdf.addPage();
+            yPos = margin;
+            addText('Plano de Ação', 16, true);
+            yPos += 10;
+            
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                checkNewPage(35);
+                
+                const titulo = item.querySelector('.timeline-title').textContent;
+                const desc = item.querySelector('.timeline-description').textContent;
+                
+                // Marcador
+                pdf.setFillColor(217, 137, 13);
+                pdf.circle(margin - 5, yPos + 3, 3, 'F');
+                
+                addText(titulo, 12, true);
+                
+                // Descrição (com quebra de linha)
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                const lines = pdf.splitTextToSize(desc, pageWidth - 2*margin - 10);
+                pdf.text(lines, margin + 5, yPos);
+                yPos += lines.length * 5 + 12;
+            });
+
+            // ========== RODAPÉ EM TODAS AS PÁGINAS ==========
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                pdf.setPage(i);
+                pdf.setFontSize(10);
+                pdf.setTextColor(150, 150, 150);
+                pdf.text(
+                    `Página ${i} de ${totalPages}`, 
+                    pageWidth / 2, 
+                    pageHeight - 10, 
+                    { align: 'center' }
+                );
+                pdf.text('EcoFin | Inteligência Financeira', margin, pageHeight - 10);
+            }
+
+            // ========== SALVAR ==========
+            const nomeArquivo = `EcoFin_Analise_${nomeCliente.replace(/\s/g, '_')}_${dataHoje.replace(/\//g, '-')}.pdf`;
+            pdf.save(nomeArquivo);
+            
+            console.log('✅ PDF gerado:', nomeArquivo);
+        }
+        
+        // ==================================================================================
         // MOTOR DE CÁLCULO
         // ==================================================================================
         
@@ -1349,99 +1653,153 @@
         // ==================================================================================
         // DADOS DO CLIENTE (MOCK - substituir por dados reais da API/localStorage)
         // ==================================================================================
-        
-        const dadosCliente = {
-            nome: 'Thalita Silva',
-            sistema: 'PRICE',
-            saldoDevedor: 300000,
-            taxaNominal: 0.12,
-            prazoRestante: 420,
-            taxaAdm: 25,
-            seguroMensal: 50,
-            valorFGTS: 30000,
-            capacidadeExtra: 1000,
-            objetivo: 'economia'
-        };
-
-        // ==================================================================================
         // INICIALIZAÇÃO
         // ==================================================================================
         
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                inicializarDashboard();
-            }, 1500);
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                console.log('🚀 Inicializando dashboard...');
+                
+                // Carregar dados da API ou localStorage
+                const dados = await carregarDadosAPI();
+                
+                // Inicializar dashboard
+                inicializarDashboard(dados);
+                
+            } catch (error) {
+                console.error('❌ Erro fatal:', error);
+                mostrarErro(error.message);
+            }
         });
 
-        function inicializarDashboard() {
-            const motor = new MotorCalculoCompleto(dadosCliente);
-            const recursos = {
-                valorFGTS: dadosCliente.valorFGTS,
-                capacidadeExtra: dadosCliente.capacidadeExtra
-            };
-
-            const estrategiaOtima = motor.encontrarEstrategiaOtima(recursos, dadosCliente.objetivo);
-            const estrategiaOriginal = motor.simularCompleto(0, 0);
-            const topCenarios = motor.getTopCenarios(recursos, dadosCliente.objetivo, 3);
-
+        function inicializarDashboard(dados) {
+            console.log('🎨 Preenchendo dashboard...');
+            
             // Ocultar loading
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
 
             // Preencher dados
-            preencherVisaoGeral(dadosCliente, estrategiaOtima, estrategiaOriginal, recursos);
-            preencherEstrategia(estrategiaOtima, dadosCliente);
-            preencherCenarios(topCenarios, estrategiaOriginal, recursos);
-            preencherTabela(estrategiaOtima.detalhes);
-            criarGraficos(estrategiaOtima.detalhes, estrategiaOriginal.detalhes);
+            preencherVisaoGeral(dados);
+            preencherEstrategia(dados);
+            preencherCenarios(dados);
+            preencherTabela(dados.estrategia_otima.detalhes);
+            criarGraficos(dados.estrategia_otima.detalhes, dados.cenario_original.detalhes);
+            
+            console.log('✅ Dashboard inicializado com sucesso!');
+        }
+        
+        function mostrarErro(mensagem) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'flex';
+            document.getElementById('errorMessage').textContent = mensagem;
+        }
         }
 
         // ==================================================================================
         // PREENCHIMENTO DE DADOS
         // ==================================================================================
         
-        function preencherVisaoGeral(cliente, otima, original, recursos) {
+        function preencherVisaoGeral(dados) {
             const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
+            
+            const cliente = dados.cliente;
+            const financiamento = dados.financiamento;
+            const otima = dados.estrategia_otima;
+            const original = dados.cenario_original;
+            const recursos = dados.recursos;
             
             // Nome do cliente
             document.getElementById('clientName').textContent = cliente.nome;
             
             // Hero metrics
             document.getElementById('economiaTotal').textContent = fmt(otima.economia);
-            document.getElementById('reducaoPrazo').textContent = `${otima.reducaoPrazo} meses`;
+            document.getElementById('reducaoPrazo').textContent = `${otima.reducaoPrazo || otima.reducao_prazo} meses`;
             document.getElementById('roiEstrategia').textContent = `${otima.roi.toFixed(1)}x`;
             document.getElementById('viabilidade').textContent = otima.viabilidade;
             
             // Dados do financiamento
-            document.getElementById('sistemaBadge').textContent = cliente.sistema;
-            document.getElementById('saldoDevedor').textContent = fmt(cliente.saldoDevedor);
-            document.getElementById('taxaJuros').textContent = `${(cliente.taxaNominal * 100).toFixed(2)}% a.a.`;
-            document.getElementById('prazoOriginal').textContent = `${cliente.prazoRestante} meses (${(cliente.prazoRestante/12).toFixed(1)} anos)`;
-            document.getElementById('taxaAdmin').textContent = fmt(cliente.taxaAdm) + '/mês';
-            document.getElementById('seguro').textContent = fmt(cliente.seguroMensal) + '/mês';
+            document.getElementById('sistemaBadge').textContent = financiamento.sistema;
+            document.getElementById('saldoDevedor').textContent = fmt(financiamento.saldo_devedor);
+            document.getElementById('taxaJuros').textContent = `${(financiamento.taxa_anual * 100).toFixed(2)}% a.a.`;
+            document.getElementById('prazoOriginal').textContent = `${financiamento.prazo_meses} meses (${(financiamento.prazo_meses/12).toFixed(1)} anos)`;
+            document.getElementById('taxaAdmin').textContent = fmt(financiamento.taxa_admin_mensal) + '/mês';
+            document.getElementById('seguro').textContent = fmt(financiamento.seguro_mensal) + '/mês';
             
             // Comparativo
-            document.getElementById('semEstrategia').textContent = fmt(original.totalPago);
-            document.getElementById('comEstrategia').textContent = fmt(otima.totalPago);
+            document.getElementById('semEstrategia').textContent = fmt(original.totalPago || original.total_pago);
+            document.getElementById('comEstrategia').textContent = fmt(otima.totalPago || otima.total_pago);
             document.getElementById('economiaDestaque').textContent = fmt(otima.economia);
             
             // Barras animadas
             setTimeout(() => {
                 document.getElementById('barSemEstrategia').style.width = '100%';
-                const percentEcofin = (otima.totalPago / original.totalPago) * 100;
+                const totalPagoOriginal = original.totalPago || original.total_pago;
+                const totalPagoOtima = otima.totalPago || otima.total_pago;
+                const percentEcofin = (totalPagoOtima / totalPagoOriginal) * 100;
                 document.getElementById('barComEstrategia').style.width = percentEcofin + '%';
             }, 300);
             
             // Resumo estratégia
-            document.getElementById('fgtsUsar').textContent = fmt(otima.fgtsUsado);
-            document.getElementById('fgtsPercentual').textContent = `${((otima.fgtsUsado / recursos.valorFGTS) * 100).toFixed(0)}% do disponível`;
-            document.getElementById('amortMensal').textContent = fmt(otima.amortMensal);
-            document.getElementById('amortPercentual').textContent = `${((otima.amortMensal / recursos.capacidadeExtra) * 100).toFixed(0)}% da capacidade`;
-            document.getElementById('duracao').textContent = `${otima.duracao} meses`;
-            document.getElementById('duracaoAnos').textContent = `${(otima.duracao/12).toFixed(1)} anos`;
+            const fgtsUsado = otima.fgtsUsado || otima.fgts_usado;
+            const amortMensal = otima.amortMensal || otima.amortizacao_mensal;
+            const duracao = otima.duracao || otima.duracao_amortizacao;
+            
+            document.getElementById('fgtsUsar').textContent = fmt(fgtsUsado);
+            document.getElementById('fgtsPercentual').textContent = `${((fgtsUsado / recursos.valor_fgts) * 100).toFixed(0)}% do disponível`;
+            document.getElementById('amortMensal').textContent = fmt(amortMensal);
+            document.getElementById('amortPercentual').textContent = `${((amortMensal / recursos.capacidade_extra_mensal) * 100).toFixed(0)}% da capacidade`;
+            document.getElementById('duracao').textContent = `${duracao} meses`;
+            document.getElementById('duracaoAnos').textContent = `${(duracao/12).toFixed(1)} anos`;
         }
 
-        function preencherEstrategia(otima, cliente) {
+        function preencherEstrategia(dados) {
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
+            
+            const otima = dados.estrategia_otima;
+            const financiamento = dados.financiamento;
+            
+            const fgtsUsado = otima.fgtsUsado || otima.fgts_usado;
+            const amortMensal = otima.amortMensal || otima.amortizacao_mensal;
+            const duracao = otima.duracao || otima.duracao_amortizacao;
+            const prazoMeses = otima.prazoMeses || otima.prazo_meses;
+            
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            
+            const items = [
+                {
+                    titulo: '1. Usar FGTS Agora',
+                    descricao: `Aplique ${fmt(fgtsUsado)} do seu FGTS imediatamente para reduzir o saldo devedor. Isso diminuirá drasticamente os juros futuros. O saldo cairá de ${fmt(financiamento.saldo_devedor)} para ${fmt(financiamento.saldo_devedor - fgtsUsado)}.`
+                },
+                {
+                    titulo: `2. Amortizar ${fmt(amortMensal)}/mês por ${(duracao/12).toFixed(1)} anos`,
+                    descricao: `Durante os próximos ${duracao} meses (${(duracao/12).toFixed(1)} anos), faça pagamentos extras de ${fmt(amortMensal)} mensalmente. Isso acelera a quitação e reduz juros compostos.`
+                },
+                {
+                    titulo: '3. Solicitar Redução de Prazo',
+                    descricao: `Sempre que amortizar, solicite ao banco a redução do prazo (não da parcela). Isso maximiza a economia de juros no longo prazo.`
+                },
+                {
+                    titulo: '4. Monitorar Evolução',
+                    descricao: `Acompanhe mensalmente o saldo devedor pelo app do banco. Compare com a projeção fornecida neste relatório. Ajuste a estratégia se sua situação financeira mudar.`
+                },
+                {
+                    titulo: `5. Quitação Total em ${prazoMeses} meses`,
+                    descricao: `Seguindo esta estratégia, você quitará em ${prazoMeses} meses (${(prazoMeses/12).toFixed(1)} anos), economizando ${fmt(otima.economia)} em relação ao plano original de ${financiamento.prazo_meses} meses.`
+                }
+            ];
+            
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'timeline-item';
+                div.innerHTML = `
+                    <div class="timeline-title">${item.titulo}</div>
+                    <div class="timeline-description">${item.descricao}</div>
+                `;
+                timeline.appendChild(div);
+            });
+        }
             const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
             
             const timeline = document.getElementById('timeline');
@@ -1481,7 +1839,57 @@
             });
         }
 
-        function preencherCenarios(cenarios, original, recursos) {
+        function preencherCenarios(dados) {
+            const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
+            
+            const cenarios = dados.top_cenarios || [dados.estrategia_otima];
+            const recursos = dados.recursos;
+            
+            const container = document.getElementById('scenarioCards');
+            container.innerHTML = '';
+            
+            cenarios.forEach((cenario, index) => {
+                const isRecommended = index === 0;
+                
+                const fgtsUsado = cenario.fgtsUsado || cenario.fgts_usado;
+                const amortMensal = cenario.amortMensal || cenario.amortizacao_mensal;
+                const duracao = cenario.duracao || cenario.duracao_amortizacao;
+                const reducaoPrazo = cenario.reducaoPrazo || cenario.reducao_prazo;
+                
+                const div = document.createElement('div');
+                div.className = `scenario-card ${isRecommended ? 'recommended' : ''}`;
+                div.innerHTML = `
+                    <div class="scenario-header">
+                        <div class="scenario-title">${isRecommended ? '🏆 Recomendado' : `Opção ${index + 1}`}</div>
+                        <div class="scenario-rank">#${index + 1}</div>
+                    </div>
+                    <div class="scenario-details">
+                        <strong>FGTS:</strong> ${fmt(fgtsUsado)} (${((fgtsUsado / recursos.valor_fgts) * 100).toFixed(0)}%)<br>
+                        <strong>Amort:</strong> ${fmt(amortMensal)}/mês por ${duracao} meses<br>
+                        <strong>Viabilidade:</strong> ${cenario.viabilidade}
+                    </div>
+                    <div class="scenario-metrics">
+                        <div class="scenario-metric">
+                            <div class="scenario-metric-label">Economia</div>
+                            <div class="scenario-metric-value" style="color: var(--success);">${fmt(cenario.economia)}</div>
+                        </div>
+                        <div class="scenario-metric">
+                            <div class="scenario-metric-label">Redução</div>
+                            <div class="scenario-metric-value" style="color: var(--warning);">${reducaoPrazo}m</div>
+                        </div>
+                        <div class="scenario-metric">
+                            <div class="scenario-metric-label">ROI</div>
+                            <div class="scenario-metric-value" style="color: var(--gold-primary);">${cenario.roi.toFixed(1)}x</div>
+                        </div>
+                        <div class="scenario-metric">
+                            <div class="scenario-metric-label">Investimento</div>
+                            <div class="scenario-metric-value">${fmt(cenario.investimentoTotal || cenario.investimento_total)}</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
             const fmt = (v) => new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', maximumFractionDigits: 0}).format(v);
             const container = document.getElementById('scenarioCards');
             container.innerHTML = '';

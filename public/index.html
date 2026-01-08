@@ -172,11 +172,57 @@
             const handleSubmit = async () => {
                 setUploading(true);
                 
+                // Preparar payload para envio
+                const payload = {
+                    nome: formData.nome,
+                    email: formData.email || "",
+                    whatsapp: formData.whatsapp,
+                    banco: formData.banco || "Não informado",
+                    objetivo: formData.objetivo || "economia",
+                    financiamento: {
+                        saldo_devedor: parseFloat(formData.saldoDevedor) || 0,
+                        taxa_nominal: parseFloat(formData.taxaNominal) || 0,
+                        prazo_restante: parseInt(formData.prazoRestante) || 0,
+                        sistema: formData.sistema || "PRICE",
+                        tr_mensal: 0.0015,
+                        seguro_mensal: parseFloat(formData.seguroMensal) || 50,
+                        taxa_admin_mensal: parseFloat(formData.taxaAdmin) || 25
+                    },
+                    recursos: {
+                        valor_fgts: parseFloat(formData.valorFGTS) || 0,
+                        capacidade_extra: parseFloat(formData.capacidadeExtra) || 0,
+                        tem_reserva_emergencia: true,
+                        trabalha_clt: true
+                    }
+                };
+
+                try {
+                    // Enviar para API (ou webhook, email, etc)
+                    const response = await fetch('https://ecofin-api-production.up.railway.app/lead', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    // Mostrar sucesso independente da resposta da API
+                    setSuccess(true);
+                    setStep(5);
+                    setUploading(false);
+                    
+                } catch (error) {
+                    console.error('Erro ao enviar:', error);
+                    // Mesmo com erro, mostrar sucesso para o cliente
+                    setSuccess(true);
+                    setStep(5);
+                    setUploading(false);
+                }
+                
+                /* CÓDIGO ANTIGO COMENTADO - Redirecionamento direto para painel
                 // Salvar dados no localStorage para o painel
                 localStorage.setItem('nome_cliente', formData.nome);
                 localStorage.setItem('saldo', formData.saldoDevedor);
                 localStorage.setItem('taxa', formData.taxaNominal);
-                localStorage.setItem('prazo', formData.prazoRestante / 12); // Converter meses para anos
+                localStorage.setItem('prazo', formData.prazoRestante / 12);
                 localStorage.setItem('sistema', formData.sistema);
                 localStorage.setItem('fgts', formData.valorFGTS || 0);
                 localStorage.setItem('capacidade', formData.capacidadeExtra || 0);
@@ -184,12 +230,12 @@
                 localStorage.setItem('taxa_admin', formData.taxaAdmin || 25);
                 localStorage.setItem('seguro', formData.seguroMensal || 50);
                 
-                // Simular envio e redirecionar direto para painel
                 setTimeout(() => {
                     window.location.href = 'painel.html';
                 }, 1000);
+                */
                 
-                /* CÓDIGO ORIGINAL COMENTADO - Descomentar se quiser enviar para API antes
+                /* CÓDIGO ORIGINAL COMENTADO
                 const payload = {
                     nome: formData.nome,
                     email: formData.email || "",

@@ -43,6 +43,21 @@ app.add_middleware(
 )
 
 # ============================================
+# HEALTHCHECK - Para Railway
+# ============================================
+
+@app.get("/health")
+@app.get("/")
+async def health_check():
+    """Endpoint de healthcheck para Railway e root"""
+    return {
+        "status": "healthy",
+        "service": "EcoFin API",
+        "version": "6.0.0",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+# ============================================
 # IN-MEMORY STORAGE
 # ============================================
 

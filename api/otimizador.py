@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 from decimal import Decimal
 from dataclasses import dataclass, field
 import math
-from motor_ecofin_v5_corrigido import MotorEcoFin, ConfiguracaoFinanciamento, Recursos
+from motor_ecofin import MotorEcoFin, ConfiguracaoFinanciamento, Recursos
 
 @dataclass
 class EstrategiaCompleta:

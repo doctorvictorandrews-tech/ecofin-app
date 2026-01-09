@@ -36,7 +36,6 @@
             min-height: 100vh;
         }
 
-        /* Background Effects */
         .bg-animation {
             position: fixed;
             width: 100vw;
@@ -76,7 +75,6 @@
             75% { transform: translate(-80px, 80px) scale(1.08); }
         }
 
-        /* Header */
         .header {
             background: rgba(15, 15, 15, 0.9);
             backdrop-filter: blur(20px);
@@ -148,14 +146,12 @@
             border-color: var(--gold);
         }
 
-        /* Container */
         .container {
             max-width: 1600px;
             margin: 0 auto;
             padding: 30px;
         }
 
-        /* Stats Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -217,7 +213,6 @@
             gap: 4px;
         }
 
-        /* Filters */
         .filters {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -281,7 +276,6 @@
             border-color: var(--gold);
         }
 
-        /* Clients Grid */
         .clients-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -442,7 +436,6 @@
             color: white;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -511,7 +504,6 @@
             justify-content: flex-end;
         }
 
-        /* Loading */
         .loading {
             text-align: center;
             padding: 60px 20px;
@@ -528,7 +520,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -549,7 +540,6 @@
             color: var(--text-secondary);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -605,7 +595,6 @@
     </div>
 
     <div class="container">
-        <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
@@ -664,7 +653,6 @@
             </div>
         </div>
 
-        <!-- Filters -->
         <div class="filters">
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Buscar por nome ou email...">
@@ -688,18 +676,13 @@
             </div>
         </div>
 
-        <!-- Loading State -->
         <div id="loading" class="loading">
             <i class="fas fa-spinner"></i>
             <p>Carregando dados...</p>
         </div>
 
-        <!-- Clients Grid -->
-        <div id="clientsGrid" class="clients-grid" style="display: none;">
-            <!-- Cards serão inseridos via JavaScript -->
-        </div>
+        <div id="clientsGrid" class="clients-grid" style="display: none;"></div>
 
-        <!-- Empty State -->
         <div id="emptyState" class="empty-state" style="display: none;">
             <i class="fas fa-folder-open"></i>
             <h3>Nenhum lead encontrado</h3>
@@ -707,7 +690,6 @@
         </div>
     </div>
 
-    <!-- Modal de Exclusão -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -728,14 +710,12 @@
     </div>
 
     <script>
-        const API_URL = 'ecofin-app-production.up.railway.app'; // Atualizar para URL do Railway
+        const API_URL = 'https://ecofin-app-production.up.railway.app';
         let todosClientes = [];
         let clienteParaExcluir = null;
 
-        // Carregar dados ao iniciar
         window.addEventListener('DOMContentLoaded', carregarDados);
 
-        // Event listeners para filtros
         document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
         document.getElementById('statusFilter').addEventListener('change', aplicarFiltros);
         document.getElementById('sortFilter').addEventListener('change', aplicarFiltros);
@@ -753,7 +733,6 @@
                 atualizarStats();
                 renderizarClientes(todosClientes);
                 
-                // Ocultar loading
                 document.getElementById('loading').style.display = 'none';
                 
                 if (todosClientes.length === 0) {
@@ -776,7 +755,6 @@
             const pendentes = todosClientes.filter(c => c.status === 'pendente').length;
             const concluidos = todosClientes.filter(c => c.status === 'concluido').length;
             
-            // Calcular economia total
             let economiaTotal = 0;
             todosClientes.forEach(cliente => {
                 if (cliente.analise_otimizada?.melhor_geral?.economia_total) {
@@ -866,7 +844,6 @@
 
             let filtrados = [...todosClientes];
 
-            // Filtrar por busca
             if (searchTerm) {
                 filtrados = filtrados.filter(c => 
                     c.nome.toLowerCase().includes(searchTerm) ||
@@ -874,12 +851,10 @@
                 );
             }
 
-            // Filtrar por status
             if (statusFilter) {
                 filtrados = filtrados.filter(c => c.status === statusFilter);
             }
 
-            // Ordenar
             switch(sortFilter) {
                 case 'recent':
                     filtrados.sort((a, b) => new Date(b.data_cadastro) - new Date(a.data_cadastro));
@@ -906,7 +881,6 @@
             window.location.href = `/dashboard?id=${clienteId}`;
         }
 
-        // CORREÇÃO: Função atualizada com event.stopPropagation()
         function abrirModalExclusao(clienteId, event) {
             if (event) {
                 event.stopPropagation();
@@ -933,16 +907,13 @@
                     throw new Error('Erro ao excluir lead');
                 }
 
-                // Remover cliente da lista
                 todosClientes = todosClientes.filter(c => c.id !== clienteParaExcluir);
                 
-                // Atualizar interface
                 atualizarStats();
                 aplicarFiltros();
                 
                 fecharModal();
                 
-                // Feedback visual
                 alert('Lead excluído com sucesso!');
 
             } catch (error) {
@@ -965,14 +936,12 @@
             }).format(valor);
         }
 
-        // Fechar modal ao clicar fora
         document.getElementById('deleteModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 fecharModal();
             }
         });
 
-        // Fechar modal com ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 fecharModal();

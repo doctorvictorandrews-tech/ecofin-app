@@ -256,7 +256,7 @@ async def otimizar_financiamento(lead_data: LeadCreate):
         )
         
         otimizador = SuperOtimizador(
-            configuracao=config,
+            config=config,
             recursos=recursos,
             passo_amortizacao=100
         )

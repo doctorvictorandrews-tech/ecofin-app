@@ -1,5 +1,5 @@
 """
-API EcoFin - Com Debug de Imports
+API EcoFin - Com CORS Ultra Configurado
 """
 
 from fastapi import FastAPI, HTTPException, status
@@ -45,16 +45,32 @@ except Exception as e:
 app = FastAPI(
     title="EcoFin API",
     description="API para otimização de financiamentos imobiliários",
-    version="6.0.0-debug"
+    version="6.0.1"
 )
 
-# CORS
+# ============================================
+# CORS - ULTRA CONFIGURADO
+# ============================================
+
+# Lista de origens permitidas
+origins = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "https://app.meuecofin.com.br",
+    "https://meuecofin.com.br",
+    "https://ecofin-app-production.vercel.app",
+    "*"  # Permitir todas (temporário para debug)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # ============================================
@@ -67,12 +83,12 @@ async def root():
     return {
         "message": "EcoFin API está rodando!",
         "status": "online",
-        "version": "6.0.0-debug",
+        "version": "6.0.1",
         "motor_disponivel": MOTOR_DISPONIVEL,
         "otimizador_disponivel": OTIMIZADOR_DISPONIVEL,
         "import_errors": IMPORT_ERRORS if IMPORT_ERRORS else None,
-        "python_version": sys.version,
-        "python_path": sys.path,
+        "cors_configured": True,
+        "allowed_origins": origins,
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -85,15 +101,25 @@ async def health():
     return {
         "status": "healthy",
         "service": "EcoFin API",
-        "version": "6.0.0-debug",
+        "version": "6.0.1",
         "checks": {
             "api": "ok",
             "motor": status_motor,
-            "otimizador": status_otimizador
+            "otimizador": status_otimizador,
+            "cors": "ok"
         },
         "errors": IMPORT_ERRORS if IMPORT_ERRORS else None,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+# ============================================
+# OPTIONS para CORS Preflight
+# ============================================
+
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handler para requests OPTIONS (CORS preflight)"""
+    return {"message": "OK"}
 
 # ============================================
 # STORAGE
@@ -204,8 +230,11 @@ async def otimizar_financiamento(lead_data: LeadCreate):
     Se motor/otimizador não estiverem disponíveis, retorna mock
     """
     
+    print(f"📨 Recebendo lead: {lead_data.nome} ({lead_data.email})")
+    
     if not MOTOR_DISPONIVEL or not OTIMIZADOR_DISPONIVEL:
         # Retornar resposta mock
+        print("⚠️  Motor/Otimizador não disponível, retornando mock...")
         lead_dict = {
             'nome': lead_data.nome,
             'email': lead_data.email,
@@ -232,6 +261,8 @@ async def otimizar_financiamento(lead_data: LeadCreate):
         lead_id = storage.create(lead_dict)
         storage.update(lead_id, {'status': 'concluido'})
         
+        print(f"✅ Lead mock criado: {lead_id}")
+        
         return {
             'success': True,
             'message': 'Lead criado (modo mock - motor não disponível)',
@@ -241,6 +272,7 @@ async def otimizar_financiamento(lead_data: LeadCreate):
     
     # Implementação real quando motor estiver disponível
     try:
+        print("🔧 Processando com motor real...")
         from decimal import Decimal
         
         config = ConfiguracaoFinanciamento(
@@ -255,6 +287,7 @@ async def otimizar_financiamento(lead_data: LeadCreate):
             capacidade_extra_mensal=Decimal(str(lead_data.recursos_disponiveis.capacidade_extra_mensal))
         )
         
+        print("🚀 Iniciando otimização...")
         otimizador = SuperOtimizador(
             config=config,
             recursos=recursos,
@@ -262,6 +295,7 @@ async def otimizar_financiamento(lead_data: LeadCreate):
         )
         
         resultado = otimizador.otimizar()
+        print("✅ Otimização concluída!")
         
         # Serializar resultado
         def serializar(obj):
@@ -288,6 +322,8 @@ async def otimizar_financiamento(lead_data: LeadCreate):
         lead_id = storage.create(lead_dict)
         storage.update(lead_id, {'status': 'concluido'})
         
+        print(f"✅ Lead real criado: {lead_id}")
+        
         return {
             'success': True,
             'message': 'Análise realizada com sucesso!',
@@ -296,6 +332,8 @@ async def otimizar_financiamento(lead_data: LeadCreate):
         }
         
     except Exception as e:
+        print(f"❌ Erro ao processar: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao processar otimização: {str(e)}"
@@ -308,10 +346,12 @@ async def otimizar_financiamento(lead_data: LeadCreate):
 @app.on_event("startup")
 async def startup_event():
     print("=" * 60)
-    print("🚀 EcoFin API v6.0.0-debug iniciada!")
+    print("🚀 EcoFin API v6.0.1 iniciada!")
     print("=" * 60)
     print(f"Motor disponível: {MOTOR_DISPONIVEL}")
     print(f"Otimizador disponível: {OTIMIZADOR_DISPONIVEL}")
+    print(f"CORS configurado: ✅")
+    print(f"Origens permitidas: {origins}")
     if IMPORT_ERRORS:
         print("⚠️  Erros de import:")
         for error in IMPORT_ERRORS:
